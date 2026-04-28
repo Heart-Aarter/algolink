@@ -17,7 +17,7 @@ import type {
   UserSettings,
 } from '@/types/algolink'
 import { readStorage, writeStorage } from '@/utils/storage'
-import { calculateSubmissionAnalysis } from '@/utils/analysis'
+import { calculateSubmissionAnalysis, getProblemKey } from '@/utils/analysis'
 
 const storageKeys = {
   accounts: 'algolink.accounts',
@@ -199,14 +199,14 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       const [profile, ratingChanges, syncedSubmissions] = await Promise.all([
         fetchCodeforcesUser(account.handle),
         fetchCodeforcesRating(account.handle),
-        fetchCodeforcesSubmissions(account.handle, 80),
+        fetchCodeforcesSubmissions(account.handle),
       ])
       const records = syncedSubmissions.map(toSubmissionRecord)
       const latestRating = ratingChanges.at(-1)?.newRating ?? profile.rating
       const acceptedProblems = new Set(
         records
           .filter((item) => item.status === 'Accepted')
-          .map((item) => `${item.platform}:${item.problemId || item.problem}`),
+          .map(getProblemKey),
       )
 
       codeforcesSubmissions.value = records

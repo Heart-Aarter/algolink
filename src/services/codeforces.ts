@@ -97,16 +97,21 @@ export async function fetchCodeforcesRating(handle: string): Promise<OjRatingCha
 
 export async function fetchCodeforcesSubmissions(
   handle: string,
-  count = 50,
+  count?: number,
 ): Promise<OjSubmission[]> {
   const normalizedHandle = normalizeHandle(handle)
+  const params: Record<string, string | number> = {
+    handle: normalizedHandle,
+    from: 1,
+  }
+
+  if (typeof count === 'number' && count > 0) {
+    params.count = count
+  }
+
   const result = await requestCodeforces<CodeforcesSubmission[]>(
     'user.status',
-    {
-      handle: normalizedHandle,
-      from: 1,
-      count,
-    },
+    params,
     normalizedHandle,
   )
 

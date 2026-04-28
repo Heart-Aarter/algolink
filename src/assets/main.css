@@ -174,6 +174,15 @@
   gap: 20px;
 }
 
+.dashboard-page .stats-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-page .stats-grid .stat-card:nth-child(3),
+.dashboard-page .stats-grid .stat-card:nth-child(8) {
+  display: none;
+}
+
 .content-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.85fr);
@@ -220,6 +229,97 @@
   color: var(--color-heading);
   font-size: 17px;
   font-weight: 780;
+}
+
+.heatmap-panel {
+  overflow: hidden;
+}
+
+.heatmap-heading {
+  align-items: flex-start;
+}
+
+.heatmap-wrap {
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.heatmap-months {
+  display: grid;
+  grid-auto-columns: 14px;
+  grid-auto-flow: column;
+  min-width: max-content;
+  margin-left: 40px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.heatmap-months span {
+  min-width: 0;
+}
+
+.heatmap-body {
+  display: flex;
+  gap: 8px;
+  min-width: max-content;
+  margin-top: 8px;
+}
+
+.heatmap-weekdays {
+  display: grid;
+  grid-template-rows: repeat(7, 14px);
+  gap: 4px;
+  width: 32px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.heatmap-grid {
+  display: grid;
+  grid-auto-columns: 14px;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 14px);
+  gap: 4px;
+}
+
+.heatmap-cell {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border: 1px solid rgba(154, 170, 190, 0.12);
+  border-radius: 3px;
+  background: rgba(154, 170, 190, 0.08);
+}
+
+.heatmap-cell.level-1 {
+  background: rgba(120, 200, 145, 0.24);
+  border-color: rgba(120, 200, 145, 0.2);
+}
+
+.heatmap-cell.level-2 {
+  background: rgba(120, 200, 145, 0.42);
+  border-color: rgba(120, 200, 145, 0.26);
+}
+
+.heatmap-cell.level-3 {
+  background: rgba(102, 214, 203, 0.58);
+  border-color: rgba(102, 214, 203, 0.28);
+}
+
+.heatmap-cell.level-4 {
+  background: rgba(102, 214, 203, 0.86);
+  border-color: rgba(102, 214, 203, 0.38);
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 16px;
+  color: var(--color-text-muted);
+  font-size: 11px;
 }
 
 .account-list,

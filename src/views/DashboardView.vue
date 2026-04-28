@@ -26,6 +26,103 @@ const dataSourceLabel = computed(() =>
 
 const chartAxis = '#738195'
 const chartGrid = 'rgba(154, 170, 190, 0.1)'
+const dayMs = 24 * 60 * 60 * 1000
+const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const heatmapWeekdayLabels = [
+  { label: 'Mon', row: 2 },
+  { label: 'Wed', row: 4 },
+  { label: 'Fri', row: 6 },
+]
+
+function startOfLocalDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function formatDateKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+    date.getDate(),
+  ).padStart(2, '0')}`
+}
+
+function getHeatmapLevel(count: number) {
+  if (count === 0) return 0
+  if (count === 1) return 1
+  if (count <= 3) return 2
+  if (count <= 6) return 3
+  return 4
+}
+
+const heatmapDays = computed(() => {
+  const today = startOfLocalDay(new Date())
+  const start = new Date(today.getTime() - 364 * dayMs)
+  start.setDate(start.getDate() - start.getDay())
+
+  const counts = new Map<string, number>()
+
+  for (const submission of dashboardSubmissions.value) {
+    const submittedAt = parseSubmittedAt(submission.submittedAt)
+
+    if (!submittedAt) {
+      continue
+    }
+
+    const day = startOfLocalDay(submittedAt)
+
+    if (day < start || day > today) {
+      continue
+    }
+
+    const key = formatDateKey(day)
+    counts.set(key, (counts.get(key) ?? 0) + 1)
+  }
+
+  const days = []
+
+  for (let time = start.getTime(); time <= today.getTime(); time += dayMs) {
+    const date = new Date(time)
+    const key = formatDateKey(date)
+    const count = counts.get(key) ?? 0
+
+    days.push({
+      key,
+      date,
+      dateLabel: key,
+      count,
+      level: getHeatmapLevel(count),
+    })
+  }
+
+  return days
+})
+
+const heatmapMonthLabels = computed(() => {
+  const labels: { name: string; column: number; span: number }[] = []
+  let currentMonth = ''
+
+  heatmapDays.value.forEach((day, index) => {
+    const month = `${day.date.getFullYear()}-${day.date.getMonth()}`
+
+    if (month === currentMonth) {
+      return
+    }
+
+    currentMonth = month
+    labels.push({
+      name: monthNames[day.date.getMonth()] ?? '',
+      column: Math.floor(index / 7) + 1,
+      span: 4,
+    })
+  })
+
+  return labels
+})
+
+const heatmapSummary = computed(() => {
+  const activeDays = heatmapDays.value.filter((day) => day.count > 0).length
+  const total = heatmapDays.value.reduce((sum, day) => sum + day.count, 0)
+
+  return { activeDays, total }
+})
 
 const dailyStats = computed(() => {
   const stats = new Map<string, { ac: number; attempts: number }>()
@@ -165,6 +262,59 @@ const visibleRecommendations = computed(() =>
       <StatCard label="高频标签" :value="analysis.topTrainingTag" helper="最常训练方向" />
       <StatCard label="薄弱标签" :value="analysis.weakestTag" helper="失败压力最高的标签" />
       <StatCard label="最近同步" :value="dashboardAccount?.lastSyncAt || '-'" helper="保存在 localStorage" />
+    </section>
+
+    <section class="panel heatmap-panel">
+      <div class="panel-heading heatmap-heading">
+        <div>
+          <p class="eyebrow">Codeforces Activity</p>
+          <h2>训练热力图</h2>
+        </div>
+        <span class="count-badge">
+          {{ heatmapSummary.total }} 次提交 / {{ heatmapSummary.activeDays }} 天活跃
+        </span>
+      </div>
+      <div class="heatmap-wrap">
+        <div class="heatmap-months" aria-hidden="true">
+          <span
+            v-for="month in heatmapMonthLabels"
+            :key="`${month.name}-${month.column}`"
+            :style="{ gridColumn: `${month.column} / span ${month.span}` }"
+          >
+            {{ month.name }}
+          </span>
+        </div>
+        <div class="heatmap-body">
+          <div class="heatmap-weekdays" aria-hidden="true">
+            <span
+              v-for="weekday in heatmapWeekdayLabels"
+              :key="weekday.label"
+              :style="{ gridRow: weekday.row }"
+            >
+              {{ weekday.label }}
+            </span>
+          </div>
+          <div class="heatmap-grid" aria-label="Codeforces activity heatmap">
+            <span
+              v-for="day in heatmapDays"
+              :key="day.key"
+              class="heatmap-cell"
+              :class="`level-${day.level}`"
+              :title="`${day.dateLabel}: ${day.count} submissions`"
+              :aria-label="`${day.dateLabel}: ${day.count} submissions`"
+            />
+          </div>
+        </div>
+        <div class="heatmap-legend" aria-hidden="true">
+          <span>Less</span>
+          <i class="heatmap-cell level-0" />
+          <i class="heatmap-cell level-1" />
+          <i class="heatmap-cell level-2" />
+          <i class="heatmap-cell level-3" />
+          <i class="heatmap-cell level-4" />
+          <span>More</span>
+        </div>
+      </div>
     </section>
 
     <section class="panel today-advice">

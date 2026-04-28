@@ -82,7 +82,7 @@ function normalizeVerdict(verdict?: string): SubmissionStatus {
 
 function getProblemId(problem: CodeforcesProblem) {
   if (problem.contestId) {
-    return `${problem.contestId}${problem.index}`
+    return `${problem.contestId}-${problem.index}`
   }
 
   if (problem.problemsetName) {
