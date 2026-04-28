@@ -52,6 +52,27 @@ export interface TrainingTask {
   dueDate?: string
 }
 
+export type TrainingPlanStatus = 'not-started' | 'doing' | 'done'
+
+export interface WeeklyTrainingPlanDay {
+  id: string
+  dayLabel: string
+  theme: string
+  problemCount: number
+  tags: string[]
+  goal: string
+  reviewAdvice: string
+}
+
+export interface RecommendedProblem {
+  id: string
+  platform: OjPlatform
+  title: string
+  difficulty: string
+  tags: string[]
+  reason: string
+}
+
 export interface UserSettings {
   syncInterval: 'manual' | 'daily' | 'weekly'
   aiTone: 'strict' | 'balanced' | 'encouraging'

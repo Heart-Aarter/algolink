@@ -5,12 +5,22 @@ import ChartPanel from '@/components/charts/ChartPanel.vue'
 import StatCard from '@/components/common/StatCard.vue'
 import { problemRecommendations } from '@/mock/algolink'
 import { useAlgoLinkStore } from '@/stores/algolink'
+import { getTrainingSummary } from '@/utils/analysis'
 
 const store = useAlgoLinkStore()
 
+const analysisSubmissions = computed(() =>
+  store.boundSubmissions.length ? store.boundSubmissions : store.submissions,
+)
 const rejectedCount = computed(
   () => store.boundSubmissions.filter((item) => item.status !== 'Accepted').length,
 )
+const aiSummary = computed(() => getTrainingSummary(analysisSubmissions.value))
+const todayAdvice = computed(() => ({
+  theme: store.todayPlan?.theme ?? 'DP 边界与初始化',
+  problemCount: store.todayPlan?.problemCount ?? 3,
+  weakTags: aiSummary.value.weakTags.length ? aiSummary.value.weakTags : ['dp', 'math'],
+}))
 
 const chartAxis = '#738195'
 const chartGrid = 'rgba(154, 170, 190, 0.1)'
@@ -155,6 +165,21 @@ const visibleRecommendations = computed(() =>
       <StatCard label="未通过" :value="rejectedCount" helper="WA / TLE / RE 合计" />
     </section>
 
+    <section class="panel today-advice">
+      <div>
+        <p class="eyebrow">Today AI Suggestion</p>
+        <h2>今日 AI 建议</h2>
+        <p>
+          今日训练主题：{{ todayAdvice.theme }}；推荐 {{ todayAdvice.problemCount }} 题；优先关注
+          {{ todayAdvice.weakTags.join(' / ') }}。
+        </p>
+      </div>
+      <div class="hero-actions">
+        <RouterLink to="/ai-advice">查看 AI Coach</RouterLink>
+        <RouterLink to="/training-plan" class="secondary-link">打开训练计划</RouterLink>
+      </div>
+    </section>
+
     <section v-if="!store.accounts.length" class="panel empty-state">
       <h3>还没有绑定任何 OJ 账号</h3>
       <p>请先绑定 Codeforces、Luogu、AtCoder 或 LeetCode 的公开用户名，其他页面会同步读取绑定状态。</p>
@@ -217,8 +242,8 @@ const visibleRecommendations = computed(() =>
             <strong>mock 数据</strong>
           </div>
           <div>
-            <span>真实 API</span>
-            <strong>未接入</strong>
+            <span>训练计划</span>
+            <strong>{{ store.weeklyPlanCompletion }}%</strong>
           </div>
         </div>
       </article>

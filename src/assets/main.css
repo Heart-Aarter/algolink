@@ -92,6 +92,28 @@
   color: var(--color-text-soft);
 }
 
+.coach-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.coach-actions button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-panel-muted);
+  color: var(--color-text-soft);
+  font-weight: 780;
+}
+
+.coach-actions button.active {
+  border-color: rgba(102, 214, 203, 0.28);
+  background: var(--color-accent-soft);
+  color: var(--color-heading);
+}
+
 .hero-scoreboard {
   padding: 18px;
   border: 1px solid rgba(102, 214, 203, 0.18);
@@ -247,6 +269,7 @@
 
 .account-row p,
 .task-card p,
+.weekly-plan-card p,
 .advice-card p,
 .metric-card p,
 .danger-panel p,
@@ -348,6 +371,40 @@ select:focus {
 
 .form-message.error {
   color: var(--color-danger);
+}
+
+.coach-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.coach-summary-grid div,
+.compact-stat,
+.weekly-plan-card,
+.analysis-card {
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-panel-muted);
+}
+
+.coach-summary-grid span,
+.compact-stat span,
+.plan-meta,
+.platform-chip {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.coach-summary-grid strong,
+.compact-stat strong,
+.weekly-plan-card strong,
+.analysis-card strong {
+  color: var(--color-heading);
+  font-weight: 820;
 }
 
 .count-badge {
@@ -461,6 +518,71 @@ select:focus {
   grid-template-columns: 120px minmax(0, 1fr) 42px;
   align-items: center;
   gap: 12px;
+}
+
+.analysis-list,
+.plan-summary-grid,
+.weekly-plan-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.analysis-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.plan-summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.today-advice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.today-advice h2,
+.weekly-plan-card h3,
+.analysis-card h3 {
+  color: var(--color-heading);
+  font-weight: 800;
+}
+
+.today-advice p {
+  margin-top: 8px;
+  color: var(--color-text-soft);
+}
+
+.weekly-plan-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.weekly-plan-card {
+  display: grid;
+  gap: 16px;
+}
+
+.weekly-plan-card h3 {
+  margin-top: 6px;
+}
+
+.plan-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.platform-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  margin-bottom: 8px;
+  padding: 0 9px;
+  border-radius: 7px;
+  background: rgba(102, 214, 203, 0.1);
+  color: var(--color-heading);
 }
 
 .filter-bar {

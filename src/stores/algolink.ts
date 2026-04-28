@@ -1,13 +1,21 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { defaultSettings, mockSubmissions, trainingTasks as mockTrainingTasks } from '@/mock/algolink'
-import type { OjAccount, OjPlatform, TrainingTask, UserSettings } from '@/types/algolink'
+import { weeklyTrainingPlan } from '@/mock/trainingPlan'
+import type {
+  OjAccount,
+  OjPlatform,
+  TrainingPlanStatus,
+  TrainingTask,
+  UserSettings,
+} from '@/types/algolink'
 import { readStorage, writeStorage } from '@/utils/storage'
 
 const storageKeys = {
   accounts: 'algolink.accounts',
   settings: 'algolink.settings',
   tasks: 'algolink.trainingTasks',
+  weeklyPlanStatus: 'algolink.weeklyPlanStatus',
 }
 
 export const supportedPlatforms: OjPlatform[] = ['Codeforces', 'Luogu', 'AtCoder', 'LeetCode']
@@ -57,6 +65,9 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const trainingTasks = ref<TrainingTask[]>(
     readStorage<TrainingTask[]>(storageKeys.tasks, mockTrainingTasks),
   )
+  const weeklyPlanStatus = ref<Record<string, TrainingPlanStatus>>(
+    readStorage<Record<string, TrainingPlanStatus>>(storageKeys.weeklyPlanStatus, {}),
+  )
   const submissions = ref(mockSubmissions)
 
   const boundPlatforms = computed(() => new Set(accounts.value.map((item) => item.platform)))
@@ -87,6 +98,17 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       }
     }),
   )
+  const weeklyPlanDays = computed(() =>
+    weeklyTrainingPlan.map((day) => ({
+      ...day,
+      status: weeklyPlanStatus.value[day.id] ?? 'not-started',
+    })),
+  )
+  const weeklyPlanCompletion = computed(() => {
+    const done = weeklyPlanDays.value.filter((day) => day.status === 'done').length
+    return Math.round((done / Math.max(weeklyPlanDays.value.length, 1)) * 100)
+  })
+  const todayPlan = computed(() => weeklyPlanDays.value[0])
 
   function addAccount(platform: OjPlatform | '', handle: string): { ok: boolean; message: string } {
     const trimmedHandle = handle.trim()
@@ -144,13 +166,23 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     writeStorage(storageKeys.tasks, trainingTasks.value)
   }
 
+  function updateWeeklyPlanStatus(id: string, status: TrainingPlanStatus) {
+    weeklyPlanStatus.value = {
+      ...weeklyPlanStatus.value,
+      [id]: status,
+    }
+    writeStorage(storageKeys.weeklyPlanStatus, weeklyPlanStatus.value)
+  }
+
   function resetLocalData() {
     accounts.value = []
     settings.value = defaultSettings
     trainingTasks.value = mockTrainingTasks
+    weeklyPlanStatus.value = {}
     writeStorage(storageKeys.accounts, accounts.value)
     writeStorage(storageKeys.settings, settings.value)
     writeStorage(storageKeys.tasks, trainingTasks.value)
+    writeStorage(storageKeys.weeklyPlanStatus, weeklyPlanStatus.value)
   }
 
   return {
@@ -159,6 +191,9 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     submissions,
     boundSubmissions,
     trainingTasks,
+    weeklyPlanDays,
+    weeklyPlanCompletion,
+    todayPlan,
     supportedPlatforms,
     platformSyncCards,
     totalSolved,
@@ -169,6 +204,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     syncAccount,
     updateSettings,
     updateTaskStatus,
+    updateWeeklyPlanStatus,
     resetLocalData,
   }
 })
