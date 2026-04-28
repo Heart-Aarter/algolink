@@ -52,15 +52,29 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .chart-panel {
+  position: relative;
   min-height: 326px;
   padding: 22px;
+  overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: var(--color-panel);
+  background:
+    linear-gradient(135deg, rgba(127, 164, 216, 0.06), transparent 45%), var(--color-panel);
   box-shadow: var(--shadow-panel);
 }
 
+.chart-panel::before {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 38%);
+  content: '';
+  pointer-events: none;
+}
+
 .chart-heading {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -70,10 +84,12 @@ onBeforeUnmount(() => {
 h2 {
   color: var(--color-heading);
   font-size: 17px;
-  font-weight: 780;
+  font-weight: 830;
 }
 
 .chart-canvas {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 246px;
 }

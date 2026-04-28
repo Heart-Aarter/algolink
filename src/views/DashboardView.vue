@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import type { EChartsOption } from 'echarts'
 import ChartPanel from '@/components/charts/ChartPanel.vue'
 import StatCard from '@/components/common/StatCard.vue'
@@ -16,7 +16,6 @@ import {
 } from '@/utils/analysis'
 
 const store = useAlgoLinkStore()
-const demoMessage = ref('')
 
 const codeforcesAccount = computed(() =>
   store.accounts.find((account) => account.platform === 'Codeforces'),
@@ -40,7 +39,7 @@ const productHighlights = computed(() => [
     text: '公开 handle 绑定与同步',
   },
   { label: '训练诊断', value: analysis.value.weakestTag, text: '自动识别薄弱标签' },
-  { label: '答辩展示', value: 'Demo Ready', text: '一键载入演示数据' },
+  { label: 'AI Coach', value: 'Rules', text: '规则化 mock 分析建议' },
 ])
 
 const chartAxis = '#738195'
@@ -356,11 +355,6 @@ const visibleRecommendations = computed(() =>
       store.accounts.some((account) => account.platform === item.platform),
   ),
 )
-
-function loadDemoData() {
-  store.loadDemoData()
-  demoMessage.value = '演示数据已载入，可直接展示 Dashboard、提交记录、能力画像和训练报告。'
-}
 </script>
 
 <template>
@@ -376,9 +370,8 @@ function loadDemoData() {
         <div class="hero-actions product-hero-actions">
           <RouterLink to="/accounts">同步 Codeforces</RouterLink>
           <RouterLink to="/training-report" class="secondary-link">生成训练报告</RouterLink>
-          <button class="demo-load-button" type="button" @click="loadDemoData">载入演示数据</button>
+          <RouterLink to="/profile" class="secondary-link">查看能力画像</RouterLink>
         </div>
-        <p v-if="demoMessage" class="demo-message success">{{ demoMessage }}</p>
       </div>
 
       <div class="product-hero-visual" aria-label="AlgoLink product summary">

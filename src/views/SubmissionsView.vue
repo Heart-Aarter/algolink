@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, h, reactive, ref, watch } from 'vue'
+import {
+  NDataTable,
+  NEmpty,
+  NInput,
+  NPagination,
+  NSelect,
+  NTag,
+  type DataTableColumns,
+} from 'naive-ui'
 import StatCard from '@/components/common/StatCard.vue'
 import { useAlgoLinkStore } from '@/stores/algolink'
 import { calculateSubmissionAnalysis, difficultyBucketOptions } from '@/utils/analysis'
@@ -9,7 +18,8 @@ import {
   sortOptions,
   type SubmissionFilterState,
 } from '@/utils/submissionFilters'
-import { getStatusClass, getVerdictCode, verdictOptions } from '@/utils/verdict'
+import { getVerdictCode, verdictOptions } from '@/utils/verdict'
+import type { SubmissionRecord, SubmissionStatus } from '@/types/algolink'
 
 const store = useAlgoLinkStore()
 
@@ -44,6 +54,69 @@ const paginatedSubmissions = computed(() =>
   filteredSubmissions.value.slice(pageStart.value, pageEnd.value),
 )
 
+const platformSelectOptions = computed(() =>
+  platformOptions.value.map((item) => ({
+    label: item,
+    value: item,
+  })),
+)
+const verdictSelectOptions = computed(() =>
+  verdictOptions.map((item) => ({
+    label: item,
+    value: item,
+  })),
+)
+const tagSelectOptions = computed(() =>
+  tagOptions.value.map((item) => ({
+    label: item,
+    value: item,
+  })),
+)
+const difficultySelectOptions = difficultyBucketOptions.map((item) => ({
+  label: item.label,
+  value: item.value,
+}))
+const sortSelectOptions = sortOptions.map((item) => ({
+  label: item.label,
+  value: item.value,
+}))
+
+const columns: DataTableColumns<SubmissionRecord> = [
+  { title: '平台', key: 'platform', width: 110 },
+  { title: '题目', key: 'problem', minWidth: 220 },
+  { title: '难度', key: 'difficulty', width: 100 },
+  {
+    title: '标签',
+    key: 'tags',
+    minWidth: 220,
+    render(row) {
+      const tags = row.tags.length ? row.tags : ['untagged']
+      return h(
+        'div',
+        { class: 'submission-tags' },
+        tags.map((tag) =>
+          h(NTag, { size: 'small', round: true, bordered: false }, { default: () => tag }),
+        ),
+      )
+    },
+  },
+  {
+    title: '结果',
+    key: 'status',
+    width: 110,
+    render(row) {
+      return h(
+        NTag,
+        { type: getStatusTagType(row.status), size: 'small', round: true },
+        { default: () => getVerdictCode(row.status) },
+      )
+    },
+  },
+  { title: '语言', key: 'language', width: 140 },
+  { title: '运行时间', key: 'runtime', width: 110 },
+  { title: '提交时间', key: 'submittedAt', width: 150 },
+]
+
 watch(
   () => [
     filters.keyword,
@@ -67,8 +140,20 @@ watch(totalPages, (pages) => {
   currentPage.value = Math.min(currentPage.value, pages)
 })
 
-function goToPage(page: number) {
-  currentPage.value = Math.min(Math.max(page, 1), totalPages.value)
+function getStatusTagType(status: SubmissionStatus) {
+  if (status === 'Accepted') {
+    return 'success'
+  }
+
+  if (status === 'Wrong Answer' || status === 'Runtime Error' || status === 'Compilation Error') {
+    return 'error'
+  }
+
+  if (status === 'Time Limit') {
+    return 'warning'
+  }
+
+  return 'default'
 }
 </script>
 
@@ -99,97 +184,49 @@ function goToPage(page: number) {
           <p class="eyebrow">Submission Stream</p>
           <h2>提交记录</h2>
         </div>
-        <div class="filter-bar submission-filter-bar">
-          <input v-model="filters.keyword" type="search" placeholder="搜索题目、题号、标签、语言" />
-          <select v-model="filters.platform" aria-label="Platform filter">
-            <option v-for="item in platformOptions" :key="item" :value="item">{{ item }}</option>
-          </select>
-          <select v-model="filters.verdict" aria-label="Verdict filter">
-            <option v-for="item in verdictOptions" :key="item" :value="item">{{ item }}</option>
-          </select>
-          <select v-model="filters.tag" aria-label="Tag filter">
-            <option v-for="item in tagOptions" :key="item" :value="item">{{ item }}</option>
-          </select>
-          <select v-model="filters.difficulty" aria-label="Difficulty filter">
-            <option v-for="item in difficultyBucketOptions" :key="item.value" :value="item.value">
-              {{ item.label }}
-            </option>
-          </select>
-          <select v-model="filters.sort" aria-label="Sort submissions">
-            <option v-for="item in sortOptions" :key="item.value" :value="item.value">
-              {{ item.label }}
-            </option>
-          </select>
-        </div>
       </div>
 
-      <div v-if="filteredSubmissions.length" class="pagination-bar">
+      <div class="filter-bar submission-filter-bar naive-filter-bar">
+        <n-input
+          v-model:value="filters.keyword"
+          clearable
+          placeholder="搜索题目、题号、标签、语言"
+        />
+        <n-select v-model:value="filters.platform" :options="platformSelectOptions" />
+        <n-select v-model:value="filters.verdict" :options="verdictSelectOptions" />
+        <n-select v-model:value="filters.tag" :options="tagSelectOptions" />
+        <n-select v-model:value="filters.difficulty" :options="difficultySelectOptions" />
+        <n-select v-model:value="filters.sort" :options="sortSelectOptions" />
+      </div>
+
+      <div v-if="filteredSubmissions.length" class="pagination-bar naive-pagination-bar">
         <div class="pagination-summary">
           显示 {{ pageStart + 1 }}-{{ pageEnd }} / {{ filteredSubmissions.length }} 条
         </div>
-        <div class="pagination-actions">
-          <label class="page-size-control">
-            每页
-            <select v-model.number="pageSize" aria-label="Rows per page">
-              <option v-for="item in pageSizeOptions" :key="item" :value="item">
-                {{ item }}
-              </option>
-            </select>
-          </label>
-          <button type="button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">
-            上一页
-          </button>
-          <span>{{ currentPage }} / {{ totalPages }}</span>
-          <button
-            type="button"
-            :disabled="currentPage === totalPages"
-            @click="goToPage(currentPage + 1)"
-          >
-            下一页
-          </button>
-        </div>
+        <n-pagination
+          v-model:page="currentPage"
+          v-model:page-size="pageSize"
+          :item-count="filteredSubmissions.length"
+          :page-sizes="pageSizeOptions"
+          show-size-picker
+        />
       </div>
 
-      <div v-if="filteredSubmissions.length" class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>平台</th>
-              <th>题目</th>
-              <th>难度</th>
-              <th>标签</th>
-              <th>结果</th>
-              <th>语言</th>
-              <th>运行时间</th>
-              <th>提交时间</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="submission in paginatedSubmissions" :key="submission.id">
-              <td>{{ submission.platform }}</td>
-              <td>{{ submission.problem }}</td>
-              <td>{{ submission.difficulty }}</td>
-              <td>
-                <span v-for="tag in submission.tags" :key="tag" class="tag">{{ tag }}</span>
-                <span v-if="!submission.tags.length" class="tag">untagged</span>
-              </td>
-              <td>
-                <span class="status-pill" :class="getStatusClass(submission.status)">
-                  {{ getVerdictCode(submission.status) }}
-                </span>
-              </td>
-              <td>{{ submission.language }}</td>
-              <td>{{ submission.runtime }}</td>
-              <td>{{ submission.submittedAt }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <n-data-table
+        v-if="filteredSubmissions.length"
+        :columns="columns"
+        :data="paginatedSubmissions"
+        :bordered="false"
+        :single-line="false"
+        size="small"
+        class="submission-data-table"
+      />
 
-      <div v-else class="empty-state submission-empty">
-        <h3>没有符合条件的提交记录</h3>
-        <p>可以清空关键词、将结果或标签切回 All，或放宽难度区间。</p>
-      </div>
+      <n-empty v-else description="没有符合条件的提交记录" class="empty-state naive-empty">
+        <template #extra>
+          <span>可以清空关键词，将结果或标签切回 All，或放宽难度区间。</span>
+        </template>
+      </n-empty>
     </section>
   </div>
 </template>

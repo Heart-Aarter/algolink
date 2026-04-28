@@ -95,6 +95,9 @@ onMounted(() => {
 
 <style scoped>
 .app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -103,7 +106,8 @@ onMounted(() => {
   padding: 0 40px;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-header);
-  backdrop-filter: blur(18px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(18px) saturate(130%);
 }
 
 .eyebrow {
@@ -116,8 +120,8 @@ onMounted(() => {
 
 h1 {
   color: var(--color-heading);
-  font-size: 23px;
-  font-weight: 780;
+  font-size: 24px;
+  font-weight: 840;
 }
 
 .header-actions {

@@ -154,8 +154,7 @@
 
 .hero-actions a:hover,
 .text-link:hover,
-.ghost-button:hover,
-.bind-form button:hover {
+.ghost-button:hover {
   transform: translateY(-1px);
   box-shadow:
     0 10px 28px rgba(0, 0, 0, 0.16),
@@ -183,50 +182,6 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 14px 32px rgba(0, 0, 0, 0.12);
   backdrop-filter: blur(18px) saturate(135%);
-}
-
-.coach-actions button {
-  position: relative;
-  min-height: 42px;
-  padding: 0 16px;
-  overflow: hidden;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--color-text-soft);
-  font-weight: 780;
-}
-
-.coach-actions button::after {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.12), transparent);
-  content: '';
-  opacity: 0;
-  transform: translateX(-55%);
-  transition:
-    opacity 0.22s ease,
-    transform 0.42s ease;
-}
-
-.coach-actions button:hover {
-  color: var(--color-heading);
-  transform: translateY(-1px);
-}
-
-.coach-actions button:hover::after {
-  opacity: 1;
-  transform: translateX(55%);
-}
-
-.coach-actions button.active {
-  border-color: rgba(102, 214, 203, 0.3);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.14), transparent 46%), var(--glass-surface-strong);
-  color: var(--color-heading);
-  box-shadow:
-    0 8px 24px rgba(102, 214, 203, 0.09),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .hero-scoreboard {
@@ -356,41 +311,6 @@
 
 .product-hero-actions {
   margin-top: 26px;
-}
-
-.demo-load-button {
-  display: inline-flex;
-  align-items: center;
-  min-height: 36px;
-  padding: 0 14px;
-  border: 1px solid var(--glass-border);
-  border-radius: 8px;
-  background:
-    linear-gradient(135deg, var(--glass-highlight), transparent 42%), var(--glass-surface);
-  color: var(--color-heading);
-  font-size: 13px;
-  font-weight: 780;
-  backdrop-filter: blur(14px) saturate(130%);
-}
-
-.demo-load-button:hover {
-  transform: translateY(-1px);
-  box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
-.demo-message {
-  width: fit-content;
-  max-width: 100%;
-  margin-top: 16px;
-  padding: 9px 12px;
-  border: 1px solid rgba(120, 200, 145, 0.24);
-  border-radius: 8px;
-  background: rgba(120, 200, 145, 0.09);
-  color: var(--color-green);
-  font-size: 13px;
-  font-weight: 760;
 }
 
 .product-hero-visual {
@@ -757,7 +677,6 @@ select:focus {
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-.bind-form button,
 .ghost-button {
   position: relative;
   min-height: 42px;
@@ -772,7 +691,6 @@ select:focus {
   backdrop-filter: blur(12px);
 }
 
-.bind-form button:disabled,
 .ghost-button:disabled {
   cursor: not-allowed;
   opacity: 0.58;
@@ -1495,6 +1413,56 @@ select:focus {
   min-height: 34px;
 }
 
+.naive-bind-form .n-button {
+  min-height: 42px;
+}
+
+.naive-filter-bar {
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.naive-filter-bar .n-input {
+  min-width: 260px;
+}
+
+.naive-filter-bar .n-select {
+  width: 136px;
+}
+
+.naive-pagination-bar {
+  margin-top: 4px;
+}
+
+.submission-data-table {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-panel-muted);
+}
+
+.submission-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.naive-empty {
+  justify-items: center;
+  text-align: center;
+}
+
+.plan-status-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.plan-status-actions > span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 760;
+}
+
 .table-wrap {
   overflow-x: auto;
 }
@@ -1503,6 +1471,16 @@ table {
   width: 100%;
   min-width: 860px;
   border-collapse: collapse;
+}
+
+tbody tr {
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+tbody tr:hover {
+  background: rgba(102, 214, 203, 0.035);
 }
 
 th,
@@ -1867,7 +1845,7 @@ td {
     width: 100%;
   }
 
-  .coach-actions button {
+  .coach-actions .n-button {
     flex: 1 1 calc(50% - 8px);
   }
 

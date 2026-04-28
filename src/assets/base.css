@@ -116,6 +116,21 @@ button {
   cursor: pointer;
 }
 
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid rgba(102, 214, 203, 0.55);
+  outline-offset: 3px;
+}
+
 a {
   color: inherit;
   text-decoration: none;

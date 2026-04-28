@@ -14,7 +14,7 @@ import type {
 
 export const mockAccounts: OjAccount[] = [
   {
-    id: 'cf-demo',
+    id: 'cf-sample',
     platform: 'Codeforces',
     handle: 'algo_runner',
     status: 'bound',
@@ -24,7 +24,7 @@ export const mockAccounts: OjAccount[] = [
     color: '#7fa4d8',
   },
   {
-    id: 'luogu-demo',
+    id: 'luogu-sample',
     platform: 'Luogu',
     handle: 'dp_starter',
     status: 'bound',
@@ -344,4 +344,3 @@ export const defaultSettings: UserSettings = {
   showOnlyPublicData: true,
   defaultPlatform: 'Codeforces',
 }
-

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { EChartsOption } from 'echarts'
+import { NEmpty } from 'naive-ui'
 import ChartPanel from '@/components/charts/ChartPanel.vue'
 import StatCard from '@/components/common/StatCard.vue'
 import { useAlgoLinkStore } from '@/stores/algolink'
@@ -121,10 +122,12 @@ const languageOption = computed(() => barOption(analysis.value.languageDistribut
       <StatCard label="薄弱标签" :value="analysis.weakestTag" helper="失败压力最高的标签" />
     </section>
 
-    <section v-if="!analysisSubmissions.length" class="panel empty-state">
-      <h3>暂无可分析数据</h3>
-      <p>请绑定并同步公开 Codeforces handle；没有真实数据时页面会继续使用 mock 数据。</p>
-      <RouterLink class="text-link" to="/accounts">前往账号绑定</RouterLink>
+    <section v-if="!analysisSubmissions.length" class="panel">
+      <n-empty description="暂无可分析数据" class="empty-state naive-empty">
+        <template #extra>
+          <RouterLink class="text-link" to="/accounts">前往账号绑定</RouterLink>
+        </template>
+      </n-empty>
     </section>
 
     <template v-else>

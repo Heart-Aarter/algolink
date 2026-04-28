@@ -1,27 +1,32 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { NButton, NEmpty, NInput, NPopconfirm, NSelect, NTag, useMessage } from 'naive-ui'
 import { useAlgoLinkStore } from '@/stores/algolink'
 import type { OjPlatform } from '@/types/algolink'
 
 const store = useAlgoLinkStore()
-const platform = ref<OjPlatform | ''>(store.settings.defaultPlatform)
+const message = useMessage()
+const platform = ref<OjPlatform | null>(store.settings.defaultPlatform)
 const handle = ref('')
-const message = ref('')
-const messageType = ref<'success' | 'error'>('success')
 const syncingId = ref('')
 
-function setMessage(type: 'success' | 'error', text: string) {
-  messageType.value = type
-  message.value = text
-}
+const platformOptions = computed(() =>
+  store.supportedPlatforms.map((item) => ({
+    label: item,
+    value: item,
+  })),
+)
 
 function submitAccount() {
-  const result = store.addAccount(platform.value, handle.value)
-  setMessage(result.ok ? 'success' : 'error', result.message)
+  const result = store.addAccount(platform.value || '', handle.value)
 
   if (result.ok) {
+    message.success(result.message)
     handle.value = ''
+    return
   }
+
+  message.error(result.message)
 }
 
 async function syncAccount(id: string, platformName: OjPlatform) {
@@ -30,15 +35,15 @@ async function syncAccount(id: string, platformName: OjPlatform) {
   }
 
   syncingId.value = id
-  setMessage('success', `${platformName} 正在同步...`)
+  message.info(`${platformName} 正在同步...`)
   const result = await store.syncCodeforcesAccount(id)
-  setMessage(result.ok ? 'success' : 'error', result.message)
+  message[result.ok ? 'success' : 'error'](result.message)
   syncingId.value = ''
 }
 
 function removeAccount(id: string, platformName: OjPlatform) {
   store.removeAccount(id)
-  setMessage('success', `${platformName} 已解绑`)
+  message.success(`${platformName} 已解绑`)
 }
 </script>
 
@@ -50,29 +55,30 @@ function removeAccount(id: string, platformName: OjPlatform) {
           <p class="eyebrow">Public Handle Only</p>
           <h2>OJ 账号绑定</h2>
         </div>
+        <n-tag type="info" round>不收集密码</n-tag>
       </div>
 
-      <form class="bind-form" @submit.prevent="submitAccount">
+      <form class="bind-form naive-bind-form" @submit.prevent="submitAccount">
         <label>
           平台
-          <select v-model="platform">
-            <option value="">请选择平台</option>
-            <option v-for="item in store.supportedPlatforms" :key="item" :value="item">
-              {{ item }}
-            </option>
-          </select>
+          <n-select
+            v-model:value="platform"
+            :options="platformOptions"
+            clearable
+            placeholder="请选择平台"
+          />
         </label>
         <label>
           用户名 / handle
-          <input v-model="handle" type="text" placeholder="例如 tourist、abc_focus" />
+          <n-input v-model:value="handle" clearable placeholder="例如 tourist、abc_focus" />
         </label>
-        <button type="submit">绑定</button>
+        <n-button type="primary" attr-type="submit" strong>绑定账号</n-button>
       </form>
 
       <p class="form-note">
-        Codeforces 点击同步会请求官方公开 API；其他平台继续使用 mock 数据。只保存公开用户名，不收集 OJ 密码。
+        Codeforces 点击同步会请求官方公开 API；其他平台继续使用 mock 数据。只保存公开用户名，不收集
+        OJ 密码。
       </p>
-      <p v-if="message" class="form-message" :class="messageType">{{ message }}</p>
     </section>
 
     <section class="panel">
@@ -81,7 +87,7 @@ function removeAccount(id: string, platformName: OjPlatform) {
           <p class="eyebrow">Bound Accounts</p>
           <h2>已绑定账号</h2>
         </div>
-        <span class="count-badge">{{ store.accounts.length }} 个公开账号</span>
+        <n-tag round>{{ store.accounts.length }} 个公开账号</n-tag>
       </div>
 
       <div v-if="store.accounts.length" class="account-cards">
@@ -108,30 +114,34 @@ function removeAccount(id: string, platformName: OjPlatform) {
             </div>
           </dl>
           <div class="account-actions">
-            <button
-              class="ghost-button"
-              type="button"
-              :disabled="!!syncingId"
+            <n-button
+              type="primary"
+              secondary
+              :loading="syncingId === account.id"
+              :disabled="!!syncingId && syncingId !== account.id"
               @click="syncAccount(account.id, account.platform)"
             >
-              {{ syncingId === account.id ? '同步中...' : account.platform === 'Codeforces' ? '同步' : '模拟同步' }}
-            </button>
-            <button
-              class="ghost-button danger-button"
-              type="button"
-              :disabled="!!syncingId"
-              @click="removeAccount(account.id, account.platform)"
+              {{ account.platform === 'Codeforces' ? '同步' : '模拟同步' }}
+            </n-button>
+            <n-popconfirm
+              positive-text="确认解绑"
+              negative-text="取消"
+              @positive-click="removeAccount(account.id, account.platform)"
             >
-              解绑
-            </button>
+              <template #trigger>
+                <n-button type="error" secondary :disabled="!!syncingId">解绑</n-button>
+              </template>
+              解绑后该平台本地同步数据会被移除，确认继续？
+            </n-popconfirm>
           </div>
         </article>
       </div>
 
-      <div v-else class="empty-state">
-        <h3>还没有绑定账号</h3>
-        <p>选择平台并输入公开 handle 后，Dashboard、提交记录和能力画像会读取对应数据；Codeforces 可同步真实公开数据。</p>
-      </div>
+      <n-empty v-else description="还没有绑定账号" class="empty-state naive-empty">
+        <template #extra>
+          <span>选择平台并输入公开 handle 后，Dashboard、提交记录和能力画像会读取对应数据。</span>
+        </template>
+      </n-empty>
     </section>
   </div>
 </template>

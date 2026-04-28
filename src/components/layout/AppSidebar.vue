@@ -39,12 +39,18 @@ const navItems = [
 
 <style scoped>
 .app-sidebar {
+  position: sticky;
+  top: 0;
   display: flex;
   flex-direction: column;
+  align-self: start;
   min-height: 100vh;
+  max-height: 100vh;
   padding: 24px 16px;
+  overflow-y: auto;
   border-right: 1px solid var(--color-border);
-  background: var(--color-sidebar);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 36%), var(--color-sidebar);
 }
 
 .brand {
@@ -196,8 +202,11 @@ const navItems = [
 
 @media (max-width: 960px) {
   .app-sidebar {
+    position: relative;
+    max-height: none;
     min-height: auto;
     padding: 16px;
+    overflow: visible;
   }
 
   .nav-list {
