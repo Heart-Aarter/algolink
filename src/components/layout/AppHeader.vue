@@ -71,7 +71,12 @@ onMounted(() => {
     </div>
 
     <div class="header-actions">
-      <button class="theme-toggle" type="button" :aria-label="`切换${themeLabel}模式`" @click="toggleTheme">
+      <button
+        class="theme-toggle"
+        type="button"
+        :aria-label="`切换${themeLabel}模式`"
+        @click="toggleTheme"
+      >
         <span>{{ themeLabel }}</span>
         <i :class="{ light: theme === 'light' }" />
       </button>
@@ -122,17 +127,27 @@ h1 {
 }
 
 .theme-toggle {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 9px;
   min-height: 40px;
   padding: 0 12px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--glass-border);
   border-radius: 999px;
-  background: var(--color-panel-muted);
+  background:
+    linear-gradient(135deg, var(--glass-highlight), transparent 42%), var(--glass-surface);
   color: var(--color-text-soft);
   font-size: 13px;
   font-weight: 780;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px) saturate(130%);
+}
+
+.theme-toggle:hover,
+.primary-action:hover,
+.sync-card:hover {
+  transform: translateY(-1px);
 }
 
 .theme-toggle i {
@@ -162,9 +177,11 @@ h1 {
 .sync-card {
   min-width: 78px;
   padding: 6px 10px;
-  border: 1px solid rgba(154, 170, 190, 0.08);
+  border: 1px solid var(--glass-border);
   border-radius: 7px;
-  background: rgba(255, 255, 255, 0.025);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.055), transparent 42%), rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(12px);
 }
 
 .sync-card span {
@@ -185,10 +202,12 @@ h1 {
   min-height: 40px;
   padding: 0 17px;
   border-radius: 9px;
-  background: var(--color-accent);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.34), transparent 44%), var(--color-accent);
   color: #071015;
   font-size: 14px;
   font-weight: 820;
+  box-shadow: 0 10px 26px rgba(102, 214, 203, 0.16);
 }
 
 @media (max-width: 760px) {

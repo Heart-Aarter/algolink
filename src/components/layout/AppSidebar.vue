@@ -66,10 +66,12 @@ const navItems = [
   place-items: center;
   border: 1px solid var(--color-border-strong);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.035);
+  background:
+    linear-gradient(135deg, var(--glass-highlight), transparent 46%), rgba(255, 255, 255, 0.035);
   color: var(--color-heading);
   font-size: 14px;
   font-weight: 850;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .brand strong,
@@ -93,11 +95,13 @@ const navItems = [
 }
 
 .nav-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 11px;
   min-height: 42px;
   padding: 0 11px;
+  overflow: hidden;
   border: 1px solid transparent;
   border-radius: 9px;
   color: var(--color-text-muted);
@@ -105,18 +109,43 @@ const navItems = [
   font-weight: 690;
 }
 
+.nav-item::before {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, var(--glass-highlight), transparent 44%), var(--glass-surface);
+  content: '';
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.035);
   color: var(--color-text);
+  transform: translateX(2px);
+}
+
+.nav-item:hover::before {
+  opacity: 0.66;
 }
 
 .nav-item.router-link-active {
-  border-color: rgba(102, 214, 203, 0.16);
-  background: rgba(102, 214, 203, 0.08);
+  border-color: rgba(102, 214, 203, 0.24);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent 48%), var(--glass-surface-strong);
   color: var(--color-heading);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.nav-item.router-link-active::before {
+  opacity: 0;
 }
 
 .nav-icon {
+  position: relative;
+  z-index: 1;
   display: inline-grid;
   width: 28px;
   height: 24px;
@@ -126,6 +155,16 @@ const navItems = [
   color: var(--color-text-muted);
   font-size: 11px;
   font-weight: 780;
+}
+
+.nav-item {
+  z-index: 0;
+}
+
+.nav-item > :not(.nav-icon),
+.nav-item .nav-icon {
+  position: relative;
+  z-index: 1;
 }
 
 .nav-item.router-link-active .nav-icon {
@@ -138,7 +177,9 @@ const navItems = [
   padding: 14px;
   border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.025);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 45%), rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(14px);
 }
 
 .sidebar-note span {

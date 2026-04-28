@@ -42,9 +42,7 @@ const modeTitle = computed(() => {
     <section class="panel ai-brief">
       <p class="eyebrow">AI Coach Mock</p>
       <h2>联动能力画像的训练建议</h2>
-      <p>
-        {{ summary.headline }} {{ summary.focus }} {{ summary.suggestion }}
-      </p>
+      <p>{{ summary.headline }} {{ summary.focus }} {{ summary.suggestion }}</p>
       <div class="coach-summary-grid">
         <div>
           <span>数据来源</span>
@@ -62,7 +60,11 @@ const modeTitle = computed(() => {
     </section>
 
     <section class="coach-actions">
-      <button type="button" :class="{ active: activeMode === 'rules' }" @click="activeMode = 'rules'">
+      <button
+        type="button"
+        :class="{ active: activeMode === 'rules' }"
+        @click="activeMode = 'rules'"
+      >
         规则建议
       </button>
       <button
@@ -99,63 +101,67 @@ const modeTitle = computed(() => {
         </RouterLink>
       </div>
 
-      <div v-if="activeMode === 'rules'" class="analysis-list">
-        <article v-for="item in summary.suggestions" :key="item" class="analysis-card">
-          <div class="metric-top">
-            <h3>建议规则</h3>
-            <span class="trend-up">Mock</span>
-          </div>
-          <p>{{ item }}</p>
-          <strong>由本地提交统计生成，不调用真实 AI API。</strong>
-        </article>
-      </div>
+      <Transition name="tab-fade" mode="out-in">
+        <div v-if="activeMode === 'rules'" :key="activeMode" class="analysis-list">
+          <article v-for="item in summary.suggestions" :key="item" class="analysis-card">
+            <div class="metric-top">
+              <h3>建议规则</h3>
+              <span class="trend-up">Mock</span>
+            </div>
+            <p>{{ item }}</p>
+            <strong>由本地提交统计生成，不调用真实 AI API。</strong>
+          </article>
+        </div>
 
-      <div v-else-if="activeMode === 'weak-tags'" class="analysis-list">
-        <article v-for="item in weakTagDetails" :key="item.tag" class="analysis-card">
-          <div class="metric-top">
-            <h3>{{ item.tag }}</h3>
-            <span :class="item.acceptanceRate >= 70 ? 'trend-up' : 'trend-down'">
-              {{ item.acceptanceRate }}%
-            </span>
-          </div>
-          <p>共 {{ item.total }} 次提交，AC {{ item.accepted }} 次，非 AC {{ item.failed }} 次。</p>
-          <strong>
-            {{
-              item.failed
-                ? '建议复盘失败提交，先写清不变量或状态转移，再选择相近难度重做。'
-                : '该标签在当前样本中较稳定，保持低频维护即可。'
-            }}
-          </strong>
-        </article>
-      </div>
+        <div v-else-if="activeMode === 'weak-tags'" :key="activeMode" class="analysis-list">
+          <article v-for="item in weakTagDetails" :key="item.tag" class="analysis-card">
+            <div class="metric-top">
+              <h3>{{ item.tag }}</h3>
+              <span :class="item.acceptanceRate >= 70 ? 'trend-up' : 'trend-down'">
+                {{ item.acceptanceRate }}%
+              </span>
+            </div>
+            <p>
+              共 {{ item.total }} 次提交，AC {{ item.accepted }} 次，非 AC {{ item.failed }} 次。
+            </p>
+            <strong>
+              {{
+                item.failed
+                  ? '建议复盘失败提交，先写清不变量或状态转移，再选择相近难度重做。'
+                  : '该标签在当前样本中较稳定，保持低频维护即可。'
+              }}
+            </strong>
+          </article>
+        </div>
 
-      <div v-else-if="activeMode === 'weekly-plan'" class="plan-summary-grid">
-        <article class="policy-card">
-          <strong>计划周期</strong>
-          <p>{{ weeklyPlanSummary.days }} 天训练，包含专题推进和复盘窗口。</p>
-        </article>
-        <article class="policy-card">
-          <strong>题量安排</strong>
-          <p>{{ weeklyPlanSummary.problems }} 道计划题，会根据薄弱标签和近期活跃度调整。</p>
-        </article>
-        <article class="policy-card">
-          <strong>重点标签</strong>
-          <p>{{ weeklyPlanSummary.focusTags.join(' / ') }}</p>
-        </article>
-      </div>
+        <div v-else-if="activeMode === 'weekly-plan'" :key="activeMode" class="plan-summary-grid">
+          <article class="policy-card">
+            <strong>计划周期</strong>
+            <p>{{ weeklyPlanSummary.days }} 天训练，包含专题推进和复盘窗口。</p>
+          </article>
+          <article class="policy-card">
+            <strong>题量安排</strong>
+            <p>{{ weeklyPlanSummary.problems }} 道计划题，会根据薄弱标签和近期活跃度调整。</p>
+          </article>
+          <article class="policy-card">
+            <strong>重点标签</strong>
+            <p>{{ weeklyPlanSummary.focusTags.join(' / ') }}</p>
+          </article>
+        </div>
 
-      <div v-else class="recommend-list">
-        <article v-for="problem in recommendedProblems" :key="problem.id" class="recommend-card">
-          <div>
-            <span class="platform-chip">{{ problem.platform }}</span>
-            <strong>{{ problem.title }}</strong>
-            <p>{{ problem.difficulty }} / {{ problem.reason }}</p>
-          </div>
-          <div>
-            <span v-for="tag in problem.tags" :key="tag" class="tag">{{ tag }}</span>
-          </div>
-        </article>
-      </div>
+        <div v-else :key="activeMode" class="recommend-list">
+          <article v-for="problem in recommendedProblems" :key="problem.id" class="recommend-card">
+            <div>
+              <span class="platform-chip">{{ problem.platform }}</span>
+              <strong>{{ problem.title }}</strong>
+              <p>{{ problem.difficulty }} / {{ problem.reason }}</p>
+            </div>
+            <div>
+              <span v-for="tag in problem.tags" :key="tag" class="tag">{{ tag }}</span>
+            </div>
+          </article>
+        </div>
+      </Transition>
     </section>
   </div>
 </template>
