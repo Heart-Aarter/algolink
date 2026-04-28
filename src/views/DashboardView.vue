@@ -3,14 +3,24 @@ import { computed } from 'vue'
 import type { EChartsOption } from 'echarts'
 import ChartPanel from '@/components/charts/ChartPanel.vue'
 import StatCard from '@/components/common/StatCard.vue'
-import { abilityMetrics, trendSeries } from '@/mock/algolink'
+import {
+  abilityMetrics,
+  platformSyncStates,
+  problemRecommendations,
+  topicInsights,
+  trendSeries,
+} from '@/mock/algolink'
 import { useAlgoLinkStore } from '@/stores/algolink'
 
 const store = useAlgoLinkStore()
 
+const rejectedCount = computed(
+  () => store.submissions.filter((item) => item.status !== 'Accepted').length,
+)
+
 const trendOption = computed<EChartsOption>(() => ({
   color: ['#25e2d3', '#4f8cff'],
-  grid: { top: 24, right: 16, bottom: 32, left: 36 },
+  grid: { top: 28, right: 18, bottom: 34, left: 38 },
   tooltip: { trigger: 'axis' },
   xAxis: {
     type: 'category',
@@ -26,10 +36,10 @@ const trendOption = computed<EChartsOption>(() => ({
   series: [
     {
       name: '通过',
-      type: 'line',
-      smooth: true,
+      type: 'bar',
+      barMaxWidth: 18,
       data: trendSeries.map((item) => item.solved),
-      areaStyle: { opacity: 0.18 },
+      itemStyle: { borderRadius: [6, 6, 0, 0] },
     },
     {
       name: '提交',
@@ -40,16 +50,28 @@ const trendOption = computed<EChartsOption>(() => ({
   ],
 }))
 
-const platformOption = computed<EChartsOption>(() => ({
-  color: store.accounts.map((item) => item.color),
-  tooltip: { trigger: 'item' },
+const topicOption = computed<EChartsOption>(() => ({
+  color: ['#25e2d3', '#ffb86b'],
+  grid: { top: 28, right: 18, bottom: 34, left: 64 },
+  tooltip: { trigger: 'axis' },
+  xAxis: {
+    type: 'value',
+    max: 100,
+    splitLine: { lineStyle: { color: 'rgba(143, 163, 191, 0.14)' } },
+    axisLabel: { color: '#8fa3bf' },
+  },
+  yAxis: {
+    type: 'category',
+    data: topicInsights.map((item) => item.topic),
+    axisLine: { lineStyle: { color: '#29405f' } },
+    axisLabel: { color: '#dce8f7' },
+  },
   series: [
     {
-      name: '已解决题数',
-      type: 'pie',
-      radius: ['48%', '72%'],
-      data: store.accounts.map((item) => ({ name: item.platform, value: item.solved })),
-      label: { color: '#dce8f7' },
+      name: '正确率',
+      type: 'bar',
+      data: topicInsights.map((item) => item.accuracy),
+      itemStyle: { borderRadius: [0, 6, 6, 0] },
     },
   ],
 }))
@@ -61,45 +83,69 @@ const topAbility = computed(() =>
 
 <template>
   <div class="page-stack">
-    <section class="hero-panel">
+    <section class="hero-panel hero-dashboard">
       <div>
-        <p class="eyebrow">AlgoLink 第一阶段</p>
-        <h2>聚合公开 OJ 刷题数据，形成可视化训练工作台</h2>
+        <p class="eyebrow">AI Multi-OJ Analytics</p>
+        <h2>把 Codeforces、洛谷、AtCoder 的公开刷题轨迹汇总成训练决策台</h2>
         <p>
-          当前使用 mock 数据和 localStorage 模拟账号绑定、提交记录、能力画像与 AI 训练建议。
+          AlgoLink 第二阶段强化了同步状态、题型画像、AI 诊断、推荐题单和训练计划看板，让作品更像可演示的数据平台。
         </p>
+        <div class="hero-actions">
+          <RouterLink to="/ai-advice">查看 AI 训练建议</RouterLink>
+          <RouterLink to="/training-plan" class="secondary-link">进入训练计划</RouterLink>
+        </div>
       </div>
-      <div class="hero-matrix" aria-hidden="true">
-        <span v-for="item in 18" :key="item" />
+      <div class="hero-scoreboard" aria-label="综合训练指数">
+        <span>训练指数</span>
+        <strong>78.6</strong>
+        <p>较上周 +6.8，主要来自贪心与 DP 题量恢复。</p>
       </div>
     </section>
 
     <section class="stats-grid">
       <StatCard label="累计解决" :value="store.totalSolved" helper="跨平台公开题目数量" />
-      <StatCard label="通过率" :value="`${store.acceptanceRate}%`" helper="基于最近 mock 提交" />
-      <StatCard label="训练项" :value="store.activePlanCount" helper="进行中与待完成计划" />
-      <StatCard label="绑定平台" :value="store.accounts.length" helper="Codeforces / 洛谷 / AtCoder" />
+      <StatCard label="最近通过率" :value="`${store.acceptanceRate}%`" helper="基于 mock 提交流计算" />
+      <StatCard label="待处理异常" :value="rejectedCount" helper="WA / TLE / RE 需要复盘" />
+      <StatCard label="活跃训练项" :value="store.activePlanCount" helper="进行中与待完成计划" />
+    </section>
+
+    <section class="sync-strip">
+      <article v-for="item in platformSyncStates" :key="item.platform" class="sync-card">
+        <div class="sync-head">
+          <strong>{{ item.platform }}</strong>
+          <span :class="`sync-${item.status}`">{{ item.status }}</span>
+        </div>
+        <div class="sync-meter"><i :style="{ width: `${item.coverage}%` }" /></div>
+        <p>{{ item.note }}</p>
+        <footer>
+          <span>覆盖 {{ item.coverage }}%</span>
+          <span>下次 {{ item.nextSync }}</span>
+        </footer>
+      </article>
     </section>
 
     <section class="content-grid">
       <ChartPanel title="近 7 天刷题趋势" :option="trendOption" />
-      <ChartPanel title="平台题量分布" :option="platformOption" />
+      <ChartPanel title="题型正确率雷达前哨" :option="topicOption" />
     </section>
 
     <section class="content-grid">
       <article class="panel">
         <div class="panel-heading">
-          <h2>公开账号概览</h2>
+          <h2>AI 推荐题单</h2>
+          <RouterLink class="text-link" to="/ai-advice">查看完整分析</RouterLink>
         </div>
-        <div class="account-list">
-          <div v-for="account in store.accounts" :key="account.id" class="account-row">
-            <span class="account-dot" :style="{ background: account.color }" />
+        <div class="recommend-list">
+          <article v-for="item in problemRecommendations" :key="item.id" class="recommend-card">
             <div>
-              <strong>{{ account.platform }}</strong>
-              <p>@{{ account.handle }} · rating {{ account.rating || '待同步' }}</p>
+              <span class="fit-score">{{ item.fitScore }}</span>
+              <strong>{{ item.title }}</strong>
+              <p>{{ item.platform }} · {{ item.difficulty }} · {{ item.reason }}</p>
             </div>
-            <b>{{ account.solved }}</b>
-          </div>
+            <div>
+              <span v-for="tag in item.tags" :key="tag" class="tag">{{ tag }}</span>
+            </div>
+          </article>
         </div>
       </article>
 

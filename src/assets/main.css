@@ -406,6 +406,304 @@ td {
   gap: 12px;
 }
 
+.hero-dashboard {
+  grid-template-columns: minmax(0, 1fr) 260px;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.hero-actions a,
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(37, 226, 211, 0.32);
+  border-radius: 8px;
+  background: rgba(37, 226, 211, 0.12);
+  color: var(--color-heading);
+  font-weight: 850;
+}
+
+.hero-actions .secondary-link {
+  border-color: var(--color-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text);
+}
+
+.hero-scoreboard {
+  padding: 22px;
+  border: 1px solid rgba(37, 226, 211, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(37, 226, 211, 0.12), rgba(79, 140, 255, 0.1)),
+    rgba(255, 255, 255, 0.03);
+}
+
+.hero-scoreboard span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.hero-scoreboard strong {
+  display: block;
+  margin: 8px 0;
+  color: var(--color-accent);
+  font-size: 52px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.hero-scoreboard p {
+  color: var(--color-text-soft);
+  font-size: 13px;
+}
+
+.sync-strip,
+.finding-grid,
+.policy-grid,
+.topic-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.sync-card,
+.finding-card,
+.policy-card,
+.topic-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-panel);
+}
+
+.sync-head,
+.topic-head,
+.column-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sync-head strong,
+.topic-head strong,
+.policy-card strong,
+.finding-card h3 {
+  color: var(--color-heading);
+  font-weight: 850;
+}
+
+.sync-head span,
+.finding-card span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.sync-synced,
+.finding-opportunity {
+  background: rgba(40, 199, 111, 0.16);
+  color: var(--color-green);
+}
+
+.sync-warning,
+.finding-risk {
+  background: rgba(255, 184, 107, 0.16);
+  color: var(--color-warning);
+}
+
+.sync-queued,
+.finding-habit {
+  background: rgba(79, 140, 255, 0.16);
+  color: #9fc1ff;
+}
+
+.sync-meter {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(143, 163, 191, 0.16);
+}
+
+.sync-meter i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--color-accent), var(--color-green));
+}
+
+.sync-card p,
+.finding-card p,
+.policy-card p,
+.topic-card p {
+  color: var(--color-text-soft);
+}
+
+.sync-card footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.recommend-list {
+  display: grid;
+  gap: 12px;
+}
+
+.recommend-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.recommend-card strong {
+  display: block;
+  margin: 4px 0;
+  color: var(--color-heading);
+  font-weight: 850;
+}
+
+.recommend-card p {
+  color: var(--color-text-soft);
+}
+
+.fit-score {
+  display: inline-grid;
+  width: 36px;
+  height: 28px;
+  place-items: center;
+  border-radius: 7px;
+  background: rgba(37, 226, 211, 0.16);
+  color: var(--color-accent);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.profile-summary h2,
+.plan-overview h2 {
+  margin-top: 6px;
+  color: var(--color-heading);
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.topic-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.topic-head span {
+  color: var(--color-accent);
+  font-size: 20px;
+  font-weight: 950;
+}
+
+.topic-card b {
+  color: var(--color-heading);
+  font-weight: 750;
+}
+
+.topic-card small {
+  color: var(--color-text-muted);
+}
+
+.plan-overview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.plan-overview p {
+  margin-top: 8px;
+  color: var(--color-text-soft);
+}
+
+.plan-ring {
+  display: grid;
+  width: 118px;
+  height: 118px;
+  place-items: center;
+  border: 12px solid rgba(37, 226, 211, 0.18);
+  border-top-color: var(--color-accent);
+  border-right-color: var(--color-blue);
+  border-radius: 999px;
+}
+
+.plan-ring strong,
+.plan-ring span {
+  grid-area: 1 / 1;
+}
+
+.plan-ring strong {
+  color: var(--color-heading);
+  font-size: 24px;
+  font-weight: 950;
+  transform: translateY(-8px);
+}
+
+.plan-ring span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  transform: translateY(18px);
+}
+
+.column-head span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.timeline-list {
+  display: grid;
+  gap: 12px;
+}
+
+.timeline-item {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.timeline-item time {
+  color: var(--color-accent);
+  font-weight: 950;
+}
+
+.timeline-item strong {
+  color: var(--color-heading);
+  font-weight: 850;
+}
+
+.timeline-item p {
+  color: var(--color-text-soft);
+}
+
 .check-row {
   display: flex;
   align-items: center;
@@ -424,7 +722,11 @@ td {
 @media (max-width: 1180px) {
   .stats-grid,
   .account-cards,
-  .advice-list {
+  .advice-list,
+  .sync-strip,
+  .finding-grid,
+  .policy-grid,
+  .topic-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -446,6 +748,10 @@ td {
   .hero-panel {
     grid-template-columns: 1fr;
   }
+
+  .hero-scoreboard {
+    max-width: 360px;
+  }
 }
 
 @media (max-width: 680px) {
@@ -453,6 +759,10 @@ td {
   .account-cards,
   .ability-grid,
   .advice-list,
+  .sync-strip,
+  .finding-grid,
+  .policy-grid,
+  .topic-grid,
   .bind-form,
   .settings-grid {
     grid-template-columns: 1fr;
@@ -470,6 +780,18 @@ td {
   }
 
   .filter-bar {
+    flex-direction: column;
     width: 100%;
+  }
+
+  .recommend-card,
+  .plan-overview,
+  .timeline-item {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-overview {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

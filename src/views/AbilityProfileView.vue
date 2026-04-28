@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import type { EChartsOption } from 'echarts'
 import ChartPanel from '@/components/charts/ChartPanel.vue'
-import { abilityMetrics } from '@/mock/algolink'
+import { abilityMetrics, topicInsights } from '@/mock/algolink'
 
 const radarOption = computed<EChartsOption>(() => ({
   color: ['#25e2d3', '#4f8cff'],
@@ -24,34 +24,57 @@ const radarOption = computed<EChartsOption>(() => ({
     },
   ],
 }))
+
+const gapList = computed(() =>
+  abilityMetrics
+    .map((item) => ({ ...item, gap: item.target - item.score }))
+    .sort((a, b) => b.gap - a.gap),
+)
 </script>
 
 <template>
   <div class="page-stack">
     <section class="content-grid wide-left">
-      <ChartPanel title="能力雷达图" :option="radarOption" />
-      <article class="panel">
-        <div class="panel-heading">
-          <h2>画像摘要</h2>
-        </div>
-        <p class="summary-text">
-          当前优势集中在贪心和数据结构，图论模板稳定性仍需提升。数学与期望类题型离目标差距最大，适合作为下一轮训练主线。
+      <ChartPanel title="能力画像雷达图" :option="radarOption" />
+      <article class="panel profile-summary">
+        <p class="eyebrow">Ability Portrait</p>
+        <h2>当前训练重心应从“做对简单题”转向“稳定中高分题型模板”</h2>
+        <p>
+          贪心和数据结构是可迁移优势；数学、图论和期望 DP 是阶段缺口。平台会把这些差距转化为训练题单与复盘任务。
         </p>
       </article>
     </section>
 
     <section class="panel">
       <div class="panel-heading">
-        <h2>能力维度</h2>
+        <h2>能力差距排序</h2>
       </div>
       <div class="ability-grid">
-        <article v-for="metric in abilityMetrics" :key="metric.name" class="metric-card">
+        <article v-for="metric in gapList" :key="metric.name" class="metric-card">
           <div class="metric-top">
             <h3>{{ metric.name }}</h3>
             <span :class="`trend-${metric.trend}`">{{ metric.trend }}</span>
           </div>
           <div class="meter"><i :style="{ width: `${metric.score}%` }" /></div>
-          <p>当前 {{ metric.score }} / 目标 {{ metric.target }}</p>
+          <p>当前 {{ metric.score }} / 目标 {{ metric.target }}，差距 {{ metric.gap }}</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>题型诊断矩阵</h2>
+      </div>
+      <div class="topic-grid">
+        <article v-for="topic in topicInsights" :key="topic.topic" class="topic-card">
+          <div class="topic-head">
+            <strong>{{ topic.topic }}</strong>
+            <span>{{ topic.accuracy }}%</span>
+          </div>
+          <div class="meter"><i :style="{ width: `${topic.accuracy}%` }" /></div>
+          <p>{{ topic.weakPoint }}</p>
+          <b>{{ topic.nextAction }}</b>
+          <small>已解决 {{ topic.solved }} 题</small>
         </article>
       </div>
     </section>

@@ -55,6 +55,21 @@ watch(
       </div>
     </section>
 
+    <section class="policy-grid">
+      <article class="policy-card">
+        <strong>公开数据原则</strong>
+        <p>只允许绑定公开 handle，不采集密码、cookie 或私有 token。</p>
+      </article>
+      <article class="policy-card">
+        <strong>前端阶段边界</strong>
+        <p>所有分析结果来自 mock 数据与 localStorage，不接真实后端。</p>
+      </article>
+      <article class="policy-card">
+        <strong>后续扩展点</strong>
+        <p>后续可通过 Axios 接入聚合 API、AI 分析服务和用户系统。</p>
+      </article>
+    </section>
+
     <section class="panel danger-panel">
       <div>
         <h2>重置本地 mock 数据</h2>

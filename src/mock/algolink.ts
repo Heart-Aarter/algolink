@@ -1,7 +1,12 @@
 import type {
   AbilityMetric,
+  AiFinding,
+  ContestMilestone,
   OjAccount,
+  PlatformSyncState,
+  ProblemRecommendation,
   SubmissionRecord,
+  TopicInsight,
   TrainingAdvice,
   TrainingTask,
   UserSettings,
@@ -104,16 +109,38 @@ export const mockSubmissions: SubmissionRecord[] = [
     submittedAt: '2026-04-23 22:31',
     runtime: '31 ms',
   },
+  {
+    id: 's-1007',
+    platform: 'Codeforces',
+    problem: '1904D2 Set To Max',
+    difficulty: '1800',
+    tags: ['data structures', 'greedy'],
+    status: 'Wrong Answer',
+    language: 'GNU C++20',
+    submittedAt: '2026-04-22 21:11',
+    runtime: '108 ms',
+  },
+  {
+    id: 's-1008',
+    platform: 'Luogu',
+    problem: 'P1434 滑雪',
+    difficulty: '普及+/提高',
+    tags: ['dfs', 'memoization'],
+    status: 'Accepted',
+    language: 'C++17',
+    submittedAt: '2026-04-22 18:44',
+    runtime: '20 ms',
+  },
 ]
 
 export const trendSeries = [
-  { date: '04-21', solved: 4, attempts: 6 },
-  { date: '04-22', solved: 6, attempts: 8 },
-  { date: '04-23', solved: 3, attempts: 7 },
-  { date: '04-24', solved: 5, attempts: 9 },
-  { date: '04-25', solved: 7, attempts: 10 },
-  { date: '04-26', solved: 2, attempts: 5 },
-  { date: '04-27', solved: 8, attempts: 11 },
+  { date: '04-21', solved: 4, attempts: 6, focus: 'dp' },
+  { date: '04-22', solved: 6, attempts: 8, focus: 'dfs' },
+  { date: '04-23', solved: 3, attempts: 7, focus: 'math' },
+  { date: '04-24', solved: 5, attempts: 9, focus: 'graph' },
+  { date: '04-25', solved: 7, attempts: 10, focus: 'greedy' },
+  { date: '04-26', solved: 2, attempts: 5, focus: 'bfs' },
+  { date: '04-27', solved: 8, attempts: 11, focus: 'mixed' },
 ]
 
 export const abilityMetrics: AbilityMetric[] = [
@@ -160,6 +187,8 @@ export const trainingTasks: TrainingTask[] = [
     difficulty: '1600',
     focus: '期望 DP',
     status: 'doing',
+    progress: 55,
+    dueDate: '04-29',
   },
   {
     id: 't-02',
@@ -168,6 +197,8 @@ export const trainingTasks: TrainingTask[] = [
     difficulty: '提高+/省选-',
     focus: '图论模板',
     status: 'todo',
+    progress: 0,
+    dueDate: '04-30',
   },
   {
     id: 't-03',
@@ -176,6 +207,8 @@ export const trainingTasks: TrainingTask[] = [
     difficulty: '1400',
     focus: '贪心构造',
     status: 'todo',
+    progress: 20,
+    dueDate: '05-02',
   },
   {
     id: 't-04',
@@ -184,6 +217,141 @@ export const trainingTasks: TrainingTask[] = [
     difficulty: '800',
     focus: '搜索',
     status: 'done',
+    progress: 100,
+    dueDate: '04-27',
+  },
+]
+
+export const platformSyncStates: PlatformSyncState[] = [
+  {
+    platform: 'Codeforces',
+    status: 'synced',
+    coverage: 96,
+    latency: '1.2s',
+    nextSync: '今日 23:30',
+    note: 'rating、提交与题目标签均已更新。',
+  },
+  {
+    platform: 'Luogu',
+    status: 'warning',
+    coverage: 82,
+    latency: '2.8s',
+    nextSync: '手动触发',
+    note: '部分题目难度需等待下一次公开页面解析。',
+  },
+  {
+    platform: 'AtCoder',
+    status: 'queued',
+    coverage: 74,
+    latency: '排队中',
+    nextSync: '今日 23:45',
+    note: '等待 contest history 与最近提交合并。',
+  },
+]
+
+export const topicInsights: TopicInsight[] = [
+  {
+    topic: '动态规划',
+    solved: 128,
+    accuracy: 71,
+    weakPoint: '状态转移边界容易遗漏。',
+    nextAction: '补 2 道网格 DP 与 1 道期望 DP。',
+  },
+  {
+    topic: '图论',
+    solved: 94,
+    accuracy: 63,
+    weakPoint: '最短路和 BFS 状态建模稳定性不足。',
+    nextAction: '复用模板做压力样例对照。',
+  },
+  {
+    topic: '数学',
+    solved: 76,
+    accuracy: 58,
+    weakPoint: '组合计数与概率题提交间隔偏长。',
+    nextAction: '用 AtCoder E 题做低频专项训练。',
+  },
+  {
+    topic: '贪心',
+    solved: 151,
+    accuracy: 84,
+    weakPoint: '高分构造题解释链偏弱。',
+    nextAction: '补 Codeforces 1500-1700 构造题。',
+  },
+]
+
+export const problemRecommendations: ProblemRecommendation[] = [
+  {
+    id: 'r-01',
+    title: 'ABC350 E Toward 0',
+    platform: 'AtCoder',
+    difficulty: '1600',
+    tags: ['expectation', 'memoization'],
+    reason: '正好覆盖当前最低的数学/期望能力缺口。',
+    fitScore: 94,
+  },
+  {
+    id: 'r-02',
+    title: 'P4779 单源最短路径标准版',
+    platform: 'Luogu',
+    difficulty: '提高+/省选-',
+    tags: ['graph', 'heap'],
+    reason: '用于验证 Dijkstra 模板在大图上的稳定性。',
+    fitScore: 88,
+  },
+  {
+    id: 'r-03',
+    title: 'Codeforces 1904D2 Set To Max',
+    platform: 'Codeforces',
+    difficulty: '1800',
+    tags: ['data structures', 'greedy'],
+    reason: '连接优势贪心与待提升的数据结构维护。',
+    fitScore: 86,
+  },
+]
+
+export const aiFindings: AiFinding[] = [
+  {
+    id: 'f-01',
+    type: 'risk',
+    title: '高难题复盘缺口',
+    detail: '最近 1800 分段题目 WA 后没有形成二次通过记录。',
+    impact: '会让题型判断停留在局部样例层面。',
+  },
+  {
+    id: 'f-02',
+    type: 'opportunity',
+    title: '贪心迁移价值高',
+    detail: '贪心题通过率较高，适合向数据结构维护和构造题迁移。',
+    impact: '能用优势能力带动中高分题通过率。',
+  },
+  {
+    id: 'f-03',
+    type: 'habit',
+    title: '晚间训练效率更高',
+    detail: '20:00-23:00 的 accepted 占比最高，适合安排主线训练。',
+    impact: '训练计划可把复盘放在低峰时段，把新题放在高峰时段。',
+  },
+]
+
+export const contestMilestones: ContestMilestone[] = [
+  {
+    date: '04-29',
+    platform: 'AtCoder',
+    title: 'ABC 虚拟赛',
+    goal: '前 4 题 70 分钟内完成。',
+  },
+  {
+    date: '05-01',
+    platform: 'Codeforces',
+    title: 'Div.3 训练场',
+    goal: 'B/C 题保持一次通过。',
+  },
+  {
+    date: '05-03',
+    platform: 'Luogu',
+    title: '图论模板日',
+    goal: '完成最短路和拓扑排序复盘。',
   },
 ]
 

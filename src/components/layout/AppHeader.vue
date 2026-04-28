@@ -18,7 +18,7 @@ const routeTitle = computed(() => {
 <template>
   <header class="app-header">
     <div>
-      <p class="eyebrow">AI Multi-OJ Analytics</p>
+      <p class="eyebrow">AlgoLink 控制台</p>
       <h1>{{ routeTitle }}</h1>
     </div>
 
@@ -26,6 +26,10 @@ const routeTitle = computed(() => {
       <div class="sync-card">
         <span>公开账号</span>
         <strong>{{ store.accounts.length }}</strong>
+      </div>
+      <div class="sync-card">
+        <span>训练项</span>
+        <strong>{{ store.activePlanCount }}</strong>
       </div>
       <RouterLink class="primary-action" to="/accounts">绑定账号</RouterLink>
     </div>
@@ -66,7 +70,7 @@ h1 {
 }
 
 .sync-card {
-  min-width: 108px;
+  min-width: 98px;
   padding: 10px 14px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -105,13 +109,14 @@ h1 {
   }
 
   .header-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
   }
 
-  .sync-card,
   .primary-action {
-    flex: 1;
     justify-content: center;
+    grid-column: 1 / -1;
   }
 }
 </style>

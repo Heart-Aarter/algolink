@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { platformSyncStates } from '@/mock/algolink'
 import { useAlgoLinkStore } from '@/stores/algolink'
 import type { OjPlatform } from '@/types/algolink'
 
@@ -37,6 +38,21 @@ function submitAccount() {
         <button type="submit">添加绑定</button>
       </form>
       <p class="form-note">AlgoLink 只记录公开用户名，不要求也不保存任何 OJ 密码。</p>
+    </section>
+
+    <section class="sync-strip">
+      <article v-for="item in platformSyncStates" :key="item.platform" class="sync-card">
+        <div class="sync-head">
+          <strong>{{ item.platform }}</strong>
+          <span :class="`sync-${item.status}`">{{ item.status }}</span>
+        </div>
+        <div class="sync-meter"><i :style="{ width: `${item.coverage}%` }" /></div>
+        <p>{{ item.note }}</p>
+        <footer>
+          <span>延迟 {{ item.latency }}</span>
+          <span>下次 {{ item.nextSync }}</span>
+        </footer>
+      </article>
     </section>
 
     <section class="panel">

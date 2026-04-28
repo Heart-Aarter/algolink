@@ -47,6 +47,8 @@ export interface TrainingTask {
   difficulty: string
   focus: string
   status: 'todo' | 'doing' | 'done'
+  progress?: number
+  dueDate?: string
 }
 
 export interface UserSettings {
@@ -54,4 +56,46 @@ export interface UserSettings {
   aiTone: 'strict' | 'balanced' | 'encouraging'
   showOnlyPublicData: boolean
   defaultPlatform: OjPlatform
+}
+
+export interface PlatformSyncState {
+  platform: OjPlatform
+  status: 'synced' | 'queued' | 'warning'
+  coverage: number
+  latency: string
+  nextSync: string
+  note: string
+}
+
+export interface TopicInsight {
+  topic: string
+  solved: number
+  accuracy: number
+  weakPoint: string
+  nextAction: string
+}
+
+export interface ProblemRecommendation {
+  id: string
+  title: string
+  platform: OjPlatform
+  difficulty: string
+  tags: string[]
+  reason: string
+  fitScore: number
+}
+
+export interface AiFinding {
+  id: string
+  type: 'risk' | 'opportunity' | 'habit'
+  title: string
+  detail: string
+  impact: string
+}
+
+export interface ContestMilestone {
+  date: string
+  platform: OjPlatform
+  title: string
+  goal: string
 }

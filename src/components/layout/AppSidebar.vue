@@ -18,7 +18,7 @@ const navItems = [
       <span class="brand-mark">AL</span>
       <span>
         <strong>AlgoLink</strong>
-        <small>刷题数据分析平台</small>
+        <small>AI 多 OJ 刷题数据分析平台</small>
       </span>
     </RouterLink>
 
@@ -30,8 +30,8 @@ const navItems = [
     </nav>
 
     <div class="sidebar-note">
-      <span>Mock Mode</span>
-      <p>当前仅使用公开 handle 与 localStorage 数据。</p>
+      <span>Mock Data</span>
+      <p>聚合公开 handle、提交记录、能力画像和 AI 训练建议，不接真实后端。</p>
     </div>
   </aside>
 </template>
