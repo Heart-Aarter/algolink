@@ -1,48 +1,142 @@
-# algolink
+# AlgoLink
 
-This template should help get you started developing with Vue 3 in Vite.
+AlgoLink 是一个面向算法竞赛学习者的 **AI 多 OJ 刷题数据分析平台**。项目尝试把分散在不同 Online Judge 平台上的公开刷题记录聚合起来，通过数据看板、提交记录筛选、能力画像和训练建议，帮助学习者更清晰地理解自己的训练状态。
 
-## Recommended IDE Setup
+本项目是网页设计比赛作品，当前阶段重点展示前端产品框架、真实 Codeforces 数据接入和数据分析交互体验。
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## 项目定位
 
-## Recommended Browser Setup
+算法竞赛学习者通常会同时使用 Codeforces、洛谷、AtCoder、LeetCode 等平台训练，但训练数据分散在多个站点中，难以形成连续的复盘视角。AlgoLink 的设计目标是提供一个统一入口：
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+- 聚合公开 OJ 刷题数据；
+- 展示训练趋势、提交结果、标签分布和难度分布；
+- 基于提交记录生成能力画像；
+- 用本地规则模拟 AI Coach，给出更贴近当前训练状态的建议；
+- 以隐私友好的方式绑定公开用户名，而不是索要 OJ 密码。
 
-## Type Support for `.vue` Imports in TS
+需要说明的是，AlgoLink **不是 Online Judge**。项目不实现代码提交、代码评测、题目评测队列，也不要求用户输入任何 OJ 密码。
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+## 当前已实现功能
 
-## Customize configuration
+- OJ 账号绑定流程：支持绑定公开 handle / 用户名。
+- Codeforces 官方公开 API 接入：已接入 `user.info`、`user.rating`、`user.status`。
+- 提交记录同步：可同步 Codeforces 用户公开提交记录。
+- 提交记录搜索、筛选、排序：支持题目、题号、标签、语言搜索，以及平台、结果、标签、难度区间和排序交互。
+- Dashboard 数据总览：展示 rating、最高 rating、最近 30 天提交、最近 30 天 AC、已解决题数、高频标签、薄弱标签和同步时间。
+- 能力画像分析：统计总提交、AC、非 AC、去重已解决题、标签分布、难度分布、verdict 分布和语言分布。
+- AI 训练建议 mock 联动：不接真实 AI API，而是基于本地分析结果生成规则化建议。
+- 训练计划页面：展示训练任务和计划进度。
+- `localStorage` 本地缓存：保存账号绑定、Codeforces 同步记录、设置和训练计划状态。
+- mock fallback：没有真实 Codeforces 数据时，页面继续使用 mock 数据保持完整展示。
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+## 数据接入范围
 
-## Project Setup
+当前真实接入的平台是 **Codeforces**，并且只使用官方公开 API 读取公开数据。洛谷、AtCoder、LeetCode 当前主要用于 mock 展示和后续扩展入口，项目没有声明已经完成这些平台的真实 API 接入。
+
+本项目不会在前端直接接入需要鉴权、Cookie、Token 或私密账号信息的 API。原因包括：
+
+- 前端代码和网络请求对用户可见，不适合保存敏感凭据；
+- 不同 OJ 的登录态、反爬策略和使用条款差异较大；
+- 需要鉴权的数据应由后端代理统一处理权限、缓存、限流和错误兜底；
+- 比赛当前阶段更关注产品设计、公开数据分析和前端交互体验。
+
+因此，AlgoLink 当前只要求用户输入公开 handle，不要求也不会保存任何 OJ 密码。
+
+## 项目特色
+
+### 多 OJ 数据聚合思路
+
+AlgoLink 以统一的数据结构组织不同 OJ 的提交记录，为后续接入更多平台预留了平台字段、题目 ID、标签、难度、结果和语言等通用分析维度。
+
+### 真实 Codeforces 数据接入
+
+项目已通过 Axios 调用 Codeforces 官方公开 API，并将返回数据标准化为前端统一的提交记录格式，用于 Dashboard、提交记录页、能力画像和 AI Coach 联动。
+
+### 算法能力画像
+
+能力画像不只统计提交数量，还会按题目去重计算已解决题目数，并分析标签分布、难度区间、verdict 分布、常用语言和最近 30 天训练活跃度，让学习者能看到自己的训练结构。
+
+### AI 个性化训练建议
+
+当前 AI Coach 是 mock 联动，不调用真实 AI API。它会读取能力画像结果，根据 DP 覆盖不足、WA 占比偏高、近期训练量偏低、难度集中在低分段等规则生成训练建议，模拟未来接入真实 AI 后的产品体验。
+
+### 隐私友好的账号绑定方式
+
+AlgoLink 只绑定公开 handle，通过公开接口读取公开数据。这样的设计降低了使用门槛，也避免了让用户提交 OJ 密码或私密 Token。
+
+## 技术栈
+
+- Vue 3
+- Vite
+- TypeScript
+- Vue Router
+- Pinia
+- ECharts
+- Axios
+- localStorage
+- 普通 CSS
+
+## 项目结构
+
+```text
+src
+├─ assets        全局样式、基础视觉变量和静态资源
+├─ components    通用组件、布局组件和图表容器
+├─ mock          mock 数据、推荐题目和训练计划数据
+├─ router        页面路由配置
+├─ services      Codeforces API 请求与数据标准化逻辑
+├─ stores        Pinia 状态管理、本地缓存读写和同步流程
+├─ types         OJ、提交记录、账号、训练计划等 TypeScript 类型
+├─ utils         数据分析、提交筛选、verdict 映射和 storage 工具
+└─ views         Dashboard、账号绑定、提交记录、能力画像、AI 建议等页面
+```
+
+## 本地运行
+
+安装依赖：
 
 ```sh
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+启动开发服务器：
 
 ```sh
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+构建生产版本：
 
 ```sh
 npm run build
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## 使用说明
 
-```sh
-npm run lint
-```
+1. 打开项目后进入账号绑定页面。
+2. 选择 Codeforces，输入公开 handle。
+3. 点击同步，项目会读取 Codeforces 官方公开 API 数据。
+4. 同步完成后，可在 Dashboard、提交记录、能力画像和 AI Coach 页面查看真实数据分析。
+5. 如果没有同步真实数据，系统会使用内置 mock 数据展示完整页面效果。
+
+## 边界说明
+
+- 不实现 Online Judge。
+- 不实现代码评测系统。
+- 不实现登录注册。
+- 不接真实 AI API。
+- 不要求用户输入任何 OJ 密码。
+- 当前真实 API 接入仅限 Codeforces。
+- 洛谷、AtCoder、LeetCode 当前用于 mock 展示或后续扩展，不代表已经完成真实 API 接入。
+
+## 后续规划
+
+- 接入 AtCoder Problems API，补充 AtCoder 训练历史分析。
+- 增加后端代理层，统一处理需要服务端保护的请求、缓存、限流和跨域问题。
+- 接入真实 AI API，把当前规则化 mock 建议升级为可解释的个性化训练方案。
+- 扩展更多 OJ 数据源，并进一步统一题目、标签、难度和提交结果模型。
+- 完善训练计划生成能力，根据薄弱标签、目标 rating 和近期训练节奏自动生成阶段计划。
+
+## 项目总结
+
+AlgoLink 的核心不是替代 OJ，而是把算法训练过程中的公开数据重新组织起来，让学习者能够看到自己的训练趋势、能力结构和下一步改进方向。当前版本已经完成前端基础框架、真实 Codeforces 数据接入和核心分析交互，为后续多 OJ 聚合与 AI 训练建议能力打下基础。
