@@ -1,4 +1,4 @@
-export type OjPlatform = 'Codeforces' | 'Luogu' | 'AtCoder' | 'LeetCode'
+export type OjPlatform = 'Codeforces' | 'Luogu' | 'AtCoder'
 
 export type SubmissionStatus =
   | 'Accepted'

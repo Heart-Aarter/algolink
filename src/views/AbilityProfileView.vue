@@ -4,7 +4,12 @@ import type { EChartsOption } from 'echarts'
 import ChartPanel from '@/components/charts/ChartPanel.vue'
 import StatCard from '@/components/common/StatCard.vue'
 import { useAlgoLinkStore } from '@/stores/algolink'
-import { calculateSubmissionAnalysis, type DistributionItem } from '@/utils/analysis'
+import {
+  calculateSubmissionAnalysis,
+  getDifficultyLabelColor,
+  sortDifficultyDistribution,
+  type DistributionItem,
+} from '@/utils/analysis'
 
 const store = useAlgoLinkStore()
 
@@ -19,7 +24,11 @@ const dataSourceLabel = computed(() =>
 const chartAxis = '#738195'
 const chartGrid = 'rgba(154, 170, 190, 0.1)'
 
-function barOption(items: DistributionItem[], color: string): EChartsOption {
+function barOption(
+  items: DistributionItem[],
+  color: string,
+  getItemColor?: (name: string) => string,
+): EChartsOption {
   const visibleItems = items.slice(0, 10).reverse()
 
   return {
@@ -47,7 +56,10 @@ function barOption(items: DistributionItem[], color: string): EChartsOption {
       {
         name: 'Submissions',
         type: 'bar',
-        data: visibleItems.map((item) => item.value),
+        data: visibleItems.map((item) => ({
+          value: item.value,
+          itemStyle: getItemColor ? { color: getItemColor(item.name) } : undefined,
+        })),
         itemStyle: { borderRadius: [0, 5, 5, 0], opacity: 0.84 },
       },
     ],
@@ -76,7 +88,13 @@ function pieOption(items: DistributionItem[], colors: string[]): EChartsOption {
 }
 
 const tagOption = computed(() => barOption(analysis.value.tagDistribution, '#66d6cb'))
-const difficultyOption = computed(() => barOption(analysis.value.difficultyDistribution, '#d9a76f'))
+const difficultyOption = computed(() =>
+  barOption(
+    sortDifficultyDistribution(analysis.value.difficultyDistribution),
+    '#d9a76f',
+    getDifficultyLabelColor,
+  ),
+)
 const verdictOption = computed(() =>
   pieOption(analysis.value.verdictDistribution, [
     '#78c891',

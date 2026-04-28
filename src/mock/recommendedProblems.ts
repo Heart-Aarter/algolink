@@ -26,14 +26,6 @@ export const recommendedProblems: RecommendedProblem[] = [
     reason: '数据结构和贪心结合题有 WA 记录，适合练习区间约束和反例构造。',
   },
   {
-    id: 'rp-04',
-    platform: 'LeetCode',
-    title: '72 Edit Distance',
-    difficulty: 'Hard',
-    tags: ['dp', 'string'],
-    reason: '编辑距离是二维 DP 基础模型，可用于校正初始化、转移顺序和边界处理。',
-  },
-  {
     id: 'rp-05',
     platform: 'AtCoder',
     title: 'ABC348 D Medicines on Grid',
@@ -42,3 +34,4 @@ export const recommendedProblems: RecommendedProblem[] = [
     reason: '搜索和图论表现较稳定，保留一题作为状态搜索热身，避免只刷薄弱题导致节奏过重。',
   },
 ]
+

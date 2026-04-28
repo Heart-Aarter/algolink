@@ -27,13 +27,12 @@ const storageKeys = {
   codeforcesSubmissions: 'algolink.codeforcesSubmissions',
 }
 
-export const supportedPlatforms: OjPlatform[] = ['Codeforces', 'Luogu', 'AtCoder', 'LeetCode']
+export const supportedPlatforms: OjPlatform[] = ['Codeforces', 'Luogu', 'AtCoder']
 
 const platformColors: Record<OjPlatform, string> = {
   Codeforces: '#7fa4d8',
   Luogu: '#78c891',
   AtCoder: '#8db1c7',
-  LeetCode: '#d9a76f',
 }
 
 function formatDateTime(date = new Date()) {

@@ -5,7 +5,15 @@ import ChartPanel from '@/components/charts/ChartPanel.vue'
 import StatCard from '@/components/common/StatCard.vue'
 import { mockAccounts, problemRecommendations } from '@/mock/algolink'
 import { useAlgoLinkStore } from '@/stores/algolink'
-import { calculateSubmissionAnalysis, parseSubmittedAt } from '@/utils/analysis'
+import {
+  calculateSubmissionAnalysis,
+  getDifficultyBucket,
+  getDifficultyBucketLabel,
+  getDifficultyLabelColor,
+  getProblemKey,
+  parseSubmittedAt,
+  sortDifficultyDistribution,
+} from '@/utils/analysis'
 
 const store = useAlgoLinkStore()
 
@@ -222,6 +230,101 @@ const tagOption = computed<EChartsOption>(() => {
   }
 })
 
+const difficultyLegendItems = computed(() =>
+  sortDifficultyDistribution(analysis.value.difficultyDistribution).map((item) => ({
+    ...item,
+    color: getDifficultyLabelColor(item.name),
+  })),
+)
+
+const difficultySolvedItems = computed(() => {
+  const solvedProblems = new Set<string>()
+  const counts = new Map<string, number>()
+
+  for (const submission of dashboardSubmissions.value) {
+    if (submission.status !== 'Accepted') {
+      continue
+    }
+
+    const problemKey = getProblemKey(submission)
+
+    if (solvedProblems.has(problemKey)) {
+      continue
+    }
+
+    solvedProblems.add(problemKey)
+    const difficultyLabel = getDifficultyBucketLabel(getDifficultyBucket(submission.difficulty))
+    counts.set(difficultyLabel, (counts.get(difficultyLabel) ?? 0) + 1)
+  }
+
+  return sortDifficultyDistribution(
+    [...counts.entries()].map(([name, value]) => ({
+      name,
+      value,
+      color: getDifficultyLabelColor(name),
+    })),
+  )
+})
+
+const topSolvedDifficultyItem = computed(() =>
+  difficultySolvedItems.value.reduce(
+    (top, item) => (item.value > top.value ? item : top),
+    difficultySolvedItems.value[0] ?? { name: '-', value: 0, color: chartAxis },
+  ),
+)
+
+const difficultyOption = computed<EChartsOption>(() => ({
+  graphic: [
+    {
+      type: 'text',
+      left: 'center',
+      top: '43%',
+      style: {
+        text: String(analysis.value.solvedProblems),
+        fill: topSolvedDifficultyItem.value.color,
+        fontSize: 30,
+        fontWeight: 850,
+        textAlign: 'center',
+      },
+    },
+    {
+      type: 'text',
+      left: 'center',
+      top: '57%',
+      style: {
+        text: '已解决',
+        fill: chartAxis,
+        fontSize: 12,
+        fontWeight: 700,
+        textAlign: 'center',
+      },
+    },
+  ],
+  tooltip: {
+    trigger: 'item',
+    backgroundColor: '#151d29',
+    borderColor: 'rgba(154, 170, 190, 0.18)',
+    textStyle: { color: '#dce5ef' },
+  },
+  series: [
+    {
+      name: 'Difficulty',
+      type: 'pie',
+      radius: ['52%', '78%'],
+      center: ['50%', '52%'],
+      clockwise: true,
+      startAngle: 90,
+      avoidLabelOverlap: true,
+      label: { show: false },
+      labelLine: { show: false },
+      data: sortDifficultyDistribution(analysis.value.difficultyDistribution).map((item) => ({
+        ...item,
+        itemStyle: { color: getDifficultyLabelColor(item.name) },
+      })),
+    },
+  ],
+}))
+
 const visibleRecommendations = computed(() =>
   problemRecommendations.filter(
     (item) =>
@@ -264,7 +367,8 @@ const visibleRecommendations = computed(() =>
       <StatCard label="最近同步" :value="dashboardAccount?.lastSyncAt || '-'" helper="保存在 localStorage" />
     </section>
 
-    <section class="panel heatmap-panel">
+    <section class="activity-grid">
+      <article class="panel heatmap-panel">
       <div class="panel-heading heatmap-heading">
         <div>
           <p class="eyebrow">Codeforces Activity</p>
@@ -315,6 +419,16 @@ const visibleRecommendations = computed(() =>
           <span>More</span>
         </div>
       </div>
+      </article>
+      <ChartPanel title="题目难度分布" :option="difficultyOption">
+        <div class="difficulty-legend-card" aria-label="Difficulty color legend">
+          <div v-for="item in difficultyLegendItems" :key="item.name" class="difficulty-legend-row">
+            <i :style="{ background: item.color }" />
+            <span>{{ item.name }}</span>
+            <strong>{{ item.value }}</strong>
+          </div>
+        </div>
+      </ChartPanel>
     </section>
 
     <section class="panel today-advice">

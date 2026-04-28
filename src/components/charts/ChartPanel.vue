@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import * as echarts from 'echarts'
-import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, useSlots, watch } from 'vue'
 
 const props = defineProps<{
   title: string
@@ -9,6 +9,8 @@ const props = defineProps<{
 
 const chartEl = ref<HTMLDivElement | null>(null)
 const chart = shallowRef<echarts.ECharts | null>(null)
+const slots = useSlots()
+const hasSideContent = computed(() => !!slots.default)
 
 function renderChart() {
   if (!chartEl.value) {
@@ -41,7 +43,10 @@ onBeforeUnmount(() => {
     <div class="chart-heading">
       <h2>{{ title }}</h2>
     </div>
-    <div ref="chartEl" class="chart-canvas" />
+    <div class="chart-body" :class="{ 'has-side-content': hasSideContent }">
+      <div ref="chartEl" class="chart-canvas" />
+      <slot />
+    </div>
   </section>
 </template>
 
@@ -71,5 +76,22 @@ h2 {
 .chart-canvas {
   width: 100%;
   height: 246px;
+}
+
+.chart-body.has-side-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+}
+
+.chart-body.has-side-content .chart-canvas {
+  min-width: 0;
+}
+
+@media (max-width: 680px) {
+  .chart-body.has-side-content {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

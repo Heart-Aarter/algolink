@@ -34,14 +34,33 @@ export interface AnalysisResult {
 
 export const difficultyBucketOptions = [
   { value: 'All', label: 'All' },
-  { value: 'le-800', label: '<= 800' },
-  { value: '900-1200', label: '900-1200' },
-  { value: '1300-1600', label: '1300-1600' },
-  { value: '1600-plus', label: '1600+' },
+  { value: 'lt-1200', label: '<1200' },
+  { value: '1200-1399', label: '1200-1399' },
+  { value: '1400-1599', label: '1400-1599' },
+  { value: '1600-1899', label: '1600-1899' },
+  { value: '1900-2099', label: '1900-2099' },
+  { value: '2100-2399', label: '2100-2399' },
+  { value: '2400-plus', label: '2400+' },
   { value: 'unknown', label: 'Unknown' },
 ] as const
 
 export type DifficultyBucket = (typeof difficultyBucketOptions)[number]['value']
+type ActualDifficultyBucket = Exclude<DifficultyBucket, 'All'>
+
+const difficultyBucketColors: Record<ActualDifficultyBucket, string> = {
+  '2400-plus': '#b7354b',
+  '2100-2399': '#ff9f1c',
+  '1900-2099': '#9b7bd8',
+  '1600-1899': '#3d73ad',
+  '1400-1599': '#25b8c7',
+  '1200-1399': '#2e9160',
+  'lt-1200': '#9aa4b2',
+  unknown: '#5f6b7a',
+}
+
+const difficultyBucketOrder = new Map<string, number>(
+  difficultyBucketOptions.map((item, index) => [item.label, index]),
+)
 
 const statusSeed: Record<SubmissionStatus, number> = {
   Accepted: 0,
@@ -57,30 +76,65 @@ export function parseDifficulty(difficulty: string) {
   return match ? Number(match[0]) : null
 }
 
-export function getDifficultyBucket(difficulty: string): Exclude<DifficultyBucket, 'All'> {
+export function getDifficultyBucket(difficulty: string): ActualDifficultyBucket {
   const value = parseDifficulty(difficulty)
 
   if (value === null) {
     return 'unknown'
   }
 
-  if (value <= 800) {
-    return 'le-800'
+  if (value >= 2400) {
+    return '2400-plus'
   }
 
-  if (value >= 900 && value <= 1200) {
-    return '900-1200'
+  if (value >= 2100) {
+    return '2100-2399'
   }
 
-  if (value >= 1300 && value <= 1600) {
-    return '1300-1600'
+  if (value >= 1900) {
+    return '1900-2099'
   }
 
-  return '1600-plus'
+  if (value >= 1600) {
+    return '1600-1899'
+  }
+
+  if (value >= 1400) {
+    return '1400-1599'
+  }
+
+  if (value >= 1200) {
+    return '1200-1399'
+  }
+
+  return 'lt-1200'
 }
 
 export function getDifficultyBucketLabel(bucket: DifficultyBucket) {
   return difficultyBucketOptions.find((item) => item.value === bucket)?.label ?? bucket
+}
+
+export function getDifficultyBucketColor(bucket: ActualDifficultyBucket) {
+  return difficultyBucketColors[bucket]
+}
+
+export function getDifficultyLabelColor(label: string) {
+  const bucket = difficultyBucketOptions.find((item) => item.label === label)?.value
+
+  if (!bucket || bucket === 'All') {
+    return difficultyBucketColors.unknown
+  }
+
+  return getDifficultyBucketColor(bucket)
+}
+
+export function sortDifficultyDistribution<T extends DistributionItem>(items: T[]): T[] {
+  return [...items].sort(
+    (left, right) =>
+      (difficultyBucketOrder.get(left.name) ?? Number.MAX_SAFE_INTEGER) -
+        (difficultyBucketOrder.get(right.name) ?? Number.MAX_SAFE_INTEGER) ||
+      left.name.localeCompare(right.name),
+  )
 }
 
 export function parseSubmittedAt(value: string) {
@@ -214,7 +268,7 @@ export function getTrainingSummary(submissions: SubmissionRecord[]) {
   const dpCount = analysis.tagDistribution.find((item) => item.name.toLowerCase() === 'dp')?.value ?? 0
   const waCount = analysis.verdictDistribution.find((item) => item.name === 'WA')?.value ?? 0
   const lowerDifficultyCount = analysis.difficultyDistribution
-    .filter((item) => item.name === '<= 800' || item.name === '900-1200')
+    .filter((item) => item.name === '<1200' || item.name === '1200-1399')
     .reduce((sum, item) => sum + item.value, 0)
 
   const suggestions: string[] = []

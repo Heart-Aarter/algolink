@@ -124,28 +124,6 @@ export const mockSubmissions: SubmissionRecord[] = [
     submittedAt: '2026-04-22 18:44',
     runtime: '20 ms',
   },
-  {
-    id: 's-1009',
-    platform: 'LeetCode',
-    problem: '146 LRU Cache',
-    difficulty: 'Medium',
-    tags: ['hash table', 'linked list', 'design'],
-    status: 'Accepted',
-    language: 'TypeScript',
-    submittedAt: '2026-04-21 22:06',
-    runtime: '118 ms',
-  },
-  {
-    id: 's-1010',
-    platform: 'LeetCode',
-    problem: '72 Edit Distance',
-    difficulty: 'Hard',
-    tags: ['dp', 'string'],
-    status: 'Wrong Answer',
-    language: 'C++17',
-    submittedAt: '2026-04-20 20:18',
-    runtime: 'N/A',
-  },
 ]
 
 export const trendSeries = [
@@ -225,16 +203,6 @@ export const trainingTasks: TrainingTask[] = [
     progress: 20,
     dueDate: '05-02',
   },
-  {
-    id: 't-04',
-    title: 'LeetCode 设计题专项',
-    platform: 'LeetCode',
-    difficulty: 'Medium',
-    focus: '哈希表和链表',
-    status: 'done',
-    progress: 100,
-    dueDate: '04-27',
-  },
 ]
 
 export const platformSyncStates: PlatformSyncState[] = [
@@ -261,14 +229,6 @@ export const platformSyncStates: PlatformSyncState[] = [
     latency: '排队中',
     nextSync: '手动触发',
     note: 'contest history 使用 mock 数据占位。',
-  },
-  {
-    platform: 'LeetCode',
-    status: 'queued',
-    coverage: 68,
-    latency: '排队中',
-    nextSync: '手动触发',
-    note: '题单和提交结果来自本地 mock 数据。',
   },
 ]
 
@@ -384,3 +344,4 @@ export const defaultSettings: UserSettings = {
   showOnlyPublicData: true,
   defaultPlatform: 'Codeforces',
 }
+
