@@ -1,74 +1,74 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive } from 'vue'
 import StatCard from '@/components/common/StatCard.vue'
 import { useAlgoLinkStore } from '@/stores/algolink'
-import type { OjPlatform, SubmissionStatus } from '@/types/algolink'
+import { calculateSubmissionAnalysis, difficultyBucketOptions } from '@/utils/analysis'
+import {
+  extractSubmissionTags,
+  filterSubmissions,
+  sortOptions,
+  type SubmissionFilterState,
+} from '@/utils/submissionFilters'
+import { getStatusClass, getVerdictCode, verdictOptions } from '@/utils/verdict'
 
 const store = useAlgoLinkStore()
-const keyword = ref('')
-const platformFilter = ref<'All' | OjPlatform>('All')
-const statusFilter = ref<'All' | SubmissionStatus>('All')
 
-const platforms = computed<Array<'All' | OjPlatform>>(() => ['All', ...store.supportedPlatforms])
-const statuses: Array<'All' | SubmissionStatus> = [
-  'All',
-  'Accepted',
-  'Wrong Answer',
-  'Time Limit',
-  'Runtime Error',
-]
-const visibleSubmissions = computed(() =>
-  store.boundSubmissions.length ? store.boundSubmissions : store.submissions,
-)
+const filters = reactive<SubmissionFilterState>({
+  keyword: '',
+  platform: 'All',
+  verdict: 'All',
+  tag: 'All',
+  difficulty: 'All',
+  sort: 'time-desc',
+})
 
-const filteredSubmissions = computed(() =>
-  visibleSubmissions.value.filter((item) => {
-    const query = keyword.value.trim().toLowerCase()
-    const matchedKeyword =
-      !query ||
-      `${item.problem} ${item.tags.join(' ')} ${item.platform}`.toLowerCase().includes(query)
-    const matchedPlatform = platformFilter.value === 'All' || item.platform === platformFilter.value
-    const matchedStatus = statusFilter.value === 'All' || item.status === statusFilter.value
-    return matchedKeyword && matchedPlatform && matchedStatus
-  }),
-)
-
-const accepted = computed(
-  () => filteredSubmissions.value.filter((item) => item.status === 'Accepted').length,
-)
+const sourceSubmissions = computed(() => store.submissions)
+const tagOptions = computed(() => ['All', ...extractSubmissionTags(sourceSubmissions.value)])
+const platformOptions = computed(() => ['All', ...store.supportedPlatforms] as const)
+const filteredSubmissions = computed(() => filterSubmissions(sourceSubmissions.value, filters))
+const filteredAnalysis = computed(() => calculateSubmissionAnalysis(filteredSubmissions.value))
 </script>
 
 <template>
   <div class="page-stack">
     <section class="stats-grid submission-stats">
-      <StatCard label="当前记录" :value="filteredSubmissions.length" helper="按已绑定平台展示 mock 提交" />
-      <StatCard label="Accepted" :value="accepted" helper="筛选结果中的通过记录" />
-      <StatCard
-        label="未通过"
-        :value="filteredSubmissions.length - accepted"
-        helper="WA / TLE / RE 记录"
-      />
-      <StatCard label="绑定平台" :value="store.accounts.length" helper="来自 localStorage 的公开账号" />
+      <StatCard label="筛选结果" :value="filteredSubmissions.length" helper="当前条件下的提交记录" />
+      <StatCard label="AC" :value="filteredAnalysis.accepted" helper="筛选结果中的通过提交" />
+      <StatCard label="已解决" :value="filteredAnalysis.solvedProblems" helper="按题目去重后的 AC 数" />
+      <StatCard label="30 天提交" :value="filteredAnalysis.recent30Total" helper="最近 30 天训练活跃度" />
     </section>
 
     <section class="panel">
-      <div class="panel-heading">
+      <div class="panel-heading submissions-heading">
         <div>
           <p class="eyebrow">Submission Stream</p>
           <h2>提交记录</h2>
         </div>
-        <div class="filter-bar">
-          <input v-model="keyword" type="search" placeholder="搜索题目、标签或平台" />
-          <select v-model="platformFilter">
-            <option v-for="item in platforms" :key="item" :value="item">{{ item }}</option>
+        <div class="filter-bar submission-filter-bar">
+          <input v-model="filters.keyword" type="search" placeholder="搜索题目、题号、标签、语言" />
+          <select v-model="filters.platform" aria-label="Platform filter">
+            <option v-for="item in platformOptions" :key="item" :value="item">{{ item }}</option>
           </select>
-          <select v-model="statusFilter">
-            <option v-for="item in statuses" :key="item" :value="item">{{ item }}</option>
+          <select v-model="filters.verdict" aria-label="Verdict filter">
+            <option v-for="item in verdictOptions" :key="item" :value="item">{{ item }}</option>
+          </select>
+          <select v-model="filters.tag" aria-label="Tag filter">
+            <option v-for="item in tagOptions" :key="item" :value="item">{{ item }}</option>
+          </select>
+          <select v-model="filters.difficulty" aria-label="Difficulty filter">
+            <option v-for="item in difficultyBucketOptions" :key="item.value" :value="item.value">
+              {{ item.label }}
+            </option>
+          </select>
+          <select v-model="filters.sort" aria-label="Sort submissions">
+            <option v-for="item in sortOptions" :key="item.value" :value="item.value">
+              {{ item.label }}
+            </option>
           </select>
         </div>
       </div>
 
-      <div v-if="visibleSubmissions.length" class="table-wrap">
+      <div v-if="filteredSubmissions.length" class="table-wrap">
         <table>
           <thead>
             <tr>
@@ -89,27 +89,24 @@ const accepted = computed(
               <td>{{ submission.difficulty }}</td>
               <td>
                 <span v-for="tag in submission.tags" :key="tag" class="tag">{{ tag }}</span>
+                <span v-if="!submission.tags.length" class="tag">untagged</span>
               </td>
               <td>
-                <span class="status-pill" :class="submission.status.toLowerCase().replaceAll(' ', '-')">
-                  {{ submission.status }}
+                <span class="status-pill" :class="getStatusClass(submission.status)">
+                  {{ getVerdictCode(submission.status) }}
                 </span>
               </td>
               <td>{{ submission.language }}</td>
               <td>{{ submission.runtime }}</td>
               <td>{{ submission.submittedAt }}</td>
             </tr>
-            <tr v-if="!filteredSubmissions.length">
-              <td colspan="8">当前筛选条件下没有 mock 提交记录。</td>
-            </tr>
           </tbody>
         </table>
       </div>
 
-      <div v-else class="empty-state">
-        <h3>暂无提交记录</h3>
-        <p>请先绑定至少一个 OJ 公开账号，页面会按绑定平台展示对应的 mock 提交记录。</p>
-        <RouterLink class="text-link" to="/accounts">去绑定账号</RouterLink>
+      <div v-else class="empty-state submission-empty">
+        <h3>没有符合条件的提交记录</h3>
+        <p>可以清空关键词、将结果或标签切回 All，或放宽难度区间。</p>
       </div>
     </section>
   </div>

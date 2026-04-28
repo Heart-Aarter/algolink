@@ -6,13 +6,16 @@ import { useAlgoLinkStore } from '@/stores/algolink'
 import { getTagAnalysis, getTrainingSummary } from '@/utils/analysis'
 
 const store = useAlgoLinkStore()
-const activeMode = ref<'weak-tags' | 'weekly-plan' | 'recommendations'>('weak-tags')
+const activeMode = ref<'rules' | 'weak-tags' | 'weekly-plan' | 'recommendations'>('rules')
 
 const analysisSubmissions = computed(() =>
-  store.boundSubmissions.length ? store.boundSubmissions : store.submissions,
+  store.codeforcesSubmissions.length ? store.codeforcesSubmissions : store.submissions,
 )
 const summary = computed(() => getTrainingSummary(analysisSubmissions.value))
 const weakTagDetails = computed(() => getTagAnalysis(analysisSubmissions.value).slice(0, 5))
+const dataSourceLabel = computed(() =>
+  store.codeforcesSubmissions.length ? '真实 Codeforces 数据' : 'mock 兜底数据',
+)
 
 const weeklyPlanSummary = computed(() => ({
   days: weeklyTrainingPlan.length,
@@ -21,13 +24,16 @@ const weeklyPlanSummary = computed(() => ({
 }))
 
 const modeTitle = computed(() => {
+  if (activeMode.value === 'rules') {
+    return '规则化训练建议'
+  }
   if (activeMode.value === 'weak-tags') {
-    return '薄弱标签分析'
+    return '薄弱标签诊断'
   }
   if (activeMode.value === 'weekly-plan') {
-    return '本周训练计划摘要'
+    return '训练计划联动'
   }
-  return '推荐下一组题目'
+  return '题目推荐'
 })
 </script>
 
@@ -35,47 +41,50 @@ const modeTitle = computed(() => {
   <div class="page-stack">
     <section class="panel ai-brief">
       <p class="eyebrow">AI Coach Mock</p>
-      <h2>AI 训练建议</h2>
+      <h2>联动能力画像的训练建议</h2>
       <p>
-        {{ summary.headline }}；{{ summary.focus }}。{{ summary.suggestion }}
+        {{ summary.headline }} {{ summary.focus }} {{ summary.suggestion }}
       </p>
       <div class="coach-summary-grid">
         <div>
-          <span>样本提交</span>
-          <strong>{{ summary.total }}</strong>
+          <span>数据来源</span>
+          <strong>{{ dataSourceLabel }}</strong>
         </div>
         <div>
-          <span>通过率</span>
+          <span>AC 率</span>
           <strong>{{ summary.acceptanceRate }}%</strong>
         </div>
         <div>
           <span>薄弱标签</span>
-          <strong>{{ summary.weakTags.join(' / ') || '暂无' }}</strong>
+          <strong>{{ summary.weakTags.join(' / ') || '-' }}</strong>
         </div>
       </div>
     </section>
 
     <section class="coach-actions">
+      <button type="button" :class="{ active: activeMode === 'rules' }" @click="activeMode = 'rules'">
+        规则建议
+      </button>
       <button
         type="button"
         :class="{ active: activeMode === 'weak-tags' }"
         @click="activeMode = 'weak-tags'"
       >
-        分析薄弱标签
+        薄弱标签
       </button>
       <button
         type="button"
         :class="{ active: activeMode === 'weekly-plan' }"
         @click="activeMode = 'weekly-plan'"
       >
-        生成本周训练计划
+        训练计划
       </button>
       <button
         type="button"
         :class="{ active: activeMode === 'recommendations' }"
         @click="activeMode = 'recommendations'"
       >
-        推荐下一组题目
+        题目推荐
       </button>
     </section>
 
@@ -86,11 +95,22 @@ const modeTitle = computed(() => {
           <h2>{{ modeTitle }}</h2>
         </div>
         <RouterLink v-if="activeMode === 'weekly-plan'" class="text-link" to="/training-plan">
-          进入训练计划
+          打开训练计划
         </RouterLink>
       </div>
 
-      <div v-if="activeMode === 'weak-tags'" class="analysis-list">
+      <div v-if="activeMode === 'rules'" class="analysis-list">
+        <article v-for="item in summary.suggestions" :key="item" class="analysis-card">
+          <div class="metric-top">
+            <h3>建议规则</h3>
+            <span class="trend-up">Mock</span>
+          </div>
+          <p>{{ item }}</p>
+          <strong>由本地提交统计生成，不调用真实 AI API。</strong>
+        </article>
+      </div>
+
+      <div v-else-if="activeMode === 'weak-tags'" class="analysis-list">
         <article v-for="item in weakTagDetails" :key="item.tag" class="analysis-card">
           <div class="metric-top">
             <h3>{{ item.tag }}</h3>
@@ -98,14 +118,12 @@ const modeTitle = computed(() => {
               {{ item.acceptanceRate }}%
             </span>
           </div>
-          <p>
-            共 {{ item.total }} 次提交，AC {{ item.accepted }} 次，未通过 {{ item.failed }} 次。
-          </p>
+          <p>共 {{ item.total }} 次提交，AC {{ item.accepted }} 次，非 AC {{ item.failed }} 次。</p>
           <strong>
             {{
               item.failed
-                ? '建议先复盘错误用例，再补同标签中低难度题巩固模型。'
-                : '当前表现稳定，可作为每日热身标签。'
+                ? '建议复盘失败提交，先写清不变量或状态转移，再选择相近难度重做。'
+                : '该标签在当前样本中较稳定，保持低频维护即可。'
             }}
           </strong>
         </article>
@@ -113,15 +131,15 @@ const modeTitle = computed(() => {
 
       <div v-else-if="activeMode === 'weekly-plan'" class="plan-summary-grid">
         <article class="policy-card">
-          <strong>训练周期</strong>
-          <p>{{ weeklyPlanSummary.days }} 天专题训练，每天聚焦一个主问题，避免题目过散。</p>
+          <strong>计划周期</strong>
+          <p>{{ weeklyPlanSummary.days }} 天训练，包含专题推进和复盘窗口。</p>
         </article>
         <article class="policy-card">
-          <strong>推荐题量</strong>
-          <p>本周合计 {{ weeklyPlanSummary.problems }} 题，前 5 天专项补弱，后 2 天综合复盘。</p>
+          <strong>题量安排</strong>
+          <p>{{ weeklyPlanSummary.problems }} 道计划题，会根据薄弱标签和近期活跃度调整。</p>
         </article>
         <article class="policy-card">
-          <strong>覆盖标签</strong>
+          <strong>重点标签</strong>
           <p>{{ weeklyPlanSummary.focusTags.join(' / ') }}</p>
         </article>
       </div>

@@ -17,6 +17,7 @@ import type {
   UserSettings,
 } from '@/types/algolink'
 import { readStorage, writeStorage } from '@/utils/storage'
+import { calculateSubmissionAnalysis } from '@/utils/analysis'
 
 const storageKeys = {
   accounts: 'algolink.accounts',
@@ -95,9 +96,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const boundSubmissions = computed(() =>
     submissions.value.filter((item) => boundPlatforms.value.has(item.platform)),
   )
-  const totalSolved = computed(
-    () => boundSubmissions.value.filter((item) => item.status === 'Accepted').length,
-  )
+  const submissionAnalysis = computed(() => calculateSubmissionAnalysis(boundSubmissions.value))
+  const totalSolved = computed(() => submissionAnalysis.value.solvedProblems)
   const acceptedCount = computed(
     () => boundSubmissions.value.filter((item) => item.status === 'Accepted').length,
   )
@@ -206,7 +206,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       const acceptedProblems = new Set(
         records
           .filter((item) => item.status === 'Accepted')
-          .map((item) => `${item.platform}:${item.problem}`),
+          .map((item) => `${item.platform}:${item.problemId || item.problem}`),
       )
 
       codeforcesSubmissions.value = records
@@ -274,6 +274,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     submissions,
     codeforcesSubmissions,
     boundSubmissions,
+    submissionAnalysis,
     trainingTasks,
     weeklyPlanDays,
     weeklyPlanCompletion,

@@ -61,6 +61,10 @@ function normalizeVerdict(verdict?: string): SubmissionStatus {
     return 'Accepted'
   }
 
+  if (verdict === 'WRONG_ANSWER') {
+    return 'Wrong Answer'
+  }
+
   if (verdict === 'TIME_LIMIT_EXCEEDED') {
     return 'Time Limit'
   }
@@ -69,7 +73,11 @@ function normalizeVerdict(verdict?: string): SubmissionStatus {
     return 'Runtime Error'
   }
 
-  return 'Wrong Answer'
+  if (verdict === 'COMPILATION_ERROR') {
+    return 'Compilation Error'
+  }
+
+  return 'Unknown'
 }
 
 function getProblemId(problem: CodeforcesProblem) {
@@ -137,6 +145,7 @@ export function toSubmissionRecord(submission: OjSubmission): SubmissionRecord {
   return {
     id: submission.id,
     platform: submission.platform,
+    problemId: submission.problemId,
     problem: submission.problemTitle,
     difficulty: submission.difficulty,
     tags: submission.tags,

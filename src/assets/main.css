@@ -593,7 +593,22 @@ select:focus {
 
 .filter-bar {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
+}
+
+.submission-filter-bar {
+  justify-content: flex-end;
+  max-width: 920px;
+}
+
+.submission-filter-bar input {
+  min-width: 260px;
+}
+
+.submission-filter-bar select {
+  width: auto;
+  min-width: 132px;
 }
 
 .table-wrap {
@@ -666,10 +681,21 @@ td {
 
 .wrong-answer,
 .runtime-error,
+.compilation-error,
 .priority-high,
 .trend-down {
   background: rgba(215, 123, 138, 0.13);
   color: var(--color-danger);
+}
+
+.time-limit {
+  background: rgba(217, 167, 111, 0.13);
+  color: var(--color-warning);
+}
+
+.unknown {
+  background: rgba(154, 170, 190, 0.13);
+  color: var(--color-text-soft);
 }
 
 .ability-grid {

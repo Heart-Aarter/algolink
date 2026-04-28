@@ -3,60 +3,48 @@ import { computed } from 'vue'
 import type { EChartsOption } from 'echarts'
 import ChartPanel from '@/components/charts/ChartPanel.vue'
 import StatCard from '@/components/common/StatCard.vue'
-import { problemRecommendations } from '@/mock/algolink'
+import { mockAccounts, problemRecommendations } from '@/mock/algolink'
 import { useAlgoLinkStore } from '@/stores/algolink'
-import { getTrainingSummary } from '@/utils/analysis'
+import { calculateSubmissionAnalysis, parseSubmittedAt } from '@/utils/analysis'
 
 const store = useAlgoLinkStore()
 
-const analysisSubmissions = computed(() =>
-  store.boundSubmissions.length ? store.boundSubmissions : store.submissions,
-)
 const codeforcesAccount = computed(() =>
   store.accounts.find((account) => account.platform === 'Codeforces'),
 )
-const rejectedCount = computed(
-  () => analysisSubmissions.value.filter((item) => item.status !== 'Accepted').length,
+const fallbackCodeforcesAccount = computed(() =>
+  mockAccounts.find((account) => account.platform === 'Codeforces'),
 )
-const aiSummary = computed(() => getTrainingSummary(analysisSubmissions.value))
-const todayAdvice = computed(() => ({
-  theme: store.todayPlan?.theme ?? 'DP 边界与初始化',
-  problemCount: store.todayPlan?.problemCount ?? 3,
-  weakTags: aiSummary.value.weakTags.length ? aiSummary.value.weakTags : ['dp', 'math'],
-}))
+const dashboardAccount = computed(() => codeforcesAccount.value ?? fallbackCodeforcesAccount.value)
+const dashboardSubmissions = computed(() =>
+  store.codeforcesSubmissions.length ? store.codeforcesSubmissions : store.submissions,
+)
+const analysis = computed(() => calculateSubmissionAnalysis(dashboardSubmissions.value))
+const dataSourceLabel = computed(() =>
+  store.codeforcesSubmissions.length ? '真实 Codeforces 数据' : 'mock 兜底数据',
+)
 
 const chartAxis = '#738195'
 const chartGrid = 'rgba(154, 170, 190, 0.1)'
 
 const dailyStats = computed(() => {
-  const stats = new Map<string, { solved: number; attempts: number }>()
+  const stats = new Map<string, { ac: number; attempts: number }>()
 
-  for (const submission of analysisSubmissions.value) {
-    const date = submission.submittedAt.slice(5, 10)
-    const current = stats.get(date) ?? { solved: 0, attempts: 0 }
+  for (const submission of dashboardSubmissions.value) {
+    const date = parseSubmittedAt(submission.submittedAt)
+    const key = date
+      ? `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+      : submission.submittedAt.slice(5, 10)
+    const current = stats.get(key) ?? { ac: 0, attempts: 0 }
     current.attempts += 1
-    current.solved += submission.status === 'Accepted' ? 1 : 0
-    stats.set(date, current)
+    current.ac += submission.status === 'Accepted' ? 1 : 0
+    stats.set(key, current)
   }
 
   return [...stats.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
+    .slice(-14)
     .map(([date, value]) => ({ date, ...value }))
-})
-
-const tagStats = computed(() => {
-  const stats = new Map<string, number>()
-
-  for (const submission of analysisSubmissions.value) {
-    for (const tag of submission.tags) {
-      stats.set(tag, (stats.get(tag) ?? 0) + 1)
-    }
-  }
-
-  return [...stats.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8)
-    .map(([tag, count]) => ({ tag, count }))
 })
 
 const trendOption = computed<EChartsOption>(() => ({
@@ -86,11 +74,11 @@ const trendOption = computed<EChartsOption>(() => ({
       name: 'AC',
       type: 'bar',
       barMaxWidth: 16,
-      data: dailyStats.value.map((item) => item.solved),
+      data: dailyStats.value.map((item) => item.ac),
       itemStyle: { borderRadius: [5, 5, 0, 0], opacity: 0.82 },
     },
     {
-      name: '提交',
+      name: 'Submissions',
       type: 'line',
       smooth: true,
       symbolSize: 6,
@@ -100,38 +88,42 @@ const trendOption = computed<EChartsOption>(() => ({
   ],
 }))
 
-const tagOption = computed<EChartsOption>(() => ({
-  color: ['#8db1c7'],
-  grid: { top: 36, right: 18, bottom: 34, left: 82 },
-  tooltip: {
-    trigger: 'axis',
-    backgroundColor: '#151d29',
-    borderColor: 'rgba(154, 170, 190, 0.18)',
-    textStyle: { color: '#dce5ef' },
-  },
-  xAxis: {
-    type: 'value',
-    minInterval: 1,
-    splitLine: { lineStyle: { color: chartGrid } },
-    axisLabel: { color: chartAxis },
-  },
-  yAxis: {
-    type: 'category',
-    data: tagStats.value.map((item) => item.tag),
-    axisLine: { lineStyle: { color: 'rgba(154, 170, 190, 0.18)' } },
-    axisTick: { show: false },
-    axisLabel: { color: '#aab6c5' },
-  },
-  series: [
-    {
-      name: '出现次数',
-      type: 'bar',
-      barMaxWidth: 14,
-      data: tagStats.value.map((item) => item.count),
-      itemStyle: { borderRadius: [0, 5, 5, 0], opacity: 0.78 },
+const tagOption = computed<EChartsOption>(() => {
+  const items = analysis.value.tagDistribution.slice(0, 8).reverse()
+
+  return {
+    color: ['#8db1c7'],
+    grid: { top: 36, right: 18, bottom: 34, left: 96 },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#151d29',
+      borderColor: 'rgba(154, 170, 190, 0.18)',
+      textStyle: { color: '#dce5ef' },
     },
-  ],
-}))
+    xAxis: {
+      type: 'value',
+      minInterval: 1,
+      splitLine: { lineStyle: { color: chartGrid } },
+      axisLabel: { color: chartAxis },
+    },
+    yAxis: {
+      type: 'category',
+      data: items.map((item) => item.name),
+      axisLine: { lineStyle: { color: 'rgba(154, 170, 190, 0.18)' } },
+      axisTick: { show: false },
+      axisLabel: { color: '#aab6c5' },
+    },
+    series: [
+      {
+        name: 'Submissions',
+        type: 'bar',
+        barMaxWidth: 14,
+        data: items.map((item) => item.value),
+        itemStyle: { borderRadius: [0, 5, 5, 0], opacity: 0.78 },
+      },
+    ],
+  }
+})
 
 const visibleRecommendations = computed(() =>
   problemRecommendations.filter(
@@ -147,65 +139,47 @@ const visibleRecommendations = computed(() =>
     <section class="hero-panel hero-dashboard">
       <div>
         <p class="eyebrow">AI Multi-OJ Analytics</p>
-        <h2>AlgoLink 刷题数据分析面板</h2>
-        <p>绑定公开 OJ handle 后，Dashboard 会从 localStorage 读取账号，并基于本地 mock 提交记录生成统计。</p>
+        <h2>AlgoLink 训练数据看板</h2>
+        <p>
+          Dashboard 优先使用 {{ dataSourceLabel }} 生成摘要、趋势、标签压力和 AI Coach 联动；本阶段不新增
+          OJ API、后端、登录、评测或真实 AI API。
+        </p>
         <div class="hero-actions">
-          <RouterLink to="/accounts">绑定账号</RouterLink>
+          <RouterLink to="/accounts">同步 Codeforces</RouterLink>
           <RouterLink to="/submissions" class="secondary-link">查看提交记录</RouterLink>
         </div>
       </div>
-      <div class="hero-scoreboard" aria-label="公开账号数量">
-        <span>公开账号</span>
-        <strong>{{ store.accounts.length }}</strong>
-        <p>{{ store.accounts.length ? '已接入本地分析闭环' : '绑定账号后开始生成分析' }}</p>
+      <div class="hero-scoreboard" aria-label="Solved problems">
+        <span>去重已解决</span>
+        <strong>{{ analysis.solvedProblems }}</strong>
+        <p>{{ analysis.total }} 次提交，AC 率 {{ analysis.acceptanceRate }}%</p>
       </div>
     </section>
 
     <section class="stats-grid">
-      <StatCard label="公开账号" :value="store.accounts.length" helper="来自 localStorage 的绑定数量" />
-      <StatCard label="AC 数" :value="store.totalSolved" helper="已绑定平台 mock 记录统计" />
-      <StatCard label="通过率" :value="`${store.acceptanceRate}%`" helper="按已绑定平台提交计算" />
-      <StatCard label="未通过" :value="rejectedCount" helper="WA / TLE / RE 合计" />
-    </section>
-
-    <section v-if="codeforcesAccount" class="stats-grid">
-      <StatCard
-        label="CF 当前 Rating"
-        :value="codeforcesAccount.rating || '-'"
-        helper="同步成功后展示真实 Codeforces rating"
-      />
-      <StatCard
-        label="CF 最高 Rating"
-        :value="codeforcesAccount.maxRating || '-'"
-        helper="来自 Codeforces user.info"
-      />
-      <StatCard
-        label="最近提交"
-        :value="analysisSubmissions.length"
-        helper="真实 CF 优先，其他平台 mock 兜底"
-      />
-      <StatCard label="未通过" :value="rejectedCount" helper="WA / TLE / RE 合计" />
+      <StatCard label="当前 Rating" :value="dashboardAccount?.rating || '-'" helper="来自 Codeforces user.info" />
+      <StatCard label="最高 Rating" :value="dashboardAccount?.maxRating || dashboardAccount?.rating || '-'" helper="Codeforces 历史最高分" />
+      <StatCard label="30 天提交" :value="analysis.recent30Total" helper="最近训练量" />
+      <StatCard label="30 天 AC" :value="analysis.recent30Accepted" helper="最近通过提交数" />
+      <StatCard label="已解决" :value="analysis.solvedProblems" helper="按题目去重后的 AC 数" />
+      <StatCard label="高频标签" :value="analysis.topTrainingTag" helper="最常训练方向" />
+      <StatCard label="薄弱标签" :value="analysis.weakestTag" helper="失败压力最高的标签" />
+      <StatCard label="最近同步" :value="dashboardAccount?.lastSyncAt || '-'" helper="保存在 localStorage" />
     </section>
 
     <section class="panel today-advice">
       <div>
         <p class="eyebrow">Today AI Suggestion</p>
-        <h2>今日 AI 建议</h2>
+        <h2>今日重点：{{ analysis.weakestTag }}</h2>
         <p>
-          今日训练主题：{{ todayAdvice.theme }}；推荐 {{ todayAdvice.problemCount }} 题；优先关注
-          {{ todayAdvice.weakTags.join(' / ') }}。
+          最近 30 天共有 {{ analysis.recent30Total }} 次提交、{{ analysis.recent30Accepted }} 次 AC。
+          AI Coach 会基于这些统计生成规则化 mock 建议。
         </p>
       </div>
       <div class="hero-actions">
-        <RouterLink to="/ai-advice">查看 AI Coach</RouterLink>
-        <RouterLink to="/training-plan" class="secondary-link">打开训练计划</RouterLink>
+        <RouterLink to="/ai-advice">打开 AI Coach</RouterLink>
+        <RouterLink to="/training-plan" class="secondary-link">训练计划</RouterLink>
       </div>
-    </section>
-
-    <section v-if="!store.accounts.length" class="panel empty-state">
-      <h3>还没有绑定任何 OJ 账号</h3>
-      <p>请先绑定 Codeforces、Luogu、AtCoder 或 LeetCode 的公开用户名，其他页面会同步读取绑定状态。</p>
-      <RouterLink class="text-link" to="/accounts">去绑定账号</RouterLink>
     </section>
 
     <section class="sync-strip">
@@ -215,9 +189,7 @@ const visibleRecommendations = computed(() =>
           <span :class="item.account ? 'sync-synced' : 'sync-queued'">{{ item.status }}</span>
         </div>
         <div class="sync-meter"><i :style="{ width: `${item.coverage}%` }" /></div>
-        <p>
-          {{ item.account ? `@${item.account.handle}` : '尚未绑定公开 handle' }}
-        </p>
+        <p>{{ item.account ? `@${item.account.handle}` : '尚未绑定公开 handle' }}</p>
         <footer>
           <span>最近同步</span>
           <span>{{ item.lastSyncAt }}</span>
@@ -225,16 +197,16 @@ const visibleRecommendations = computed(() =>
       </article>
     </section>
 
-    <section v-if="store.accounts.length" class="content-grid">
-      <ChartPanel title="绑定平台提交趋势" :option="trendOption" />
+    <section class="content-grid">
+      <ChartPanel title="提交趋势" :option="trendOption" />
       <ChartPanel title="标签分布 Top 8" :option="tagOption" />
     </section>
 
-    <section v-if="store.accounts.length" class="content-grid">
+    <section class="content-grid">
       <article class="panel panel-prominent">
         <div class="panel-heading">
-          <h2>训练建议入口</h2>
-          <RouterLink class="text-link" to="/ai-advice">查看 AI 建议</RouterLink>
+          <h2>推荐训练入口</h2>
+          <RouterLink class="text-link" to="/ai-advice">打开 AI Coach</RouterLink>
         </div>
         <div class="recommend-list">
           <article v-for="item in visibleRecommendations" :key="item.id" class="recommend-card">
@@ -252,19 +224,19 @@ const visibleRecommendations = computed(() =>
 
       <article class="panel panel-subtle">
         <div class="panel-heading">
-          <h2>闭环状态</h2>
+          <h2>数据范围</h2>
         </div>
         <div class="stat-list">
           <div>
-            <span>账号来源</span>
-            <strong>localStorage</strong>
+            <span>主要来源</span>
+            <strong>{{ dataSourceLabel }}</strong>
           </div>
           <div>
-            <span>提交来源</span>
-            <strong>mock 数据</strong>
+            <span>AI 模式</span>
+            <strong>本地规则 mock</strong>
           </div>
           <div>
-            <span>训练计划</span>
+            <span>计划进度</span>
             <strong>{{ store.weeklyPlanCompletion }}%</strong>
           </div>
         </div>

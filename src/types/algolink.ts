@@ -1,6 +1,12 @@
 export type OjPlatform = 'Codeforces' | 'Luogu' | 'AtCoder' | 'LeetCode'
 
-export type SubmissionStatus = 'Accepted' | 'Wrong Answer' | 'Time Limit' | 'Runtime Error'
+export type SubmissionStatus =
+  | 'Accepted'
+  | 'Wrong Answer'
+  | 'Time Limit'
+  | 'Runtime Error'
+  | 'Compilation Error'
+  | 'Unknown'
 
 export interface OjAccount {
   id: string
@@ -17,6 +23,7 @@ export interface OjAccount {
 export interface SubmissionRecord {
   id: string
   platform: OjPlatform
+  problemId?: string
   problem: string
   difficulty: string
   tags: string[]
