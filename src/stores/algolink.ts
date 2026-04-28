@@ -1,6 +1,11 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { defaultSettings, mockSubmissions, trainingTasks as mockTrainingTasks } from '@/mock/algolink'
+import {
+  defaultSettings,
+  mockAccounts,
+  mockSubmissions,
+  trainingTasks as mockTrainingTasks,
+} from '@/mock/algolink'
 import {
   fetchCodeforcesRating,
   fetchCodeforcesSubmissions,
@@ -70,7 +75,9 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const accounts = ref<OjAccount[]>(
     normalizeAccounts(readStorage<StoredOjAccount[]>(storageKeys.accounts, [])),
   )
-  const settings = ref<UserSettings>(readStorage<UserSettings>(storageKeys.settings, defaultSettings))
+  const settings = ref<UserSettings>(
+    readStorage<UserSettings>(storageKeys.settings, defaultSettings),
+  )
   const trainingTasks = ref<TrainingTask[]>(
     readStorage<TrainingTask[]>(storageKeys.tasks, mockTrainingTasks),
   )
@@ -203,9 +210,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       const records = syncedSubmissions.map(toSubmissionRecord)
       const latestRating = ratingChanges.at(-1)?.newRating ?? profile.rating
       const acceptedProblems = new Set(
-        records
-          .filter((item) => item.status === 'Accepted')
-          .map(getProblemKey),
+        records.filter((item) => item.status === 'Accepted').map(getProblemKey),
       )
 
       codeforcesSubmissions.value = records
@@ -267,6 +272,29 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
   }
 
+  function loadDemoData() {
+    accounts.value = mockAccounts.map((account) => ({
+      ...account,
+      lastSyncAt: formatDateTime(),
+    }))
+    settings.value = defaultSettings
+    trainingTasks.value = mockTrainingTasks
+    weeklyPlanStatus.value = {
+      'day-1': 'done',
+      'day-2': 'doing',
+      'day-3': 'not-started',
+    }
+    codeforcesSubmissions.value = mockSubmissions
+      .filter((submission) => submission.platform === 'Codeforces')
+      .map((submission) => ({ ...submission }))
+
+    writeStorage(storageKeys.accounts, accounts.value)
+    writeStorage(storageKeys.settings, settings.value)
+    writeStorage(storageKeys.tasks, trainingTasks.value)
+    writeStorage(storageKeys.weeklyPlanStatus, weeklyPlanStatus.value)
+    writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
+  }
+
   return {
     accounts,
     settings,
@@ -291,5 +319,6 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     updateTaskStatus,
     updateWeeklyPlanStatus,
     resetLocalData,
+    loadDemoData,
   }
 })

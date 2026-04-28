@@ -35,6 +35,12 @@ const router = createRouter({
       meta: { title: 'AI 训练建议' },
     },
     {
+      path: '/training-report',
+      name: 'training-report',
+      component: () => import('@/views/TrainingReportView.vue'),
+      meta: { title: '训练报告' },
+    },
+    {
       path: '/training-plan',
       name: 'training-plan',
       component: () => import('@/views/TrainingPlanView.vue'),

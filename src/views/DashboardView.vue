@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { EChartsOption } from 'echarts'
 import ChartPanel from '@/components/charts/ChartPanel.vue'
 import StatCard from '@/components/common/StatCard.vue'
@@ -16,6 +16,7 @@ import {
 } from '@/utils/analysis'
 
 const store = useAlgoLinkStore()
+const demoMessage = ref('')
 
 const codeforcesAccount = computed(() =>
   store.accounts.find((account) => account.platform === 'Codeforces'),
@@ -32,10 +33,33 @@ const dataSourceLabel = computed(() =>
   store.codeforcesSubmissions.length ? '真实 Codeforces 数据' : 'mock 兜底数据',
 )
 
+const productHighlights = computed(() => [
+  {
+    label: '数据聚合',
+    value: `${store.supportedPlatforms.length} OJ`,
+    text: '公开 handle 绑定与同步',
+  },
+  { label: '训练诊断', value: analysis.value.weakestTag, text: '自动识别薄弱标签' },
+  { label: '答辩展示', value: 'Demo Ready', text: '一键载入演示数据' },
+])
+
 const chartAxis = '#738195'
 const chartGrid = 'rgba(154, 170, 190, 0.1)'
 const dayMs = 24 * 60 * 60 * 1000
-const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const monthNames = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+]
 const heatmapWeekdayLabels = [
   { label: 'Mon', row: 2 },
   { label: 'Wed', row: 4 },
@@ -332,17 +356,54 @@ const visibleRecommendations = computed(() =>
       store.accounts.some((account) => account.platform === item.platform),
   ),
 )
+
+function loadDemoData() {
+  store.loadDemoData()
+  demoMessage.value = '演示数据已载入，可直接展示 Dashboard、提交记录、能力画像和训练报告。'
+}
 </script>
 
 <template>
   <div class="page-stack dashboard-page">
+    <section class="product-hero">
+      <div class="product-hero-copy">
+        <p class="eyebrow">AI Multi-OJ Training Intelligence</p>
+        <h2>AlgoLink</h2>
+        <p class="product-slogan">
+          面向算法竞赛学习者的 AI 多 OJ
+          刷题数据分析平台，聚合公开训练记录，生成趋势看板、能力画像、训练报告和下一阶段建议。
+        </p>
+        <div class="hero-actions product-hero-actions">
+          <RouterLink to="/accounts">同步 Codeforces</RouterLink>
+          <RouterLink to="/training-report" class="secondary-link">生成训练报告</RouterLink>
+          <button class="demo-load-button" type="button" @click="loadDemoData">载入演示数据</button>
+        </div>
+        <p v-if="demoMessage" class="demo-message success">{{ demoMessage }}</p>
+      </div>
+
+      <div class="product-hero-visual" aria-label="AlgoLink product summary">
+        <div class="hero-scoreboard hero-scoreboard-prominent">
+          <span>已解决题目</span>
+          <strong>{{ analysis.solvedProblems }}</strong>
+          <p>{{ analysis.total }} 次提交，AC 率 {{ analysis.acceptanceRate }}%</p>
+        </div>
+        <div class="product-highlight-grid">
+          <article v-for="item in productHighlights" :key="item.label">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+            <p>{{ item.text }}</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <section class="hero-panel hero-dashboard">
       <div>
         <p class="eyebrow">AI Multi-OJ Analytics</p>
         <h2>AlgoLink 训练数据看板</h2>
         <p>
-          Dashboard 优先使用 {{ dataSourceLabel }} 生成摘要、趋势、标签压力和 AI Coach 联动；本阶段不新增
-          OJ API、后端、登录、评测或真实 AI API。
+          Dashboard 优先使用 {{ dataSourceLabel }} 生成摘要、趋势、标签压力和 AI Coach
+          联动；本阶段不新增 OJ API、后端、登录、评测或真实 AI API。
         </p>
         <div class="hero-actions">
           <RouterLink to="/accounts">同步 Codeforces</RouterLink>
@@ -357,68 +418,80 @@ const visibleRecommendations = computed(() =>
     </section>
 
     <section class="stats-grid">
-      <StatCard label="当前 Rating" :value="dashboardAccount?.rating || '-'" helper="来自 Codeforces user.info" />
-      <StatCard label="最高 Rating" :value="dashboardAccount?.maxRating || dashboardAccount?.rating || '-'" helper="Codeforces 历史最高分" />
+      <StatCard
+        label="当前 Rating"
+        :value="dashboardAccount?.rating || '-'"
+        helper="来自 Codeforces user.info"
+      />
+      <StatCard
+        label="最高 Rating"
+        :value="dashboardAccount?.maxRating || dashboardAccount?.rating || '-'"
+        helper="Codeforces 历史最高分"
+      />
       <StatCard label="30 天提交" :value="analysis.recent30Total" helper="最近训练量" />
       <StatCard label="30 天 AC" :value="analysis.recent30Accepted" helper="最近通过提交数" />
       <StatCard label="已解决" :value="analysis.solvedProblems" helper="按题目去重后的 AC 数" />
       <StatCard label="高频标签" :value="analysis.topTrainingTag" helper="最常训练方向" />
       <StatCard label="薄弱标签" :value="analysis.weakestTag" helper="失败压力最高的标签" />
-      <StatCard label="最近同步" :value="dashboardAccount?.lastSyncAt || '-'" helper="保存在 localStorage" />
+      <StatCard
+        label="最近同步"
+        :value="dashboardAccount?.lastSyncAt || '-'"
+        helper="保存在 localStorage"
+      />
     </section>
 
     <section class="activity-grid">
       <article class="panel heatmap-panel">
-      <div class="panel-heading heatmap-heading">
-        <div>
-          <p class="eyebrow">Codeforces Activity</p>
-          <h2>训练热力图</h2>
-        </div>
-        <span class="count-badge">
-          {{ heatmapSummary.total }} 次提交 / {{ heatmapSummary.activeDays }} 天活跃
-        </span>
-      </div>
-      <div class="heatmap-wrap">
-        <div class="heatmap-months" aria-hidden="true">
-          <span
-            v-for="month in heatmapMonthLabels"
-            :key="`${month.name}-${month.column}`"
-            :style="{ gridColumn: `${month.column} / span ${month.span}` }"
-          >
-            {{ month.name }}
+        <div class="panel-heading heatmap-heading">
+          <div>
+            <p class="eyebrow">Codeforces Activity</p>
+            <h2>训练热力图</h2>
+          </div>
+          <span class="count-badge">
+            {{ heatmapSummary.total }} 次提交 / {{ heatmapSummary.activeDays }} 天活跃
           </span>
         </div>
-        <div class="heatmap-body">
-          <div class="heatmap-weekdays" aria-hidden="true">
+        <div class="heatmap-wrap">
+          <div class="heatmap-months" aria-hidden="true">
             <span
-              v-for="weekday in heatmapWeekdayLabels"
-              :key="weekday.label"
-              :style="{ gridRow: weekday.row }"
+              v-for="month in heatmapMonthLabels"
+              :key="`${month.name}-${month.column}`"
+              :style="{ gridColumn: `${month.column} / span ${month.span}` }"
             >
-              {{ weekday.label }}
+              {{ month.name }}
             </span>
           </div>
-          <div class="heatmap-grid" aria-label="Codeforces activity heatmap">
-            <span
-              v-for="day in heatmapDays"
-              :key="day.key"
-              class="heatmap-cell"
-              :class="`level-${day.level}`"
-              :title="`${day.dateLabel}: ${day.count} submissions`"
-              :aria-label="`${day.dateLabel}: ${day.count} submissions`"
-            />
+          <div class="heatmap-body">
+            <div class="heatmap-weekdays" aria-hidden="true">
+              <span
+                v-for="weekday in heatmapWeekdayLabels"
+                :key="weekday.label"
+                :style="{ gridRow: weekday.row }"
+              >
+                {{ weekday.label }}
+              </span>
+            </div>
+            <div class="heatmap-grid" aria-label="Codeforces activity heatmap">
+              <span
+                v-for="day in heatmapDays"
+                :key="day.key"
+                class="heatmap-cell"
+                :class="`level-${day.level}`"
+                :title="`${day.dateLabel}: ${day.count} submissions`"
+                :aria-label="`${day.dateLabel}: ${day.count} submissions`"
+              />
+            </div>
+          </div>
+          <div class="heatmap-legend" aria-hidden="true">
+            <span>Less</span>
+            <i class="heatmap-cell level-0" />
+            <i class="heatmap-cell level-1" />
+            <i class="heatmap-cell level-2" />
+            <i class="heatmap-cell level-3" />
+            <i class="heatmap-cell level-4" />
+            <span>More</span>
           </div>
         </div>
-        <div class="heatmap-legend" aria-hidden="true">
-          <span>Less</span>
-          <i class="heatmap-cell level-0" />
-          <i class="heatmap-cell level-1" />
-          <i class="heatmap-cell level-2" />
-          <i class="heatmap-cell level-3" />
-          <i class="heatmap-cell level-4" />
-          <span>More</span>
-        </div>
-      </div>
       </article>
       <ChartPanel title="题目难度分布" :option="difficultyOption">
         <div class="difficulty-legend-card" aria-label="Difficulty color legend">
@@ -436,14 +509,30 @@ const visibleRecommendations = computed(() =>
         <p class="eyebrow">Today AI Suggestion</p>
         <h2>今日重点：{{ analysis.weakestTag }}</h2>
         <p>
-          最近 30 天共有 {{ analysis.recent30Total }} 次提交、{{ analysis.recent30Accepted }} 次 AC。
-          AI Coach 会基于这些统计生成规则化 mock 建议。
+          最近 30 天共有 {{ analysis.recent30Total }} 次提交、{{ analysis.recent30Accepted }} 次
+          AC。 AI Coach 会基于这些统计生成规则化 mock 建议。
         </p>
       </div>
       <div class="hero-actions">
         <RouterLink to="/ai-advice">打开 AI Coach</RouterLink>
         <RouterLink to="/training-plan" class="secondary-link">训练计划</RouterLink>
       </div>
+    </section>
+
+    <section class="report-entry-panel">
+      <div>
+        <p class="eyebrow">Training Report</p>
+        <h2>生成训练报告</h2>
+        <p>
+          将已同步的 Codeforces
+          提交记录整理成一份训练诊断书，适合展示近期状态、强弱项、难度结构和下一阶段建议。
+        </p>
+      </div>
+      <div class="report-entry-meta">
+        <span>CF Submissions</span>
+        <strong>{{ store.codeforcesSubmissions.length }}</strong>
+      </div>
+      <RouterLink class="report-entry-action" to="/training-report">生成报告</RouterLink>
     </section>
 
     <section class="sync-strip">

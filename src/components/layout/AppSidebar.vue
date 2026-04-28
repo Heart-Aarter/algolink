@@ -7,8 +7,9 @@ const navItems = [
   { path: '/submissions', label: '提交记录', icon: '03' },
   { path: '/profile', label: '能力画像', icon: '04' },
   { path: '/ai-advice', label: 'AI 训练建议', icon: '05' },
-  { path: '/training-plan', label: '训练计划', icon: '06' },
-  { path: '/settings', label: '设置', icon: '07' },
+  { path: '/training-report', label: '训练报告', icon: '06' },
+  { path: '/training-plan', label: '训练计划', icon: '07' },
+  { path: '/settings', label: '设置', icon: '08' },
 ]
 </script>
 
@@ -31,7 +32,7 @@ const navItems = [
 
     <div class="sidebar-note">
       <span>Mock Data</span>
-      <p>仅使用公开 handle、mock 数据与 localStorage。</p>
+      <p>仅使用公开 handle，mock 数据与同步结果保存到 localStorage。</p>
     </div>
   </aside>
 </template>
@@ -96,6 +97,7 @@ const navItems = [
 
 .nav-item {
   position: relative;
+  z-index: 0;
   display: flex;
   align-items: center;
   gap: 11px;
@@ -155,10 +157,6 @@ const navItems = [
   color: var(--color-text-muted);
   font-size: 11px;
   font-weight: 780;
-}
-
-.nav-item {
-  z-index: 0;
 }
 
 .nav-item > :not(.nav-icon),
