@@ -353,6 +353,12 @@ select:focus {
   font-weight: 780;
 }
 
+.bind-form button:disabled,
+.ghost-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 .form-note {
   margin-top: 12px;
   color: var(--color-text-muted);

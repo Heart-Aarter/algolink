@@ -1,10 +1,17 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { defaultSettings, mockSubmissions, trainingTasks as mockTrainingTasks } from '@/mock/algolink'
+import {
+  fetchCodeforcesRating,
+  fetchCodeforcesSubmissions,
+  fetchCodeforcesUser,
+} from '@/services/codeforces'
+import { toSubmissionRecord } from '@/services/normalizers'
 import { weeklyTrainingPlan } from '@/mock/trainingPlan'
 import type {
   OjAccount,
   OjPlatform,
+  SubmissionRecord,
   TrainingPlanStatus,
   TrainingTask,
   UserSettings,
@@ -16,6 +23,7 @@ const storageKeys = {
   settings: 'algolink.settings',
   tasks: 'algolink.trainingTasks',
   weeklyPlanStatus: 'algolink.weeklyPlanStatus',
+  codeforcesSubmissions: 'algolink.codeforcesSubmissions',
 }
 
 export const supportedPlatforms: OjPlatform[] = ['Codeforces', 'Luogu', 'AtCoder', 'LeetCode']
@@ -51,6 +59,7 @@ function normalizeAccounts(value: StoredOjAccount[]): OjAccount[] {
       handle: account.handle.trim(),
       status: 'bound',
       rating: Number(account.rating ?? 0),
+      maxRating: Number(account.maxRating ?? account.rating ?? 0),
       solved: Number(account.solved ?? 0),
       lastSyncAt: account.lastSyncAt || account.lastSync || '暂无同步',
       color: account.color || platformColors[account.platform],
@@ -68,7 +77,19 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const weeklyPlanStatus = ref<Record<string, TrainingPlanStatus>>(
     readStorage<Record<string, TrainingPlanStatus>>(storageKeys.weeklyPlanStatus, {}),
   )
-  const submissions = ref(mockSubmissions)
+  const codeforcesSubmissions = ref<SubmissionRecord[]>(
+    readStorage<SubmissionRecord[]>(storageKeys.codeforcesSubmissions, []),
+  )
+  const submissions = computed(() => {
+    if (!codeforcesSubmissions.value.length) {
+      return mockSubmissions
+    }
+
+    return [
+      ...codeforcesSubmissions.value,
+      ...mockSubmissions.filter((item) => item.platform !== 'Codeforces'),
+    ]
+  })
 
   const boundPlatforms = computed(() => new Set(accounts.value.map((item) => item.platform)))
   const boundSubmissions = computed(() =>
@@ -132,6 +153,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       handle: trimmedHandle,
       status: 'bound',
       rating: 0,
+      maxRating: 0,
       solved: platformSubmissions.filter((item) => item.status === 'Accepted').length,
       lastSyncAt: formatDateTime(),
       color: platformColors[platform],
@@ -143,7 +165,14 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   }
 
   function removeAccount(id: string) {
+    const removedAccount = accounts.value.find((item) => item.id === id)
     accounts.value = accounts.value.filter((item) => item.id !== id)
+
+    if (removedAccount?.platform === 'Codeforces') {
+      codeforcesSubmissions.value = []
+      writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
+    }
+
     writeStorage(storageKeys.accounts, accounts.value)
   }
 
@@ -152,6 +181,58 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       item.id === id ? { ...item, lastSyncAt: formatDateTime() } : item,
     )
     writeStorage(storageKeys.accounts, accounts.value)
+  }
+
+  async function syncCodeforcesAccount(id: string): Promise<{ ok: boolean; message: string }> {
+    const account = accounts.value.find((item) => item.id === id)
+
+    if (!account) {
+      return { ok: false, message: '未找到要同步的账号。' }
+    }
+
+    if (account.platform !== 'Codeforces') {
+      syncAccount(id)
+      return { ok: true, message: `${account.platform} mock 数据已刷新。` }
+    }
+
+    try {
+      const [profile, ratingChanges, syncedSubmissions] = await Promise.all([
+        fetchCodeforcesUser(account.handle),
+        fetchCodeforcesRating(account.handle),
+        fetchCodeforcesSubmissions(account.handle, 80),
+      ])
+      const records = syncedSubmissions.map(toSubmissionRecord)
+      const latestRating = ratingChanges.at(-1)?.newRating ?? profile.rating
+      const acceptedProblems = new Set(
+        records
+          .filter((item) => item.status === 'Accepted')
+          .map((item) => `${item.platform}:${item.problem}`),
+      )
+
+      codeforcesSubmissions.value = records
+      accounts.value = accounts.value.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              handle: profile.handle,
+              rating: latestRating,
+              maxRating: profile.maxRating,
+              solved: acceptedProblems.size,
+              lastSyncAt: formatDateTime(),
+            }
+          : item,
+      )
+      writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
+      writeStorage(storageKeys.accounts, accounts.value)
+
+      return {
+        ok: true,
+        message: `Codeforces 同步成功，已保存最近 ${records.length} 条提交。`,
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Codeforces API 请求失败'
+      return { ok: false, message: `Codeforces 同步失败：${message}` }
+    }
   }
 
   function updateSettings(nextSettings: UserSettings) {
@@ -179,16 +260,19 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     settings.value = defaultSettings
     trainingTasks.value = mockTrainingTasks
     weeklyPlanStatus.value = {}
+    codeforcesSubmissions.value = []
     writeStorage(storageKeys.accounts, accounts.value)
     writeStorage(storageKeys.settings, settings.value)
     writeStorage(storageKeys.tasks, trainingTasks.value)
     writeStorage(storageKeys.weeklyPlanStatus, weeklyPlanStatus.value)
+    writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
   }
 
   return {
     accounts,
     settings,
     submissions,
+    codeforcesSubmissions,
     boundSubmissions,
     trainingTasks,
     weeklyPlanDays,
@@ -202,6 +286,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     addAccount,
     removeAccount,
     syncAccount,
+    syncCodeforcesAccount,
     updateSettings,
     updateTaskStatus,
     updateWeeklyPlanStatus,

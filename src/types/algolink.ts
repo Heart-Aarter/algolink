@@ -8,6 +8,7 @@ export interface OjAccount {
   handle: string
   status: 'bound'
   rating: number
+  maxRating?: number
   solved: number
   lastSyncAt: string
   color: string

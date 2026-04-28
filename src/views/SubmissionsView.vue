@@ -17,9 +17,12 @@ const statuses: Array<'All' | SubmissionStatus> = [
   'Time Limit',
   'Runtime Error',
 ]
+const visibleSubmissions = computed(() =>
+  store.boundSubmissions.length ? store.boundSubmissions : store.submissions,
+)
 
 const filteredSubmissions = computed(() =>
-  store.boundSubmissions.filter((item) => {
+  visibleSubmissions.value.filter((item) => {
     const query = keyword.value.trim().toLowerCase()
     const matchedKeyword =
       !query ||
@@ -65,7 +68,7 @@ const accepted = computed(
         </div>
       </div>
 
-      <div v-if="store.accounts.length" class="table-wrap">
+      <div v-if="visibleSubmissions.length" class="table-wrap">
         <table>
           <thead>
             <tr>

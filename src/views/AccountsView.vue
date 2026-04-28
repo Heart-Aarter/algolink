@@ -8,6 +8,7 @@ const platform = ref<OjPlatform | ''>(store.settings.defaultPlatform)
 const handle = ref('')
 const message = ref('')
 const messageType = ref<'success' | 'error'>('success')
+const syncingId = ref('')
 
 function setMessage(type: 'success' | 'error', text: string) {
   messageType.value = type
@@ -23,9 +24,16 @@ function submitAccount() {
   }
 }
 
-function syncAccount(id: string, platformName: OjPlatform) {
-  store.syncAccount(id)
-  setMessage('success', `${platformName} 模拟同步成功`)
+async function syncAccount(id: string, platformName: OjPlatform) {
+  if (syncingId.value) {
+    return
+  }
+
+  syncingId.value = id
+  setMessage('success', `${platformName} 正在同步...`)
+  const result = await store.syncCodeforcesAccount(id)
+  setMessage(result.ok ? 'success' : 'error', result.message)
+  syncingId.value = ''
 }
 
 function removeAccount(id: string, platformName: OjPlatform) {
@@ -61,7 +69,9 @@ function removeAccount(id: string, platformName: OjPlatform) {
         <button type="submit">绑定</button>
       </form>
 
-      <p class="form-note">只保存公开用户名，不需要也不会收集任何 OJ 密码。</p>
+      <p class="form-note">
+        Codeforces 点击同步会请求官方公开 API；其他平台继续使用 mock 数据。只保存公开用户名，不收集 OJ 密码。
+      </p>
       <p v-if="message" class="form-message" :class="messageType">{{ message }}</p>
     </section>
 
@@ -81,8 +91,16 @@ function removeAccount(id: string, platformName: OjPlatform) {
           <p>@{{ account.handle }}</p>
           <dl>
             <div>
-              <dt>绑定状态</dt>
-              <dd>已绑定</dd>
+              <dt>当前 rating</dt>
+              <dd>{{ account.rating || '-' }}</dd>
+            </div>
+            <div>
+              <dt>最高 rating</dt>
+              <dd>{{ account.maxRating || '-' }}</dd>
+            </div>
+            <div>
+              <dt>AC 题数</dt>
+              <dd>{{ account.solved }}</dd>
             </div>
             <div>
               <dt>最近同步</dt>
@@ -90,10 +108,20 @@ function removeAccount(id: string, platformName: OjPlatform) {
             </div>
           </dl>
           <div class="account-actions">
-            <button class="ghost-button" type="button" @click="syncAccount(account.id, account.platform)">
-              模拟同步
+            <button
+              class="ghost-button"
+              type="button"
+              :disabled="!!syncingId"
+              @click="syncAccount(account.id, account.platform)"
+            >
+              {{ syncingId === account.id ? '同步中...' : account.platform === 'Codeforces' ? '同步' : '模拟同步' }}
             </button>
-            <button class="ghost-button danger-button" type="button" @click="removeAccount(account.id, account.platform)">
+            <button
+              class="ghost-button danger-button"
+              type="button"
+              :disabled="!!syncingId"
+              @click="removeAccount(account.id, account.platform)"
+            >
               解绑
             </button>
           </div>
@@ -102,7 +130,7 @@ function removeAccount(id: string, platformName: OjPlatform) {
 
       <div v-else class="empty-state">
         <h3>还没有绑定账号</h3>
-        <p>选择一个平台并输入公开 handle 后，Dashboard、提交记录和能力画像会自动读取对应 mock 数据。</p>
+        <p>选择平台并输入公开 handle 后，Dashboard、提交记录和能力画像会读取对应数据；Codeforces 可同步真实公开数据。</p>
       </div>
     </section>
   </div>

@@ -8,15 +8,14 @@ AlgoLink 面向算法竞赛学习者，支持聚合 Codeforces、洛谷、AtCode
 
 ## 重要规则
 
-1. 禁止直接复制任何开源模板、商业模板或完整页面代码。
-2. 可以使用 Vue、Vite、TypeScript、Vue Router、Pinia、ECharts、Axios 等开源框架和工具库。
-3. 页面结构、业务模块、文案和数据展示逻辑必须围绕 AlgoLink 自主设计。
-4. 当前阶段只实现前端基础框架，不接真实后端。
-5. 数据使用 mock 数据和 localStorage。
-6. 不实现真正的 Online Judge，不实现代码评测系统。
-7. 不要求用户输入其他 OJ 的密码，只允许绑定公开用户名 / handle。
-8. 整体风格偏科技感、数据平台、算法训练工具。
-9. 每次修改后必须保证 npm run dev 和 npm run build 可以正常运行。
+1. 可以使用 Vue、Vite、TypeScript、Vue Router、Pinia、ECharts、Axios 等开源框架和工具库。
+2. 页面结构、业务模块、文案和数据展示逻辑必须围绕 AlgoLink 自主设计。
+3. 当前阶段只实现前端基础框架，不接真实后端。
+4. 数据使用 mock 数据和 localStorage。
+5. 不实现真正的 Online Judge，不实现代码评测系统。
+6. 不要求用户输入其他 OJ 的密码，只允许绑定公开用户名 / handle。
+7. 整体风格偏科技感、数据平台、算法训练工具。
+8. 每次修改后必须保证 npm run dev 和 npm run build 可以正常运行。
 
 ## 技术栈
 

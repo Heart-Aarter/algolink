@@ -1,0 +1,114 @@
+import axios from 'axios'
+import type { OjProfile, OjRatingChange, OjSubmission } from './ojTypes'
+import {
+  normalizeCodeforcesRating,
+  normalizeCodeforcesSubmission,
+  normalizeCodeforcesUser,
+  type CodeforcesRatingChange,
+  type CodeforcesSubmission,
+  type CodeforcesUserInfo,
+} from './normalizers'
+
+const codeforcesClient = axios.create({
+  baseURL: 'https://codeforces.com/api',
+  timeout: 10000,
+})
+
+const requestIntervalMs = 2000
+const lastRequestAt = new Map<string, number>()
+
+interface CodeforcesApiResponse<T> {
+  status: 'OK' | 'FAILED'
+  comment?: string
+  result: T
+}
+
+function normalizeHandle(handle: string) {
+  return handle.trim()
+}
+
+async function waitForThrottle(key: string) {
+  const now = Date.now()
+  const lastTime = lastRequestAt.get(key) ?? 0
+  const waitMs = requestIntervalMs - (now - lastTime)
+
+  if (waitMs > 0) {
+    await new Promise((resolve) => globalThis.setTimeout(resolve, waitMs))
+  }
+
+  lastRequestAt.set(key, Date.now())
+}
+
+async function requestCodeforces<T>(
+  method: string,
+  params: Record<string, string | number>,
+  throttleKey: string,
+) {
+  await waitForThrottle(`${method}:${throttleKey.toLowerCase()}`)
+
+  try {
+    const response = await codeforcesClient.get<CodeforcesApiResponse<T>>(`/${method}`, { params })
+
+    if (response.data.status !== 'OK') {
+      throw new Error(response.data.comment || 'Codeforces API request failed')
+    }
+
+    return response.data.result
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const apiMessage = (error.response?.data as { comment?: string } | undefined)?.comment
+      throw new Error(apiMessage || error.message || 'Codeforces API request failed')
+    }
+
+    throw error
+  }
+}
+
+export async function fetchCodeforcesUser(handle: string): Promise<OjProfile> {
+  const normalizedHandle = normalizeHandle(handle)
+  const result = await requestCodeforces<CodeforcesUserInfo[]>(
+    'user.info',
+    {
+      handles: normalizedHandle,
+    },
+    normalizedHandle,
+  )
+  const user = result[0]
+
+  if (!user) {
+    throw new Error(`Codeforces user "${normalizedHandle}" not found`)
+  }
+
+  return normalizeCodeforcesUser(user)
+}
+
+export async function fetchCodeforcesRating(handle: string): Promise<OjRatingChange[]> {
+  const normalizedHandle = normalizeHandle(handle)
+  const result = await requestCodeforces<CodeforcesRatingChange[]>(
+    'user.rating',
+    {
+      handle: normalizedHandle,
+    },
+    normalizedHandle,
+  )
+
+  return result.map(normalizeCodeforcesRating)
+}
+
+export async function fetchCodeforcesSubmissions(
+  handle: string,
+  count = 50,
+): Promise<OjSubmission[]> {
+  const normalizedHandle = normalizeHandle(handle)
+  const result = await requestCodeforces<CodeforcesSubmission[]>(
+    'user.status',
+    {
+      handle: normalizedHandle,
+      from: 1,
+      count,
+    },
+    normalizedHandle,
+  )
+
+  return result.map(normalizeCodeforcesSubmission)
+}

@@ -12,8 +12,11 @@ const store = useAlgoLinkStore()
 const analysisSubmissions = computed(() =>
   store.boundSubmissions.length ? store.boundSubmissions : store.submissions,
 )
+const codeforcesAccount = computed(() =>
+  store.accounts.find((account) => account.platform === 'Codeforces'),
+)
 const rejectedCount = computed(
-  () => store.boundSubmissions.filter((item) => item.status !== 'Accepted').length,
+  () => analysisSubmissions.value.filter((item) => item.status !== 'Accepted').length,
 )
 const aiSummary = computed(() => getTrainingSummary(analysisSubmissions.value))
 const todayAdvice = computed(() => ({
@@ -28,7 +31,7 @@ const chartGrid = 'rgba(154, 170, 190, 0.1)'
 const dailyStats = computed(() => {
   const stats = new Map<string, { solved: number; attempts: number }>()
 
-  for (const submission of store.boundSubmissions) {
+  for (const submission of analysisSubmissions.value) {
     const date = submission.submittedAt.slice(5, 10)
     const current = stats.get(date) ?? { solved: 0, attempts: 0 }
     current.attempts += 1
@@ -44,7 +47,7 @@ const dailyStats = computed(() => {
 const tagStats = computed(() => {
   const stats = new Map<string, number>()
 
-  for (const submission of store.boundSubmissions) {
+  for (const submission of analysisSubmissions.value) {
     for (const tag of submission.tags) {
       stats.set(tag, (stats.get(tag) ?? 0) + 1)
     }
@@ -162,6 +165,25 @@ const visibleRecommendations = computed(() =>
       <StatCard label="公开账号" :value="store.accounts.length" helper="来自 localStorage 的绑定数量" />
       <StatCard label="AC 数" :value="store.totalSolved" helper="已绑定平台 mock 记录统计" />
       <StatCard label="通过率" :value="`${store.acceptanceRate}%`" helper="按已绑定平台提交计算" />
+      <StatCard label="未通过" :value="rejectedCount" helper="WA / TLE / RE 合计" />
+    </section>
+
+    <section v-if="codeforcesAccount" class="stats-grid">
+      <StatCard
+        label="CF 当前 Rating"
+        :value="codeforcesAccount.rating || '-'"
+        helper="同步成功后展示真实 Codeforces rating"
+      />
+      <StatCard
+        label="CF 最高 Rating"
+        :value="codeforcesAccount.maxRating || '-'"
+        helper="来自 Codeforces user.info"
+      />
+      <StatCard
+        label="最近提交"
+        :value="analysisSubmissions.length"
+        helper="真实 CF 优先，其他平台 mock 兜底"
+      />
       <StatCard label="未通过" :value="rejectedCount" helper="WA / TLE / RE 合计" />
     </section>
 
