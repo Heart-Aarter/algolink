@@ -1,12 +1,8 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import {
-  defaultSettings,
-  mockAccounts,
-  mockSubmissions,
-  trainingTasks as mockTrainingTasks,
-} from '@/mock/algolink'
+import { defaultSettings, mockSubmissions, trainingTasks as mockTrainingTasks } from '@/mock/algolink'
 import type { OjAccount, OjPlatform, TrainingTask, UserSettings } from '@/types/algolink'
+import { readStorage, writeStorage } from '@/utils/storage'
 
 const storageKeys = {
   accounts: 'algolink.accounts',
@@ -14,65 +10,125 @@ const storageKeys = {
   tasks: 'algolink.trainingTasks',
 }
 
-function readStorage<T>(key: string, fallback: T): T {
-  const value = localStorage.getItem(key)
+export const supportedPlatforms: OjPlatform[] = ['Codeforces', 'Luogu', 'AtCoder', 'LeetCode']
 
-  if (!value) {
-    return fallback
-  }
-
-  try {
-    return JSON.parse(value) as T
-  } catch {
-    return fallback
-  }
+const platformColors: Record<OjPlatform, string> = {
+  Codeforces: '#7fa4d8',
+  Luogu: '#78c891',
+  AtCoder: '#8db1c7',
+  LeetCode: '#d9a76f',
 }
 
-function writeStorage<T>(key: string, value: T) {
-  localStorage.setItem(key, JSON.stringify(value))
+function formatDateTime(date = new Date()) {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(
+    date.getHours(),
+  )}:${pad(date.getMinutes())}`
+}
+
+type StoredOjAccount = Partial<OjAccount> & { lastSync?: string }
+
+function normalizeAccounts(value: StoredOjAccount[]): OjAccount[] {
+  return value
+    .filter(
+      (account): account is StoredOjAccount & { platform: OjPlatform; handle: string } =>
+        !!account.platform &&
+        supportedPlatforms.includes(account.platform) &&
+        typeof account.handle === 'string' &&
+        account.handle.trim().length > 0,
+    )
+    .map((account) => ({
+      id: account.id || `${account.platform.toLowerCase()}-${account.handle}`,
+      platform: account.platform,
+      handle: account.handle.trim(),
+      status: 'bound',
+      rating: Number(account.rating ?? 0),
+      solved: Number(account.solved ?? 0),
+      lastSyncAt: account.lastSyncAt || account.lastSync || '暂无同步',
+      color: account.color || platformColors[account.platform],
+    }))
 }
 
 export const useAlgoLinkStore = defineStore('algolink', () => {
-  const accounts = ref<OjAccount[]>(readStorage(storageKeys.accounts, mockAccounts))
-  const settings = ref<UserSettings>(readStorage(storageKeys.settings, defaultSettings))
-  const trainingTasks = ref<TrainingTask[]>(readStorage(storageKeys.tasks, mockTrainingTasks))
-
+  const accounts = ref<OjAccount[]>(
+    normalizeAccounts(readStorage<StoredOjAccount[]>(storageKeys.accounts, [])),
+  )
+  const settings = ref<UserSettings>(readStorage<UserSettings>(storageKeys.settings, defaultSettings))
+  const trainingTasks = ref<TrainingTask[]>(
+    readStorage<TrainingTask[]>(storageKeys.tasks, mockTrainingTasks),
+  )
   const submissions = ref(mockSubmissions)
 
-  const totalSolved = computed(() => accounts.value.reduce((sum, item) => sum + item.solved, 0))
+  const boundPlatforms = computed(() => new Set(accounts.value.map((item) => item.platform)))
+  const boundSubmissions = computed(() =>
+    submissions.value.filter((item) => boundPlatforms.value.has(item.platform)),
+  )
+  const totalSolved = computed(
+    () => boundSubmissions.value.filter((item) => item.status === 'Accepted').length,
+  )
   const acceptedCount = computed(
-    () => submissions.value.filter((item) => item.status === 'Accepted').length,
+    () => boundSubmissions.value.filter((item) => item.status === 'Accepted').length,
   )
   const acceptanceRate = computed(() =>
-    Math.round((acceptedCount.value / Math.max(submissions.value.length, 1)) * 100),
+    Math.round((acceptedCount.value / Math.max(boundSubmissions.value.length, 1)) * 100),
   )
   const activePlanCount = computed(
     () => trainingTasks.value.filter((item) => item.status !== 'done').length,
   )
+  const platformSyncCards = computed(() =>
+    supportedPlatforms.map((platform) => {
+      const account = accounts.value.find((item) => item.platform === platform)
+      return {
+        platform,
+        account,
+        status: account ? '已绑定' : '未绑定',
+        lastSyncAt: account?.lastSyncAt || '暂无同步',
+        coverage: account ? 100 : 0,
+      }
+    }),
+  )
 
-  function addAccount(platform: OjPlatform, handle: string) {
+  function addAccount(platform: OjPlatform | '', handle: string): { ok: boolean; message: string } {
     const trimmedHandle = handle.trim()
 
-    if (!trimmedHandle) {
-      return
+    if (!platform) {
+      return { ok: false, message: '请选择平台' }
     }
 
+    if (!trimmedHandle) {
+      return { ok: false, message: '请输入公开用户名 / handle' }
+    }
+
+    if (accounts.value.some((item) => item.platform === platform)) {
+      return { ok: false, message: `${platform} 已绑定账号，不能重复绑定同一平台` }
+    }
+
+    const platformSubmissions = submissions.value.filter((item) => item.platform === platform)
     const nextAccount: OjAccount = {
       id: `${platform.toLowerCase()}-${Date.now()}`,
       platform,
       handle: trimmedHandle,
+      status: 'bound',
       rating: 0,
-      solved: 0,
-      lastSync: '待同步',
-      color: platform === 'Codeforces' ? '#4f8cff' : platform === 'Luogu' ? '#28c76f' : '#00c2ff',
+      solved: platformSubmissions.filter((item) => item.status === 'Accepted').length,
+      lastSyncAt: formatDateTime(),
+      color: platformColors[platform],
     }
 
     accounts.value = [nextAccount, ...accounts.value]
     writeStorage(storageKeys.accounts, accounts.value)
+    return { ok: true, message: `${platform} 账号绑定成功` }
   }
 
   function removeAccount(id: string) {
     accounts.value = accounts.value.filter((item) => item.id !== id)
+    writeStorage(storageKeys.accounts, accounts.value)
+  }
+
+  function syncAccount(id: string) {
+    accounts.value = accounts.value.map((item) =>
+      item.id === id ? { ...item, lastSyncAt: formatDateTime() } : item,
+    )
     writeStorage(storageKeys.accounts, accounts.value)
   }
 
@@ -89,7 +145,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   }
 
   function resetLocalData() {
-    accounts.value = mockAccounts
+    accounts.value = []
     settings.value = defaultSettings
     trainingTasks.value = mockTrainingTasks
     writeStorage(storageKeys.accounts, accounts.value)
@@ -101,12 +157,16 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     accounts,
     settings,
     submissions,
+    boundSubmissions,
     trainingTasks,
+    supportedPlatforms,
+    platformSyncCards,
     totalSolved,
     acceptanceRate,
     activePlanCount,
     addAccount,
     removeAccount,
+    syncAccount,
     updateSettings,
     updateTaskStatus,
     resetLocalData,

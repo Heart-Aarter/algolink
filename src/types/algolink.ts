@@ -1,4 +1,4 @@
-export type OjPlatform = 'Codeforces' | 'Luogu' | 'AtCoder'
+export type OjPlatform = 'Codeforces' | 'Luogu' | 'AtCoder' | 'LeetCode'
 
 export type SubmissionStatus = 'Accepted' | 'Wrong Answer' | 'Time Limit' | 'Runtime Error'
 
@@ -6,9 +6,10 @@ export interface OjAccount {
   id: string
   platform: OjPlatform
   handle: string
+  status: 'bound'
   rating: number
   solved: number
-  lastSync: string
+  lastSyncAt: string
   color: string
 }
 

@@ -3,144 +3,198 @@ import { computed } from 'vue'
 import type { EChartsOption } from 'echarts'
 import ChartPanel from '@/components/charts/ChartPanel.vue'
 import StatCard from '@/components/common/StatCard.vue'
-import {
-  abilityMetrics,
-  platformSyncStates,
-  problemRecommendations,
-  topicInsights,
-  trendSeries,
-} from '@/mock/algolink'
+import { problemRecommendations } from '@/mock/algolink'
 import { useAlgoLinkStore } from '@/stores/algolink'
 
 const store = useAlgoLinkStore()
 
 const rejectedCount = computed(
-  () => store.submissions.filter((item) => item.status !== 'Accepted').length,
+  () => store.boundSubmissions.filter((item) => item.status !== 'Accepted').length,
 )
 
+const chartAxis = '#738195'
+const chartGrid = 'rgba(154, 170, 190, 0.1)'
+
+const dailyStats = computed(() => {
+  const stats = new Map<string, { solved: number; attempts: number }>()
+
+  for (const submission of store.boundSubmissions) {
+    const date = submission.submittedAt.slice(5, 10)
+    const current = stats.get(date) ?? { solved: 0, attempts: 0 }
+    current.attempts += 1
+    current.solved += submission.status === 'Accepted' ? 1 : 0
+    stats.set(date, current)
+  }
+
+  return [...stats.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([date, value]) => ({ date, ...value }))
+})
+
+const tagStats = computed(() => {
+  const stats = new Map<string, number>()
+
+  for (const submission of store.boundSubmissions) {
+    for (const tag of submission.tags) {
+      stats.set(tag, (stats.get(tag) ?? 0) + 1)
+    }
+  }
+
+  return [...stats.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([tag, count]) => ({ tag, count }))
+})
+
 const trendOption = computed<EChartsOption>(() => ({
-  color: ['#25e2d3', '#4f8cff'],
-  grid: { top: 28, right: 18, bottom: 34, left: 38 },
-  tooltip: { trigger: 'axis' },
+  color: ['#7fa4d8', '#66d6cb'],
+  grid: { top: 36, right: 18, bottom: 34, left: 38 },
+  tooltip: {
+    trigger: 'axis',
+    backgroundColor: '#151d29',
+    borderColor: 'rgba(154, 170, 190, 0.18)',
+    textStyle: { color: '#dce5ef' },
+  },
   xAxis: {
     type: 'category',
-    data: trendSeries.map((item) => item.date),
-    axisLine: { lineStyle: { color: '#29405f' } },
-    axisLabel: { color: '#8fa3bf' },
+    data: dailyStats.value.map((item) => item.date),
+    axisLine: { lineStyle: { color: 'rgba(154, 170, 190, 0.2)' } },
+    axisTick: { show: false },
+    axisLabel: { color: chartAxis },
   },
   yAxis: {
     type: 'value',
-    splitLine: { lineStyle: { color: 'rgba(143, 163, 191, 0.14)' } },
-    axisLabel: { color: '#8fa3bf' },
+    minInterval: 1,
+    splitLine: { lineStyle: { color: chartGrid } },
+    axisLabel: { color: chartAxis },
   },
   series: [
     {
-      name: '通过',
+      name: 'AC',
       type: 'bar',
-      barMaxWidth: 18,
-      data: trendSeries.map((item) => item.solved),
-      itemStyle: { borderRadius: [6, 6, 0, 0] },
+      barMaxWidth: 16,
+      data: dailyStats.value.map((item) => item.solved),
+      itemStyle: { borderRadius: [5, 5, 0, 0], opacity: 0.82 },
     },
     {
       name: '提交',
       type: 'line',
       smooth: true,
-      data: trendSeries.map((item) => item.attempts),
+      symbolSize: 6,
+      lineStyle: { width: 2 },
+      data: dailyStats.value.map((item) => item.attempts),
     },
   ],
 }))
 
-const topicOption = computed<EChartsOption>(() => ({
-  color: ['#25e2d3', '#ffb86b'],
-  grid: { top: 28, right: 18, bottom: 34, left: 64 },
-  tooltip: { trigger: 'axis' },
+const tagOption = computed<EChartsOption>(() => ({
+  color: ['#8db1c7'],
+  grid: { top: 36, right: 18, bottom: 34, left: 82 },
+  tooltip: {
+    trigger: 'axis',
+    backgroundColor: '#151d29',
+    borderColor: 'rgba(154, 170, 190, 0.18)',
+    textStyle: { color: '#dce5ef' },
+  },
   xAxis: {
     type: 'value',
-    max: 100,
-    splitLine: { lineStyle: { color: 'rgba(143, 163, 191, 0.14)' } },
-    axisLabel: { color: '#8fa3bf' },
+    minInterval: 1,
+    splitLine: { lineStyle: { color: chartGrid } },
+    axisLabel: { color: chartAxis },
   },
   yAxis: {
     type: 'category',
-    data: topicInsights.map((item) => item.topic),
-    axisLine: { lineStyle: { color: '#29405f' } },
-    axisLabel: { color: '#dce8f7' },
+    data: tagStats.value.map((item) => item.tag),
+    axisLine: { lineStyle: { color: 'rgba(154, 170, 190, 0.18)' } },
+    axisTick: { show: false },
+    axisLabel: { color: '#aab6c5' },
   },
   series: [
     {
-      name: '正确率',
+      name: '出现次数',
       type: 'bar',
-      data: topicInsights.map((item) => item.accuracy),
-      itemStyle: { borderRadius: [0, 6, 6, 0] },
+      barMaxWidth: 14,
+      data: tagStats.value.map((item) => item.count),
+      itemStyle: { borderRadius: [0, 5, 5, 0], opacity: 0.78 },
     },
   ],
 }))
 
-const topAbility = computed(() =>
-  [...abilityMetrics].sort((a, b) => b.score - a.score).slice(0, 3),
+const visibleRecommendations = computed(() =>
+  problemRecommendations.filter(
+    (item) =>
+      !store.accounts.length ||
+      store.accounts.some((account) => account.platform === item.platform),
+  ),
 )
 </script>
 
 <template>
-  <div class="page-stack">
+  <div class="page-stack dashboard-page">
     <section class="hero-panel hero-dashboard">
       <div>
         <p class="eyebrow">AI Multi-OJ Analytics</p>
-        <h2>把 Codeforces、洛谷、AtCoder 的公开刷题轨迹汇总成训练决策台</h2>
-        <p>
-          AlgoLink 第二阶段强化了同步状态、题型画像、AI 诊断、推荐题单和训练计划看板，让作品更像可演示的数据平台。
-        </p>
+        <h2>AlgoLink 刷题数据分析面板</h2>
+        <p>绑定公开 OJ handle 后，Dashboard 会从 localStorage 读取账号，并基于本地 mock 提交记录生成统计。</p>
         <div class="hero-actions">
-          <RouterLink to="/ai-advice">查看 AI 训练建议</RouterLink>
-          <RouterLink to="/training-plan" class="secondary-link">进入训练计划</RouterLink>
+          <RouterLink to="/accounts">绑定账号</RouterLink>
+          <RouterLink to="/submissions" class="secondary-link">查看提交记录</RouterLink>
         </div>
       </div>
-      <div class="hero-scoreboard" aria-label="综合训练指数">
-        <span>训练指数</span>
-        <strong>78.6</strong>
-        <p>较上周 +6.8，主要来自贪心与 DP 题量恢复。</p>
+      <div class="hero-scoreboard" aria-label="公开账号数量">
+        <span>公开账号</span>
+        <strong>{{ store.accounts.length }}</strong>
+        <p>{{ store.accounts.length ? '已接入本地分析闭环' : '绑定账号后开始生成分析' }}</p>
       </div>
     </section>
 
     <section class="stats-grid">
-      <StatCard label="累计解决" :value="store.totalSolved" helper="跨平台公开题目数量" />
-      <StatCard label="最近通过率" :value="`${store.acceptanceRate}%`" helper="基于 mock 提交流计算" />
-      <StatCard label="待处理异常" :value="rejectedCount" helper="WA / TLE / RE 需要复盘" />
-      <StatCard label="活跃训练项" :value="store.activePlanCount" helper="进行中与待完成计划" />
+      <StatCard label="公开账号" :value="store.accounts.length" helper="来自 localStorage 的绑定数量" />
+      <StatCard label="AC 数" :value="store.totalSolved" helper="已绑定平台 mock 记录统计" />
+      <StatCard label="通过率" :value="`${store.acceptanceRate}%`" helper="按已绑定平台提交计算" />
+      <StatCard label="未通过" :value="rejectedCount" helper="WA / TLE / RE 合计" />
+    </section>
+
+    <section v-if="!store.accounts.length" class="panel empty-state">
+      <h3>还没有绑定任何 OJ 账号</h3>
+      <p>请先绑定 Codeforces、Luogu、AtCoder 或 LeetCode 的公开用户名，其他页面会同步读取绑定状态。</p>
+      <RouterLink class="text-link" to="/accounts">去绑定账号</RouterLink>
     </section>
 
     <section class="sync-strip">
-      <article v-for="item in platformSyncStates" :key="item.platform" class="sync-card">
+      <article v-for="item in store.platformSyncCards" :key="item.platform" class="sync-card">
         <div class="sync-head">
           <strong>{{ item.platform }}</strong>
-          <span :class="`sync-${item.status}`">{{ item.status }}</span>
+          <span :class="item.account ? 'sync-synced' : 'sync-queued'">{{ item.status }}</span>
         </div>
         <div class="sync-meter"><i :style="{ width: `${item.coverage}%` }" /></div>
-        <p>{{ item.note }}</p>
+        <p>
+          {{ item.account ? `@${item.account.handle}` : '尚未绑定公开 handle' }}
+        </p>
         <footer>
-          <span>覆盖 {{ item.coverage }}%</span>
-          <span>下次 {{ item.nextSync }}</span>
+          <span>最近同步</span>
+          <span>{{ item.lastSyncAt }}</span>
         </footer>
       </article>
     </section>
 
-    <section class="content-grid">
-      <ChartPanel title="近 7 天刷题趋势" :option="trendOption" />
-      <ChartPanel title="题型正确率雷达前哨" :option="topicOption" />
+    <section v-if="store.accounts.length" class="content-grid">
+      <ChartPanel title="绑定平台提交趋势" :option="trendOption" />
+      <ChartPanel title="标签分布 Top 8" :option="tagOption" />
     </section>
 
-    <section class="content-grid">
-      <article class="panel">
+    <section v-if="store.accounts.length" class="content-grid">
+      <article class="panel panel-prominent">
         <div class="panel-heading">
-          <h2>AI 推荐题单</h2>
-          <RouterLink class="text-link" to="/ai-advice">查看完整分析</RouterLink>
+          <h2>训练建议入口</h2>
+          <RouterLink class="text-link" to="/ai-advice">查看 AI 建议</RouterLink>
         </div>
         <div class="recommend-list">
-          <article v-for="item in problemRecommendations" :key="item.id" class="recommend-card">
+          <article v-for="item in visibleRecommendations" :key="item.id" class="recommend-card">
             <div>
               <span class="fit-score">{{ item.fitScore }}</span>
               <strong>{{ item.title }}</strong>
-              <p>{{ item.platform }} · {{ item.difficulty }} · {{ item.reason }}</p>
+              <p>{{ item.platform }} / {{ item.difficulty }} / {{ item.reason }}</p>
             </div>
             <div>
               <span v-for="tag in item.tags" :key="tag" class="tag">{{ tag }}</span>
@@ -149,15 +203,22 @@ const topAbility = computed(() =>
         </div>
       </article>
 
-      <article class="panel">
+      <article class="panel panel-subtle">
         <div class="panel-heading">
-          <h2>能力高分项</h2>
+          <h2>闭环状态</h2>
         </div>
-        <div class="ability-list">
-          <div v-for="metric in topAbility" :key="metric.name" class="ability-row">
-            <span>{{ metric.name }}</span>
-            <div class="meter"><i :style="{ width: `${metric.score}%` }" /></div>
-            <strong>{{ metric.score }}</strong>
+        <div class="stat-list">
+          <div>
+            <span>账号来源</span>
+            <strong>localStorage</strong>
+          </div>
+          <div>
+            <span>提交来源</span>
+            <strong>mock 数据</strong>
+          </div>
+          <div>
+            <span>真实 API</span>
+            <strong>未接入</strong>
           </div>
         </div>
       </article>

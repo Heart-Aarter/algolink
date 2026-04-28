@@ -1,17 +1,36 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { platformSyncStates } from '@/mock/algolink'
 import { useAlgoLinkStore } from '@/stores/algolink'
 import type { OjPlatform } from '@/types/algolink'
 
 const store = useAlgoLinkStore()
-const platform = ref<OjPlatform>(store.settings.defaultPlatform)
+const platform = ref<OjPlatform | ''>(store.settings.defaultPlatform)
 const handle = ref('')
-const platforms: OjPlatform[] = ['Codeforces', 'Luogu', 'AtCoder']
+const message = ref('')
+const messageType = ref<'success' | 'error'>('success')
+
+function setMessage(type: 'success' | 'error', text: string) {
+  messageType.value = type
+  message.value = text
+}
 
 function submitAccount() {
-  store.addAccount(platform.value, handle.value)
-  handle.value = ''
+  const result = store.addAccount(platform.value, handle.value)
+  setMessage(result.ok ? 'success' : 'error', result.message)
+
+  if (result.ok) {
+    handle.value = ''
+  }
+}
+
+function syncAccount(id: string, platformName: OjPlatform) {
+  store.syncAccount(id)
+  setMessage('success', `${platformName} 模拟同步成功`)
+}
+
+function removeAccount(id: string, platformName: OjPlatform) {
+  store.removeAccount(id)
+  setMessage('success', `${platformName} 已解绑`)
 }
 </script>
 
@@ -21,64 +40,69 @@ function submitAccount() {
       <div class="panel-heading">
         <div>
           <p class="eyebrow">Public Handle Only</p>
-          <h2>绑定公开 OJ 账号</h2>
+          <h2>OJ 账号绑定</h2>
         </div>
       </div>
+
       <form class="bind-form" @submit.prevent="submitAccount">
         <label>
           平台
           <select v-model="platform">
-            <option v-for="item in platforms" :key="item" :value="item">{{ item }}</option>
+            <option value="">请选择平台</option>
+            <option v-for="item in store.supportedPlatforms" :key="item" :value="item">
+              {{ item }}
+            </option>
           </select>
         </label>
         <label>
           用户名 / handle
           <input v-model="handle" type="text" placeholder="例如 tourist、abc_focus" />
         </label>
-        <button type="submit">添加绑定</button>
+        <button type="submit">绑定</button>
       </form>
-      <p class="form-note">AlgoLink 只记录公开用户名，不要求也不保存任何 OJ 密码。</p>
-    </section>
 
-    <section class="sync-strip">
-      <article v-for="item in platformSyncStates" :key="item.platform" class="sync-card">
-        <div class="sync-head">
-          <strong>{{ item.platform }}</strong>
-          <span :class="`sync-${item.status}`">{{ item.status }}</span>
-        </div>
-        <div class="sync-meter"><i :style="{ width: `${item.coverage}%` }" /></div>
-        <p>{{ item.note }}</p>
-        <footer>
-          <span>延迟 {{ item.latency }}</span>
-          <span>下次 {{ item.nextSync }}</span>
-        </footer>
-      </article>
+      <p class="form-note">只保存公开用户名，不需要也不会收集任何 OJ 密码。</p>
+      <p v-if="message" class="form-message" :class="messageType">{{ message }}</p>
     </section>
 
     <section class="panel">
       <div class="panel-heading">
-        <h2>已绑定账号</h2>
+        <div>
+          <p class="eyebrow">Bound Accounts</p>
+          <h2>已绑定账号</h2>
+        </div>
+        <span class="count-badge">{{ store.accounts.length }} 个公开账号</span>
       </div>
-      <div class="account-cards">
+
+      <div v-if="store.accounts.length" class="account-cards">
         <article v-for="account in store.accounts" :key="account.id" class="account-card">
           <span class="account-dot" :style="{ background: account.color }" />
           <h3>{{ account.platform }}</h3>
           <p>@{{ account.handle }}</p>
           <dl>
             <div>
-              <dt>题数</dt>
-              <dd>{{ account.solved }}</dd>
+              <dt>绑定状态</dt>
+              <dd>已绑定</dd>
             </div>
             <div>
-              <dt>Rating</dt>
-              <dd>{{ account.rating || '待同步' }}</dd>
+              <dt>最近同步</dt>
+              <dd>{{ account.lastSyncAt }}</dd>
             </div>
           </dl>
-          <small>上次同步：{{ account.lastSync }}</small>
-          <button class="ghost-button" type="button" @click="store.removeAccount(account.id)">
-            移除
-          </button>
+          <div class="account-actions">
+            <button class="ghost-button" type="button" @click="syncAccount(account.id, account.platform)">
+              模拟同步
+            </button>
+            <button class="ghost-button danger-button" type="button" @click="removeAccount(account.id, account.platform)">
+              解绑
+            </button>
+          </div>
         </article>
+      </div>
+
+      <div v-else class="empty-state">
+        <h3>还没有绑定账号</h3>
+        <p>选择一个平台并输入公开 handle 后，Dashboard、提交记录和能力画像会自动读取对应 mock 数据。</p>
       </div>
     </section>
   </div>

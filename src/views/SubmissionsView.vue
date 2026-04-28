@@ -9,7 +9,7 @@ const keyword = ref('')
 const platformFilter = ref<'All' | OjPlatform>('All')
 const statusFilter = ref<'All' | SubmissionStatus>('All')
 
-const platforms: Array<'All' | OjPlatform> = ['All', 'Codeforces', 'Luogu', 'AtCoder']
+const platforms = computed<Array<'All' | OjPlatform>>(() => ['All', ...store.supportedPlatforms])
 const statuses: Array<'All' | SubmissionStatus> = [
   'All',
   'Accepted',
@@ -19,12 +19,11 @@ const statuses: Array<'All' | SubmissionStatus> = [
 ]
 
 const filteredSubmissions = computed(() =>
-  store.submissions.filter((item) => {
+  store.boundSubmissions.filter((item) => {
+    const query = keyword.value.trim().toLowerCase()
     const matchedKeyword =
-      !keyword.value.trim() ||
-      `${item.problem} ${item.tags.join(' ')} ${item.platform}`
-        .toLowerCase()
-        .includes(keyword.value.trim().toLowerCase())
+      !query ||
+      `${item.problem} ${item.tags.join(' ')} ${item.platform}`.toLowerCase().includes(query)
     const matchedPlatform = platformFilter.value === 'All' || item.platform === platformFilter.value
     const matchedStatus = statusFilter.value === 'All' || item.status === statusFilter.value
     return matchedKeyword && matchedPlatform && matchedStatus
@@ -39,14 +38,14 @@ const accepted = computed(
 <template>
   <div class="page-stack">
     <section class="stats-grid submission-stats">
-      <StatCard label="筛选结果" :value="filteredSubmissions.length" helper="当前表格记录数" />
-      <StatCard label="Accepted" :value="accepted" helper="筛选范围内通过数" />
+      <StatCard label="当前记录" :value="filteredSubmissions.length" helper="按已绑定平台展示 mock 提交" />
+      <StatCard label="Accepted" :value="accepted" helper="筛选结果中的通过记录" />
       <StatCard
-        label="失败提交"
+        label="未通过"
         :value="filteredSubmissions.length - accepted"
-        helper="需要复盘的记录"
+        helper="WA / TLE / RE 记录"
       />
-      <StatCard label="平台数" :value="store.accounts.length" helper="已绑定公开账号" />
+      <StatCard label="绑定平台" :value="store.accounts.length" helper="来自 localStorage 的公开账号" />
     </section>
 
     <section class="panel">
@@ -66,7 +65,7 @@ const accepted = computed(
         </div>
       </div>
 
-      <div class="table-wrap">
+      <div v-if="store.accounts.length" class="table-wrap">
         <table>
           <thead>
             <tr>
@@ -76,8 +75,8 @@ const accepted = computed(
               <th>标签</th>
               <th>结果</th>
               <th>语言</th>
-              <th>运行</th>
-              <th>时间</th>
+              <th>运行时间</th>
+              <th>提交时间</th>
             </tr>
           </thead>
           <tbody>
@@ -97,8 +96,17 @@ const accepted = computed(
               <td>{{ submission.runtime }}</td>
               <td>{{ submission.submittedAt }}</td>
             </tr>
+            <tr v-if="!filteredSubmissions.length">
+              <td colspan="8">当前筛选条件下没有 mock 提交记录。</td>
+            </tr>
           </tbody>
         </table>
+      </div>
+
+      <div v-else class="empty-state">
+        <h3>暂无提交记录</h3>
+        <p>请先绑定至少一个 OJ 公开账号，页面会按绑定平台展示对应的 mock 提交记录。</p>
+        <RouterLink class="text-link" to="/accounts">去绑定账号</RouterLink>
       </div>
     </section>
   </div>

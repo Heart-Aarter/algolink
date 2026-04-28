@@ -16,25 +16,28 @@ defineProps<{
 
 <style scoped>
 .stat-card {
-  min-height: 126px;
+  min-height: 118px;
   padding: 20px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-panel);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent),
+    var(--color-panel);
+  box-shadow: var(--shadow-panel);
 }
 
 span {
   color: var(--color-text-muted);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 720;
 }
 
 strong {
   display: block;
-  margin-top: 10px;
+  margin-top: 12px;
   color: var(--color-heading);
-  font-size: 34px;
-  font-weight: 900;
+  font-size: 32px;
+  font-weight: 880;
   line-height: 1;
 }
 

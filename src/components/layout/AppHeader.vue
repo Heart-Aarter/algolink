@@ -42,10 +42,10 @@ const routeTitle = computed(() => {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  min-height: 88px;
-  padding: 0 32px;
+  min-height: 82px;
+  padding: 0 40px;
   border-bottom: 1px solid var(--color-border);
-  background: rgba(8, 15, 31, 0.86);
+  background: rgba(13, 20, 30, 0.82);
   backdrop-filter: blur(18px);
 }
 
@@ -59,8 +59,8 @@ const routeTitle = computed(() => {
 
 h1 {
   color: var(--color-heading);
-  font-size: 24px;
-  font-weight: 800;
+  font-size: 23px;
+  font-weight: 780;
 }
 
 .header-actions {
@@ -70,11 +70,11 @@ h1 {
 }
 
 .sync-card {
-  min-width: 98px;
-  padding: 10px 14px;
+  min-width: 96px;
+  padding: 9px 13px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-panel);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .sync-card span {
@@ -85,19 +85,20 @@ h1 {
 
 .sync-card strong {
   color: var(--color-heading);
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 800;
 }
 
 .primary-action {
   display: inline-flex;
   align-items: center;
-  min-height: 42px;
-  padding: 0 18px;
-  border-radius: 8px;
+  min-height: 40px;
+  padding: 0 17px;
+  border-radius: 9px;
   background: var(--color-accent);
-  color: #06111f;
-  font-weight: 800;
+  color: #071015;
+  font-size: 14px;
+  font-weight: 820;
 }
 
 @media (max-width: 760px) {

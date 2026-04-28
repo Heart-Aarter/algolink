@@ -2,13 +2,13 @@
 import { RouterLink } from 'vue-router'
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: 'D' },
-  { path: '/accounts', label: 'OJ 账号绑定', icon: 'O' },
-  { path: '/submissions', label: '提交记录', icon: 'S' },
-  { path: '/profile', label: '能力画像', icon: 'P' },
-  { path: '/ai-advice', label: 'AI 训练建议', icon: 'A' },
-  { path: '/training-plan', label: '训练计划', icon: 'T' },
-  { path: '/settings', label: '设置', icon: 'G' },
+  { path: '/', label: 'Dashboard', icon: '01' },
+  { path: '/accounts', label: 'OJ 账号绑定', icon: '02' },
+  { path: '/submissions', label: '提交记录', icon: '03' },
+  { path: '/profile', label: '能力画像', icon: '04' },
+  { path: '/ai-advice', label: 'AI 训练建议', icon: '05' },
+  { path: '/training-plan', label: '训练计划', icon: '06' },
+  { path: '/settings', label: '设置', icon: '07' },
 ]
 </script>
 
@@ -18,7 +18,7 @@ const navItems = [
       <span class="brand-mark">AL</span>
       <span>
         <strong>AlgoLink</strong>
-        <small>AI 多 OJ 刷题数据分析平台</small>
+        <small>AI 多 OJ 数据分析</small>
       </span>
     </RouterLink>
 
@@ -31,7 +31,7 @@ const navItems = [
 
     <div class="sidebar-note">
       <span>Mock Data</span>
-      <p>聚合公开 handle、提交记录、能力画像和 AI 训练建议，不接真实后端。</p>
+      <p>仅使用公开 handle、mock 数据与 localStorage。</p>
     </div>
   </aside>
 </template>
@@ -41,16 +41,17 @@ const navItems = [
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  padding: 24px 18px;
+  padding: 24px 16px;
   border-right: 1px solid var(--color-border);
-  background: #07101f;
+  background: var(--color-sidebar);
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 28px;
+  margin-bottom: 30px;
+  padding: 0 6px;
   color: var(--color-heading);
 }
 
@@ -60,15 +61,15 @@ const navItems = [
 
 .brand-mark {
   display: inline-grid;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   place-items: center;
-  border: 1px solid rgba(37, 226, 211, 0.45);
-  border-radius: 8px;
-  background: linear-gradient(135deg, rgba(37, 226, 211, 0.2), rgba(79, 140, 255, 0.24));
-  color: var(--color-accent);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--color-heading);
   font-size: 14px;
-  font-weight: 900;
+  font-weight: 850;
 }
 
 .brand strong,
@@ -78,7 +79,7 @@ const navItems = [
 
 .brand strong {
   font-size: 19px;
-  font-weight: 900;
+  font-weight: 850;
 }
 
 .brand small {
@@ -88,53 +89,62 @@ const navItems = [
 
 .nav-list {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
   min-height: 42px;
-  padding: 0 12px;
+  padding: 0 11px;
   border: 1px solid transparent;
-  border-radius: 8px;
-  color: var(--color-text-soft);
+  border-radius: 9px;
+  color: var(--color-text-muted);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 690;
 }
 
-.nav-item:hover,
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--color-text);
+}
+
 .nav-item.router-link-active {
-  border-color: rgba(37, 226, 211, 0.25);
-  background: rgba(37, 226, 211, 0.1);
+  border-color: rgba(102, 214, 203, 0.16);
+  background: rgba(102, 214, 203, 0.08);
   color: var(--color-heading);
 }
 
 .nav-icon {
   display: inline-grid;
-  width: 24px;
+  width: 28px;
   height: 24px;
   place-items: center;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--color-accent);
-  font-size: 12px;
-  font-weight: 900;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 780;
+}
+
+.nav-item.router-link-active .nav-icon {
+  background: rgba(102, 214, 203, 0.12);
+  color: var(--color-heading);
 }
 
 .sidebar-note {
   margin-top: auto;
   padding: 14px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-panel);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .sidebar-note span {
-  color: var(--color-accent);
+  color: var(--color-text-soft);
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 800;
   text-transform: uppercase;
 }
 

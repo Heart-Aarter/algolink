@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { reactive, watch } from 'vue'
 import { useAlgoLinkStore } from '@/stores/algolink'
-import type { OjPlatform, UserSettings } from '@/types/algolink'
+import type { UserSettings } from '@/types/algolink'
 
 const store = useAlgoLinkStore()
 const form = reactive<UserSettings>({ ...store.settings })
-const platforms: OjPlatform[] = ['Codeforces', 'Luogu', 'AtCoder']
 
 watch(
   form,
@@ -45,7 +44,7 @@ watch(
         <label>
           默认平台
           <select v-model="form.defaultPlatform">
-            <option v-for="item in platforms" :key="item" :value="item">{{ item }}</option>
+            <option v-for="item in store.supportedPlatforms" :key="item" :value="item">{{ item }}</option>
           </select>
         </label>
         <label class="check-row">

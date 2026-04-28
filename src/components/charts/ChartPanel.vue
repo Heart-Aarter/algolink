@@ -47,28 +47,29 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .chart-panel {
-  min-height: 320px;
-  padding: 20px;
+  min-height: 326px;
+  padding: 22px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--color-panel);
+  box-shadow: var(--shadow-panel);
 }
 
 .chart-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 22px;
 }
 
 h2 {
   color: var(--color-heading);
   font-size: 17px;
-  font-weight: 850;
+  font-weight: 780;
 }
 
 .chart-canvas {
   width: 100%;
-  height: 250px;
+  height: 246px;
 }
 </style>
