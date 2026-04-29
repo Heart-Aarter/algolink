@@ -10,7 +10,7 @@ AlgoLink 面向算法竞赛学习者，支持聚合 Codeforces、洛谷、AtCode
 
 1. 可以使用 Vue、Vite、TypeScript、Vue Router、Pinia、ECharts、Axios 等开源框架和工具库。
 2. 页面结构、业务模块、文案和数据展示逻辑必须围绕 AlgoLink 自主设计。
-3. 当前阶段只实现前端基础框架，不接真实后端。
+3. 可以使用少量后端技术。
 4. 数据使用 mock 数据和 localStorage。
 5. 不实现真正的 Online Judge，不实现代码评测系统。
 6. 不要求用户输入其他 OJ 的密码，只允许绑定公开用户名 / handle。

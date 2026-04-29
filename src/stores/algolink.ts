@@ -11,6 +11,7 @@ import {
   fetchCodeforcesUser,
 } from '@/services/codeforces'
 import { fetchAtCoderSubmissions, fetchAtCoderUser } from '@/services/atcoder'
+import { fetchLuoguSubmissions, fetchLuoguUser } from '@/services/luogu'
 import { toSubmissionRecord } from '@/services/normalizers'
 import { weeklyTrainingPlan } from '@/mock/trainingPlan'
 import type {
@@ -31,6 +32,7 @@ const storageKeys = {
   weeklyPlanStatus: 'algolink.weeklyPlanStatus',
   codeforcesSubmissions: 'algolink.codeforcesSubmissions',
   atcoderSubmissions: 'algolink.atcoderSubmissions',
+  luoguSubmissions: 'algolink.luoguSubmissions',
 }
 
 export const supportedPlatforms: OjPlatform[] = ['Codeforces', 'Luogu', 'AtCoder']
@@ -91,15 +93,20 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const atcoderSubmissions = ref<SubmissionRecord[]>(
     readStorage<SubmissionRecord[]>(storageKeys.atcoderSubmissions, []),
   )
+  const luoguSubmissions = ref<SubmissionRecord[]>(
+    readStorage<SubmissionRecord[]>(storageKeys.luoguSubmissions, []),
+  )
   const syncedSubmissions = computed(() => [
     ...codeforcesSubmissions.value,
     ...atcoderSubmissions.value,
+    ...luoguSubmissions.value,
   ])
   const hasSyncedSubmissions = computed(() => syncedSubmissions.value.length > 0)
   const submissionDataSourceLabel = computed(() => {
     const platforms = [
       codeforcesSubmissions.value.length ? 'Codeforces' : '',
       atcoderSubmissions.value.length ? 'AtCoder' : '',
+      luoguSubmissions.value.length ? 'Luogu' : '',
     ].filter(Boolean)
 
     return platforms.length ? `真实 ${platforms.join(' + ')} 数据` : 'mock 兜底数据'
@@ -112,6 +119,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     return [
       ...codeforcesSubmissions.value,
       ...atcoderSubmissions.value,
+      ...luoguSubmissions.value,
       ...mockSubmissions.filter((item) => {
         if (item.platform === 'Codeforces') {
           return !codeforcesSubmissions.value.length
@@ -119,6 +127,10 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
         if (item.platform === 'AtCoder') {
           return !atcoderSubmissions.value.length
+        }
+
+        if (item.platform === 'Luogu') {
+          return !luoguSubmissions.value.length
         }
 
         return true
@@ -201,22 +213,32 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     const removedAccount = accounts.value.find((item) => item.id === id)
     accounts.value = accounts.value.filter((item) => item.id !== id)
 
-    if (removedAccount?.platform === 'Codeforces' || removedAccount?.platform === 'AtCoder') {
+    if (
+      removedAccount?.platform === 'Codeforces' ||
+      removedAccount?.platform === 'AtCoder' ||
+      removedAccount?.platform === 'Luogu'
+    ) {
       clearSyncedSubmissions(removedAccount.platform)
     }
 
     writeStorage(storageKeys.accounts, accounts.value)
   }
 
-  function clearSyncedSubmissions(platform: Extract<OjPlatform, 'Codeforces' | 'AtCoder'>) {
+  function clearSyncedSubmissions(platform: OjPlatform) {
     if (platform === 'Codeforces') {
       codeforcesSubmissions.value = []
       writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
       return
     }
 
-    atcoderSubmissions.value = []
-    writeStorage(storageKeys.atcoderSubmissions, atcoderSubmissions.value)
+    if (platform === 'AtCoder') {
+      atcoderSubmissions.value = []
+      writeStorage(storageKeys.atcoderSubmissions, atcoderSubmissions.value)
+      return
+    }
+
+    luoguSubmissions.value = []
+    writeStorage(storageKeys.luoguSubmissions, luoguSubmissions.value)
   }
 
   function syncAccount(id: string) {
@@ -324,6 +346,54 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     }
   }
 
+  async function syncLuoguAccount(id: string): Promise<{ ok: boolean; message: string }> {
+    const account = accounts.value.find((item) => item.id === id)
+
+    if (!account) {
+      return { ok: false, message: '未找到要同步的账号。' }
+    }
+
+    if (account.platform !== 'Luogu') {
+      syncAccount(id)
+      return { ok: true, message: `${account.platform} mock 数据已刷新。` }
+    }
+
+    try {
+      const [profile, syncedSubmissions] = await Promise.all([
+        fetchLuoguUser(account.handle),
+        fetchLuoguSubmissions(account.handle),
+      ])
+      const records = syncedSubmissions.map(toSubmissionRecord)
+      const acceptedProblems = new Set(
+        records.filter((item) => item.status === 'Accepted').map(getProblemKey),
+      )
+
+      luoguSubmissions.value = records
+      accounts.value = accounts.value.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              handle: profile.handle,
+              rating: profile.rating,
+              maxRating: profile.maxRating,
+              solved: acceptedProblems.size,
+              lastSyncAt: formatDateTime(),
+            }
+          : item,
+      )
+      writeStorage(storageKeys.luoguSubmissions, luoguSubmissions.value)
+      writeStorage(storageKeys.accounts, accounts.value)
+
+      return {
+        ok: true,
+        message: `洛谷公开练习数据同步成功，已保存 ${records.length} 条题目记录。`,
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '洛谷公开接口请求失败'
+      return { ok: false, message: `洛谷同步失败：${message}` }
+    }
+  }
+
   async function syncOjAccount(id: string): Promise<{ ok: boolean; message: string }> {
     const account = accounts.value.find((item) => item.id === id)
 
@@ -339,8 +409,11 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       return syncAtCoderAccount(id)
     }
 
-    syncAccount(id)
-    return { ok: true, message: `${account.platform} mock 数据已刷新。` }
+    if (account.platform === 'Luogu') {
+      return syncLuoguAccount(id)
+    }
+
+    return { ok: false, message: `${account.platform} 暂不支持同步。` }
   }
 
   function updateSettings(nextSettings: UserSettings) {
@@ -370,12 +443,14 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     weeklyPlanStatus.value = {}
     codeforcesSubmissions.value = []
     atcoderSubmissions.value = []
+    luoguSubmissions.value = []
     writeStorage(storageKeys.accounts, accounts.value)
     writeStorage(storageKeys.settings, settings.value)
     writeStorage(storageKeys.tasks, trainingTasks.value)
     writeStorage(storageKeys.weeklyPlanStatus, weeklyPlanStatus.value)
     writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
     writeStorage(storageKeys.atcoderSubmissions, atcoderSubmissions.value)
+    writeStorage(storageKeys.luoguSubmissions, luoguSubmissions.value)
   }
 
   return {
@@ -384,6 +459,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     submissions,
     codeforcesSubmissions,
     atcoderSubmissions,
+    luoguSubmissions,
     syncedSubmissions,
     hasSyncedSubmissions,
     submissionDataSourceLabel,
@@ -403,6 +479,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     syncAccount,
     syncCodeforcesAccount,
     syncAtCoderAccount,
+    syncLuoguAccount,
     syncOjAccount,
     updateSettings,
     updateTaskStatus,

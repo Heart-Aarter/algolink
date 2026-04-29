@@ -18,6 +18,7 @@ import {
   sortOptions,
   type SubmissionFilterState,
 } from '@/utils/submissionFilters'
+import { getDisplayTags } from '@/utils/tags'
 import { getVerdictCode, verdictOptions } from '@/utils/verdict'
 import type { SubmissionRecord, SubmissionStatus } from '@/types/algolink'
 
@@ -118,7 +119,7 @@ const columns: DataTableColumns<SubmissionRecord> = [
     key: 'tags',
     minWidth: 220,
     render(row) {
-      const tags = row.tags.length ? row.tags : ['untagged']
+      const tags = getDisplayTags(row)
       return h(
         'div',
         { class: 'submission-tags' },

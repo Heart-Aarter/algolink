@@ -1,4 +1,5 @@
 import type { SubmissionRecord, SubmissionStatus } from '@/types/algolink'
+import { getAlgorithmTags } from '@/utils/tags'
 import { getVerdictCode } from '@/utils/verdict'
 
 export interface DistributionItem {
@@ -171,7 +172,7 @@ export function getTagAnalysis(submissions: SubmissionRecord[]): TagAnalysisItem
   const stats = new Map<string, { total: number; accepted: number; failed: number }>()
 
   for (const submission of submissions) {
-    for (const tag of submission.tags) {
+    for (const tag of getAlgorithmTags(submission.tags)) {
       const current = stats.get(tag) ?? { total: 0, accepted: 0, failed: 0 }
       current.total += 1
       if (submission.status === 'Accepted') {
@@ -218,7 +219,7 @@ export function calculateSubmissionAnalysis(
       solvedProblems.add(getProblemKey(submission))
     }
 
-    for (const tag of submission.tags) {
+    for (const tag of getAlgorithmTags(submission.tags)) {
       addCount(tagCounts, tag)
     }
 

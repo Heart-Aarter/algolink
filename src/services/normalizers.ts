@@ -68,6 +68,50 @@ export interface AtCoderProblemMeta {
   difficulty?: number
 }
 
+export interface LuoguUserInfo {
+  uid: number
+  name: string
+  avatar?: string
+  color?: string
+  ccfLevel?: number
+  xcpcLevel?: number
+  ranking?: number
+  passedProblemCount?: number | null
+  submittedProblemCount?: number | null
+  eloValue?: number | null
+  elo?: number | null
+  registerTime?: number
+}
+
+export interface LuoguSearchResponse {
+  users?: LuoguUserInfo[]
+}
+
+export interface LuoguPracticeProblem {
+  type: string
+  title: string
+  difficulty: number
+  pid: string
+  tags?: Array<number | string>
+}
+
+export interface LuoguPracticeResponse {
+  status: number
+  data: {
+    user: LuoguUserInfo
+    passed?: LuoguPracticeProblem[]
+    submitted?: LuoguPracticeProblem[]
+    privacy?: boolean
+  }
+}
+
+export interface LuoguTag {
+  id: number
+  name: string
+  type?: number
+  parent?: number | null
+}
+
 function formatDateTimeFromSeconds(seconds?: number) {
   if (!seconds) {
     return ''
@@ -128,6 +172,28 @@ function normalizeAtCoderVerdict(result?: string): SubmissionStatus {
 
   return 'Unknown'
 }
+
+const luoguDifficultyRatings = new Map<number, number>([
+  [0, 800],
+  [1, 800],
+  [2, 1100],
+  [3, 1300],
+  [4, 1500],
+  [5, 1800],
+  [6, 2200],
+  [7, 2600],
+])
+
+const luoguDifficultyLabels = new Map<number, string>([
+  [0, '暂无评定'],
+  [1, '入门'],
+  [2, '普及-'],
+  [3, '普及/提高-'],
+  [4, '普及+/提高'],
+  [5, '提高+/省选-'],
+  [6, '省选/NOI-'],
+  [7, 'NOI/NOI+/CTSC'],
+])
 
 function getProblemId(problem: CodeforcesProblem) {
   if (problem.contestId) {
@@ -223,6 +289,43 @@ export function normalizeAtCoderSubmission(
     submittedAt: formatDateTimeFromSeconds(submission.epoch_second),
     runtime:
       typeof submission.execution_time === 'number' ? `${submission.execution_time} ms` : 'N/A',
+  }
+}
+
+export function normalizeLuoguUser(user: LuoguUserInfo): OjProfile {
+  const rating = user.eloValue ?? user.elo ?? 0
+
+  return {
+    platform: 'Luogu',
+    handle: user.name,
+    rating,
+    maxRating: rating,
+    rank: typeof user.ranking === 'number' ? `#${user.ranking}` : undefined,
+    avatar: user.avatar,
+    registeredAt: formatDateTimeFromSeconds(user.registerTime),
+  }
+}
+
+export function normalizeLuoguPracticeProblem(
+  problem: LuoguPracticeProblem,
+  verdict: SubmissionStatus,
+  tagNames: string[] = [],
+): OjSubmission {
+  const rating = luoguDifficultyRatings.get(problem.difficulty)
+  const label = luoguDifficultyLabels.get(problem.difficulty) ?? '未知难度'
+  const tags = [...new Set([...tagNames, label, problem.type])]
+
+  return {
+    id: `luogu-${verdict === 'Accepted' ? 'ac' : 'tried'}-${problem.pid}`,
+    platform: 'Luogu',
+    problemId: problem.pid,
+    problemTitle: `${problem.pid} ${problem.title}`,
+    difficulty: typeof rating === 'number' ? String(rating) : 'Unrated',
+    tags,
+    verdict,
+    language: 'N/A',
+    submittedAt: '公开练习页',
+    runtime: 'N/A',
   }
 }
 

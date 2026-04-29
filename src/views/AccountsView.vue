@@ -47,7 +47,11 @@ function removeAccount(id: string, platformName: OjPlatform) {
 }
 
 function getSyncButtonText(platformName: OjPlatform) {
-  return platformName === 'Luogu' ? '模拟同步' : '同步'
+  return platformName === 'Luogu' ? '同步公开练习' : '同步'
+}
+
+function shouldShowRating(platformName: OjPlatform) {
+  return platformName === 'Codeforces'
 }
 </script>
 
@@ -80,8 +84,8 @@ function getSyncButtonText(platformName: OjPlatform) {
       </form>
 
       <p class="form-note">
-        Codeforces 使用官方公开 API；AtCoder 使用 AtCoder Problems 公开 API；Luogu 暂时继续使用
-        mock 同步。AlgoLink 只保存公开用户名，不收集任何 OJ 密码。
+        Codeforces 使用官方公开 API；AtCoder 使用 AtCoder Problems 公开 API；Luogu 使用公开练习页数据。
+        AlgoLink 只保存公开用户名，不收集任何 OJ 密码。
       </p>
     </section>
 
@@ -100,11 +104,11 @@ function getSyncButtonText(platformName: OjPlatform) {
           <h3>{{ account.platform }}</h3>
           <p>@{{ account.handle }}</p>
           <dl>
-            <div>
+            <div v-if="shouldShowRating(account.platform)">
               <dt>当前 rating</dt>
               <dd>{{ account.rating || '-' }}</dd>
             </div>
-            <div>
+            <div v-if="shouldShowRating(account.platform)">
               <dt>最高 rating</dt>
               <dd>{{ account.maxRating || '-' }}</dd>
             </div>
@@ -115,6 +119,10 @@ function getSyncButtonText(platformName: OjPlatform) {
             <div>
               <dt>最近同步</dt>
               <dd>{{ account.lastSyncAt }}</dd>
+            </div>
+            <div v-if="account.platform !== 'Codeforces'">
+              <dt>数据来源</dt>
+              <dd>{{ account.platform === 'AtCoder' ? '公开提交' : '公开练习' }}</dd>
             </div>
           </dl>
           <div class="account-actions">

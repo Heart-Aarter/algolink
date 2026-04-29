@@ -5,6 +5,7 @@ import {
   parseSubmittedAt,
   type DifficultyBucket,
 } from '@/utils/analysis'
+import { getAlgorithmTags, getDisplayTags } from '@/utils/tags'
 import { matchesVerdictFilter, type VerdictFilter } from '@/utils/verdict'
 
 export type PlatformFilter = 'All' | OjPlatform
@@ -27,7 +28,7 @@ export const sortOptions: Array<{ value: SubmissionSortKey; label: string }> = [
 ]
 
 export function extractSubmissionTags(submissions: SubmissionRecord[]) {
-  return [...new Set(submissions.flatMap((submission) => submission.tags))]
+  return [...new Set(submissions.flatMap((submission) => getAlgorithmTags(submission.tags)))]
     .filter(Boolean)
     .sort((left, right) => left.localeCompare(right))
 }
@@ -42,7 +43,7 @@ function matchesKeyword(submission: SubmissionRecord, keyword: string) {
   return [
     submission.problem,
     submission.problemId,
-    submission.tags.join(' '),
+    getDisplayTags(submission).join(' '),
     submission.language,
   ]
     .filter(Boolean)
@@ -70,7 +71,7 @@ export function filterSubmissions(
   const filtered = submissions.filter((submission) => {
     const platformMatched = filters.platform === 'All' || submission.platform === filters.platform
     const verdictMatched = matchesVerdictFilter(submission.status, filters.verdict)
-    const tagMatched = filters.tag === 'All' || submission.tags.includes(filters.tag)
+    const tagMatched = filters.tag === 'All' || getAlgorithmTags(submission.tags).includes(filters.tag)
     const difficultyMatched =
       filters.difficulty === 'All' || getDifficultyBucket(submission.difficulty) === filters.difficulty
 
