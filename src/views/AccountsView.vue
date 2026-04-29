@@ -8,6 +8,7 @@ const store = useAlgoLinkStore()
 const message = useMessage()
 const platform = ref<OjPlatform | null>(store.settings.defaultPlatform)
 const handle = ref('')
+const bindingAccount = ref(false)
 const syncingId = ref('')
 
 const platformOptions = computed(() =>
@@ -17,8 +18,14 @@ const platformOptions = computed(() =>
   })),
 )
 
-function submitAccount() {
-  const result = store.addAccount(platform.value || '', handle.value)
+async function submitAccount() {
+  if (bindingAccount.value) {
+    return
+  }
+
+  bindingAccount.value = true
+  const result = await store.bindAccount(platform.value || '', handle.value)
+  bindingAccount.value = false
 
   if (result.ok) {
     message.success(result.message)
@@ -82,6 +89,11 @@ function shouldShowRating(platformName: OjPlatform) {
         </label>
         <n-button type="primary" attr-type="submit" strong>绑定账号</n-button>
       </form>
+
+      <p class="form-note">
+        Codeforces 绑定：10 分钟内去 CF 1A 提交一发 CE；AtCoder 绑定：10 分钟内去
+        practice_1 提交一发 CE。验证只读取公开提交记录。
+      </p>
 
       <p class="form-note">
         Codeforces 使用官方公开 API；AtCoder 使用 AtCoder Problems 公开 API；Luogu 使用公开练习页数据。

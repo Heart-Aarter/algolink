@@ -9,8 +9,13 @@ import {
   fetchCodeforcesRating,
   fetchCodeforcesSubmissions,
   fetchCodeforcesUser,
+  hasRecentCodeforcesBindingCe,
 } from '@/services/codeforces'
-import { fetchAtCoderSubmissions, fetchAtCoderUser } from '@/services/atcoder'
+import {
+  fetchAtCoderSubmissions,
+  fetchAtCoderUser,
+  hasRecentAtCoderBindingCe,
+} from '@/services/atcoder'
 import { fetchDailyProblems } from '@/services/dailyChallenge'
 import { fetchLuoguSubmissions, fetchLuoguUser } from '@/services/luogu'
 import { toSubmissionRecord } from '@/services/normalizers'
@@ -215,6 +220,54 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     return Math.round((done / Math.max(weeklyPlanDays.value.length, 1)) * 100)
   })
   const todayPlan = computed(() => weeklyPlanDays.value[0])
+
+  async function bindAccount(
+    platform: OjPlatform | '',
+    handle: string,
+  ): Promise<{ ok: boolean; message: string }> {
+    const trimmedHandle = handle.trim()
+
+    if (!platform) {
+      return { ok: false, message: '请选择平台' }
+    }
+
+    if (!trimmedHandle) {
+      return { ok: false, message: '请输入公开用户名 / handle' }
+    }
+
+    if (accounts.value.some((item) => item.platform === platform)) {
+      return { ok: false, message: `${platform} 已绑定账号，不能重复绑定同一平台` }
+    }
+
+    try {
+      if (platform === 'Codeforces') {
+        const verified = await hasRecentCodeforcesBindingCe(trimmedHandle)
+
+        if (!verified) {
+          return {
+            ok: false,
+            message: '未检测到 10 分钟内在 Codeforces 1A 的 CE 提交，请提交后再绑定。',
+          }
+        }
+      }
+
+      if (platform === 'AtCoder') {
+        const verified = await hasRecentAtCoderBindingCe(trimmedHandle)
+
+        if (!verified) {
+          return {
+            ok: false,
+            message: '未检测到 10 分钟内在 AtCoder practice_1 的 CE 提交，请提交后再绑定。',
+          }
+        }
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : `${platform} 公开提交读取失败`
+      return { ok: false, message: `${platform} 绑定验证失败：${message}` }
+    }
+
+    return addAccount(platform, trimmedHandle)
+  }
 
   function addAccount(platform: OjPlatform | '', handle: string): { ok: boolean; message: string } {
     const trimmedHandle = handle.trim()
@@ -587,6 +640,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     currentUsername,
     dailyChallenge,
     leaderboard,
+    bindAccount,
     addAccount,
     removeAccount,
     syncAccount,

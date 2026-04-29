@@ -117,3 +117,25 @@ export async function fetchCodeforcesSubmissions(
 
   return result.map(normalizeCodeforcesSubmission)
 }
+
+export async function hasRecentCodeforcesBindingCe(handle: string): Promise<boolean> {
+  const normalizedHandle = normalizeHandle(handle)
+  const tenMinutesAgoSeconds = Math.floor(Date.now() / 1000) - 10 * 60
+  const result = await requestCodeforces<CodeforcesSubmission[]>(
+    'user.status',
+    {
+      handle: normalizedHandle,
+      from: 1,
+      count: 20,
+    },
+    `${normalizedHandle}:binding`,
+  )
+
+  return result.some(
+    (submission) =>
+      submission.creationTimeSeconds >= tenMinutesAgoSeconds &&
+      submission.verdict === 'COMPILATION_ERROR' &&
+      submission.problem.contestId === 1 &&
+      submission.problem.index.toUpperCase() === 'A',
+  )
+}
