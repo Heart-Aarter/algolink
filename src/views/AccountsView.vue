@@ -36,14 +36,18 @@ async function syncAccount(id: string, platformName: OjPlatform) {
 
   syncingId.value = id
   message.info(`${platformName} 正在同步...`)
-  const result = await store.syncCodeforcesAccount(id)
+  const result = await store.syncOjAccount(id)
   message[result.ok ? 'success' : 'error'](result.message)
   syncingId.value = ''
 }
 
 function removeAccount(id: string, platformName: OjPlatform) {
   store.removeAccount(id)
-  message.success(`${platformName} 已解绑`)
+  message.success(`${platformName} 账号已移除`)
+}
+
+function getSyncButtonText(platformName: OjPlatform) {
+  return platformName === 'Luogu' ? '模拟同步' : '同步'
 }
 </script>
 
@@ -55,7 +59,7 @@ function removeAccount(id: string, platformName: OjPlatform) {
           <p class="eyebrow">Public Handle Only</p>
           <h2>OJ 账号绑定</h2>
         </div>
-        <n-tag type="info" round>不收集密码</n-tag>
+        <n-tag type="info" round>仅使用公开数据</n-tag>
       </div>
 
       <form class="bind-form naive-bind-form" @submit.prevent="submitAccount">
@@ -65,19 +69,19 @@ function removeAccount(id: string, platformName: OjPlatform) {
             v-model:value="platform"
             :options="platformOptions"
             clearable
-            placeholder="请选择平台"
+            placeholder="选择 OJ 平台"
           />
         </label>
         <label>
-          用户名 / handle
-          <n-input v-model:value="handle" clearable placeholder="例如 tourist、abc_focus" />
+          公开用户名 / handle
+          <n-input v-model:value="handle" clearable placeholder="例如 tourist 或 chokudai" />
         </label>
         <n-button type="primary" attr-type="submit" strong>绑定账号</n-button>
       </form>
 
       <p class="form-note">
-        Codeforces 点击同步会请求官方公开 API；其他平台继续使用 mock 数据。只保存公开用户名，不收集
-        OJ 密码。
+        Codeforces 使用官方公开 API；AtCoder 使用 AtCoder Problems 公开 API；Luogu 暂时继续使用
+        mock 同步。AlgoLink 只保存公开用户名，不收集任何 OJ 密码。
       </p>
     </section>
 
@@ -121,25 +125,25 @@ function removeAccount(id: string, platformName: OjPlatform) {
               :disabled="!!syncingId && syncingId !== account.id"
               @click="syncAccount(account.id, account.platform)"
             >
-              {{ account.platform === 'Codeforces' ? '同步' : '模拟同步' }}
+              {{ getSyncButtonText(account.platform) }}
             </n-button>
             <n-popconfirm
-              positive-text="确认解绑"
+              positive-text="确认移除"
               negative-text="取消"
               @positive-click="removeAccount(account.id, account.platform)"
             >
               <template #trigger>
-                <n-button type="error" secondary :disabled="!!syncingId">解绑</n-button>
+                <n-button type="error" secondary :disabled="!!syncingId">移除</n-button>
               </template>
-              解绑后该平台本地同步数据会被移除，确认继续？
+              移除后会清空该平台已同步的本地提交记录。
             </n-popconfirm>
           </div>
         </article>
       </div>
 
-      <n-empty v-else description="还没有绑定账号" class="empty-state naive-empty">
+      <n-empty v-else description="还没有绑定公开账号" class="empty-state naive-empty">
         <template #extra>
-          <span>选择平台并输入公开 handle 后，Dashboard、提交记录和能力画像会读取对应数据。</span>
+          <span>选择平台并输入公开 handle 后，可以同步公开提交数据。</span>
         </template>
       </n-empty>
     </section>

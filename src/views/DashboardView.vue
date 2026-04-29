@@ -17,20 +17,18 @@ import {
 
 const store = useAlgoLinkStore()
 
-const codeforcesAccount = computed(() =>
-  store.accounts.find((account) => account.platform === 'Codeforces'),
+const syncedAccount = computed(() =>
+  store.accounts.find((account) => account.solved > 0 || account.lastSyncAt !== '等待同步'),
 )
 const fallbackCodeforcesAccount = computed(() =>
   mockAccounts.find((account) => account.platform === 'Codeforces'),
 )
-const dashboardAccount = computed(() => codeforcesAccount.value ?? fallbackCodeforcesAccount.value)
+const dashboardAccount = computed(() => syncedAccount.value ?? fallbackCodeforcesAccount.value)
 const dashboardSubmissions = computed(() =>
-  store.codeforcesSubmissions.length ? store.codeforcesSubmissions : store.submissions,
+  store.hasSyncedSubmissions ? store.syncedSubmissions : store.submissions,
 )
 const analysis = computed(() => calculateSubmissionAnalysis(dashboardSubmissions.value))
-const dataSourceLabel = computed(() =>
-  store.codeforcesSubmissions.length ? '真实 Codeforces 数据' : 'mock 兜底数据',
-)
+const dataSourceLabel = computed(() => store.submissionDataSourceLabel)
 
 const productHighlights = computed(() => [
   {
@@ -523,7 +521,7 @@ const visibleRecommendations = computed(() =>
       </div>
       <div class="report-entry-meta">
         <span>CF Submissions</span>
-        <strong>{{ store.codeforcesSubmissions.length }}</strong>
+        <strong>{{ store.syncedSubmissions.length }}</strong>
       </div>
       <RouterLink class="report-entry-action" to="/training-report">生成报告</RouterLink>
     </section>

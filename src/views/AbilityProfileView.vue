@@ -15,12 +15,10 @@ import {
 const store = useAlgoLinkStore()
 
 const analysisSubmissions = computed(() =>
-  store.codeforcesSubmissions.length ? store.codeforcesSubmissions : store.submissions,
+  store.hasSyncedSubmissions ? store.syncedSubmissions : store.submissions,
 )
 const analysis = computed(() => calculateSubmissionAnalysis(analysisSubmissions.value))
-const dataSourceLabel = computed(() =>
-  store.codeforcesSubmissions.length ? '真实 Codeforces 数据' : 'mock 兜底数据',
-)
+const dataSourceLabel = computed(() => store.submissionDataSourceLabel)
 
 const chartAxis = '#738195'
 const chartGrid = 'rgba(154, 170, 190, 0.1)'

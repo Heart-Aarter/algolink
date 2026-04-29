@@ -10,6 +10,7 @@ import {
   fetchCodeforcesSubmissions,
   fetchCodeforcesUser,
 } from '@/services/codeforces'
+import { fetchAtCoderSubmissions, fetchAtCoderUser } from '@/services/atcoder'
 import { toSubmissionRecord } from '@/services/normalizers'
 import { weeklyTrainingPlan } from '@/mock/trainingPlan'
 import type {
@@ -29,6 +30,7 @@ const storageKeys = {
   tasks: 'algolink.trainingTasks',
   weeklyPlanStatus: 'algolink.weeklyPlanStatus',
   codeforcesSubmissions: 'algolink.codeforcesSubmissions',
+  atcoderSubmissions: 'algolink.atcoderSubmissions',
 }
 
 export const supportedPlatforms: OjPlatform[] = ['Codeforces', 'Luogu', 'AtCoder']
@@ -86,14 +88,41 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const codeforcesSubmissions = ref<SubmissionRecord[]>(
     readStorage<SubmissionRecord[]>(storageKeys.codeforcesSubmissions, []),
   )
+  const atcoderSubmissions = ref<SubmissionRecord[]>(
+    readStorage<SubmissionRecord[]>(storageKeys.atcoderSubmissions, []),
+  )
+  const syncedSubmissions = computed(() => [
+    ...codeforcesSubmissions.value,
+    ...atcoderSubmissions.value,
+  ])
+  const hasSyncedSubmissions = computed(() => syncedSubmissions.value.length > 0)
+  const submissionDataSourceLabel = computed(() => {
+    const platforms = [
+      codeforcesSubmissions.value.length ? 'Codeforces' : '',
+      atcoderSubmissions.value.length ? 'AtCoder' : '',
+    ].filter(Boolean)
+
+    return platforms.length ? `真实 ${platforms.join(' + ')} 数据` : 'mock 兜底数据'
+  })
   const submissions = computed(() => {
-    if (!codeforcesSubmissions.value.length) {
+    if (!hasSyncedSubmissions.value) {
       return mockSubmissions
     }
 
     return [
       ...codeforcesSubmissions.value,
-      ...mockSubmissions.filter((item) => item.platform !== 'Codeforces'),
+      ...atcoderSubmissions.value,
+      ...mockSubmissions.filter((item) => {
+        if (item.platform === 'Codeforces') {
+          return !codeforcesSubmissions.value.length
+        }
+
+        if (item.platform === 'AtCoder') {
+          return !atcoderSubmissions.value.length
+        }
+
+        return true
+      }),
     ]
   })
 
@@ -151,7 +180,6 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       return { ok: false, message: `${platform} 已绑定账号，不能重复绑定同一平台` }
     }
 
-    const platformSubmissions = submissions.value.filter((item) => item.platform === platform)
     const nextAccount: OjAccount = {
       id: `${platform.toLowerCase()}-${Date.now()}`,
       platform,
@@ -159,8 +187,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       status: 'bound',
       rating: 0,
       maxRating: 0,
-      solved: platformSubmissions.filter((item) => item.status === 'Accepted').length,
-      lastSyncAt: formatDateTime(),
+      solved: 0,
+      lastSyncAt: '等待同步',
       color: platformColors[platform],
     }
 
@@ -173,12 +201,22 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     const removedAccount = accounts.value.find((item) => item.id === id)
     accounts.value = accounts.value.filter((item) => item.id !== id)
 
-    if (removedAccount?.platform === 'Codeforces') {
-      codeforcesSubmissions.value = []
-      writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
+    if (removedAccount?.platform === 'Codeforces' || removedAccount?.platform === 'AtCoder') {
+      clearSyncedSubmissions(removedAccount.platform)
     }
 
     writeStorage(storageKeys.accounts, accounts.value)
+  }
+
+  function clearSyncedSubmissions(platform: Extract<OjPlatform, 'Codeforces' | 'AtCoder'>) {
+    if (platform === 'Codeforces') {
+      codeforcesSubmissions.value = []
+      writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
+      return
+    }
+
+    atcoderSubmissions.value = []
+    writeStorage(storageKeys.atcoderSubmissions, atcoderSubmissions.value)
   }
 
   function syncAccount(id: string) {
@@ -238,6 +276,73 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     }
   }
 
+  async function syncAtCoderAccount(id: string): Promise<{ ok: boolean; message: string }> {
+    const account = accounts.value.find((item) => item.id === id)
+
+    if (!account) {
+      return { ok: false, message: '未找到要同步的账号。' }
+    }
+
+    if (account.platform !== 'AtCoder') {
+      syncAccount(id)
+      return { ok: true, message: `${account.platform} mock 数据已刷新。` }
+    }
+
+    try {
+      const [profile, syncedSubmissions] = await Promise.all([
+        fetchAtCoderUser(account.handle),
+        fetchAtCoderSubmissions(account.handle),
+      ])
+      const records = syncedSubmissions.map(toSubmissionRecord)
+      const acceptedProblems = new Set(
+        records.filter((item) => item.status === 'Accepted').map(getProblemKey),
+      )
+
+      atcoderSubmissions.value = records
+      accounts.value = accounts.value.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              handle: profile.handle,
+              rating: profile.rating,
+              maxRating: profile.maxRating,
+              solved: acceptedProblems.size,
+              lastSyncAt: formatDateTime(),
+            }
+          : item,
+      )
+      writeStorage(storageKeys.atcoderSubmissions, atcoderSubmissions.value)
+      writeStorage(storageKeys.accounts, accounts.value)
+
+      return {
+        ok: true,
+        message: `AtCoder 同步成功，已保存 ${records.length} 条公开提交。`,
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'AtCoder Problems API 请求失败'
+      return { ok: false, message: `AtCoder 同步失败：${message}` }
+    }
+  }
+
+  async function syncOjAccount(id: string): Promise<{ ok: boolean; message: string }> {
+    const account = accounts.value.find((item) => item.id === id)
+
+    if (!account) {
+      return { ok: false, message: '未找到要同步的账号。' }
+    }
+
+    if (account.platform === 'Codeforces') {
+      return syncCodeforcesAccount(id)
+    }
+
+    if (account.platform === 'AtCoder') {
+      return syncAtCoderAccount(id)
+    }
+
+    syncAccount(id)
+    return { ok: true, message: `${account.platform} mock 数据已刷新。` }
+  }
+
   function updateSettings(nextSettings: UserSettings) {
     settings.value = nextSettings
     writeStorage(storageKeys.settings, settings.value)
@@ -264,11 +369,13 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     trainingTasks.value = mockTrainingTasks
     weeklyPlanStatus.value = {}
     codeforcesSubmissions.value = []
+    atcoderSubmissions.value = []
     writeStorage(storageKeys.accounts, accounts.value)
     writeStorage(storageKeys.settings, settings.value)
     writeStorage(storageKeys.tasks, trainingTasks.value)
     writeStorage(storageKeys.weeklyPlanStatus, weeklyPlanStatus.value)
     writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
+    writeStorage(storageKeys.atcoderSubmissions, atcoderSubmissions.value)
   }
 
   return {
@@ -276,6 +383,10 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     settings,
     submissions,
     codeforcesSubmissions,
+    atcoderSubmissions,
+    syncedSubmissions,
+    hasSyncedSubmissions,
+    submissionDataSourceLabel,
     boundSubmissions,
     submissionAnalysis,
     trainingTasks,
@@ -291,6 +402,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     removeAccount,
     syncAccount,
     syncCodeforcesAccount,
+    syncAtCoderAccount,
+    syncOjAccount,
     updateSettings,
     updateTaskStatus,
     updateWeeklyPlanStatus,

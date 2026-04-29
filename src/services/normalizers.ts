@@ -43,6 +43,31 @@ export interface CodeforcesRatingChange {
   newRating: number
 }
 
+export interface AtCoderProblemsUserInfo {
+  user_id?: string
+  accepted_count?: number
+  accepted_count_rank?: number
+  rated_point_sum?: number
+  rated_point_sum_rank?: number
+}
+
+export interface AtCoderProblemsSubmission {
+  id: number
+  epoch_second: number
+  problem_id: string
+  contest_id: string
+  user_id: string
+  language: string
+  point?: number
+  result: string
+  execution_time?: number
+}
+
+export interface AtCoderProblemMeta {
+  title?: string
+  difficulty?: number
+}
+
 function formatDateTimeFromSeconds(seconds?: number) {
   if (!seconds) {
     return ''
@@ -74,6 +99,30 @@ function normalizeVerdict(verdict?: string): SubmissionStatus {
   }
 
   if (verdict === 'COMPILATION_ERROR') {
+    return 'Compilation Error'
+  }
+
+  return 'Unknown'
+}
+
+function normalizeAtCoderVerdict(result?: string): SubmissionStatus {
+  if (result === 'AC') {
+    return 'Accepted'
+  }
+
+  if (result === 'WA') {
+    return 'Wrong Answer'
+  }
+
+  if (result === 'TLE') {
+    return 'Time Limit'
+  }
+
+  if (result === 'RE' || result === 'OLE' || result === 'MLE') {
+    return 'Runtime Error'
+  }
+
+  if (result === 'CE') {
     return 'Compilation Error'
   }
 
@@ -138,6 +187,42 @@ export function normalizeCodeforcesRating(change: CodeforcesRatingChange): OjRat
     oldRating: change.oldRating,
     newRating: change.newRating,
     ratingUpdatedAt: formatDateTimeFromSeconds(change.ratingUpdateTimeSeconds),
+  }
+}
+
+export function normalizeAtCoderUser(handle: string, user: AtCoderProblemsUserInfo): OjProfile {
+  return {
+    platform: 'AtCoder',
+    handle: user.user_id || handle,
+    rating: user.rated_point_sum ?? 0,
+    maxRating: user.rated_point_sum ?? 0,
+    rank:
+      typeof user.rated_point_sum_rank === 'number' ? `#${user.rated_point_sum_rank}` : undefined,
+  }
+}
+
+export function normalizeAtCoderSubmission(
+  submission: AtCoderProblemsSubmission,
+  meta?: AtCoderProblemMeta,
+): OjSubmission {
+  const problemId = submission.problem_id
+  const problemTitle = meta?.title
+    ? `${problemId} ${meta.title}`
+    : `${problemId} (${submission.contest_id})`
+
+  return {
+    id: `atcoder-${submission.id}`,
+    platform: 'AtCoder',
+    problemId,
+    problemTitle,
+    difficulty:
+      typeof meta?.difficulty === 'number' ? String(Math.round(meta.difficulty)) : 'Unrated',
+    tags: [submission.contest_id],
+    verdict: normalizeAtCoderVerdict(submission.result),
+    language: submission.language,
+    submittedAt: formatDateTimeFromSeconds(submission.epoch_second),
+    runtime:
+      typeof submission.execution_time === 'number' ? `${submission.execution_time} ms` : 'N/A',
   }
 }
 

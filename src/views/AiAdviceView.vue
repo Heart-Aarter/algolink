@@ -11,13 +11,11 @@ const activeMode = ref<'rules' | 'weak-tags' | 'weekly-plan' | 'recommendations'
 const isGenerating = ref(false)
 
 const analysisSubmissions = computed(() =>
-  store.codeforcesSubmissions.length ? store.codeforcesSubmissions : store.submissions,
+  store.hasSyncedSubmissions ? store.syncedSubmissions : store.submissions,
 )
 const summary = computed(() => getTrainingSummary(analysisSubmissions.value))
 const weakTagDetails = computed(() => getTagAnalysis(analysisSubmissions.value).slice(0, 5))
-const dataSourceLabel = computed(() =>
-  store.codeforcesSubmissions.length ? '真实 Codeforces 数据' : 'mock 兜底数据',
-)
+const dataSourceLabel = computed(() => store.submissionDataSourceLabel)
 
 const weeklyPlanSummary = computed(() => ({
   days: weeklyTrainingPlan.length,
