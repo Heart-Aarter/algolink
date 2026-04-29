@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { useTheme } from '@/composables/useTheme'
 import { useAlgoLinkStore } from '@/stores/algolink'
 
 const route = useRoute()
 const store = useAlgoLinkStore()
-const theme = ref<'dark' | 'light'>('dark')
+const { theme, initTheme } = useTheme()
 
 const routeTitle = computed(() => {
   if (typeof route.meta.title === 'string') {
@@ -58,8 +59,7 @@ function toggleTheme(event: MouseEvent) {
 }
 
 onMounted(() => {
-  const savedTheme = localStorage.getItem('algolink.theme')
-  applyTheme(savedTheme === 'light' ? 'light' : 'dark')
+  initTheme()
 })
 </script>
 

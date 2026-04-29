@@ -1340,8 +1340,14 @@ select:focus {
 }
 
 .submission-filter-bar {
-  justify-content: flex-end;
-  max-width: 920px;
+  display: grid;
+  grid-template-columns: minmax(240px, 1.4fr) repeat(5, minmax(126px, 1fr));
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, var(--glass-highlight), transparent 40%), var(--color-panel-muted);
 }
 
 .submission-filter-bar input {
@@ -1423,11 +1429,11 @@ select:focus {
 }
 
 .naive-filter-bar .n-input {
-  min-width: 260px;
+  min-width: 0;
 }
 
 .naive-filter-bar .n-select {
-  width: 136px;
+  width: 100%;
 }
 
 .naive-pagination-bar {
@@ -1439,6 +1445,64 @@ select:focus {
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background: var(--color-panel-muted);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+}
+
+.submission-data-table .n-data-table-th {
+  background: var(--color-panel-soft);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.submission-data-table .n-data-table-td {
+  background: var(--color-panel);
+  color: var(--color-text);
+}
+
+.submission-data-table .n-data-table-tr:hover .n-data-table-td {
+  background: var(--color-panel-soft);
+}
+
+.submission-platform,
+.difficulty-chip,
+.runtime-cell {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-accent-soft);
+  color: var(--color-heading);
+  font-size: 12px;
+  font-weight: 780;
+}
+
+.platform-luogu {
+  background: rgba(120, 200, 145, 0.13);
+}
+
+.platform-atcoder {
+  background: rgba(127, 164, 216, 0.13);
+}
+
+.submission-problem {
+  display: grid;
+  gap: 3px;
+}
+
+.submission-problem strong {
+  color: var(--color-heading);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.submission-problem span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 680;
 }
 
 .submission-tags {
@@ -1778,6 +1842,14 @@ td {
   .plan-board {
     grid-template-columns: 1fr;
   }
+
+  .submission-filter-bar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .submission-filter-bar .n-input {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 960px) {
@@ -1828,6 +1900,10 @@ td {
   .filter-bar {
     flex-direction: column;
     width: 100%;
+  }
+
+  .submission-filter-bar {
+    grid-template-columns: 1fr;
   }
 
   .pagination-bar,
