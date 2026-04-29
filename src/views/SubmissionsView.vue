@@ -82,9 +82,37 @@ const sortSelectOptions = sortOptions.map((item) => ({
 }))
 
 const columns: DataTableColumns<SubmissionRecord> = [
-  { title: '平台', key: 'platform', width: 110 },
-  { title: '题目', key: 'problem', minWidth: 220 },
-  { title: '难度', key: 'difficulty', width: 100 },
+  {
+    title: '平台',
+    key: 'platform',
+    width: 118,
+    render(row) {
+      return h(
+        'span',
+        { class: ['submission-platform', `platform-${row.platform.toLowerCase()}`] },
+        row.platform,
+      )
+    },
+  },
+  {
+    title: '题目',
+    key: 'problem',
+    minWidth: 260,
+    render(row) {
+      return h('div', { class: 'submission-problem' }, [
+        h('strong', row.problem),
+        h('span', row.problemId || 'Untracked'),
+      ])
+    },
+  },
+  {
+    title: '难度',
+    key: 'difficulty',
+    width: 104,
+    render(row) {
+      return h('span', { class: 'difficulty-chip' }, row.difficulty)
+    },
+  },
   {
     title: '标签',
     key: 'tags',
@@ -113,8 +141,15 @@ const columns: DataTableColumns<SubmissionRecord> = [
     },
   },
   { title: '语言', key: 'language', width: 140 },
-  { title: '运行时间', key: 'runtime', width: 110 },
-  { title: '提交时间', key: 'submittedAt', width: 150 },
+  {
+    title: '运行时间',
+    key: 'runtime',
+    width: 112,
+    render(row) {
+      return h('span', { class: 'runtime-cell' }, row.runtime || '-')
+    },
+  },
+  { title: '提交时间', key: 'submittedAt', width: 156 },
 ]
 
 watch(
