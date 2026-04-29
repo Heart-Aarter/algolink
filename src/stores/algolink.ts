@@ -11,12 +11,15 @@ import {
   fetchCodeforcesUser,
 } from '@/services/codeforces'
 import { fetchAtCoderSubmissions, fetchAtCoderUser } from '@/services/atcoder'
+import { fetchDailyProblems } from '@/services/dailyChallenge'
 import { fetchLuoguSubmissions, fetchLuoguUser } from '@/services/luogu'
 import { toSubmissionRecord } from '@/services/normalizers'
 import { weeklyTrainingPlan } from '@/mock/trainingPlan'
 import type {
   OjAccount,
   OjPlatform,
+  DailyChallengeState,
+  LeaderboardEntry,
   SubmissionRecord,
   TrainingPlanStatus,
   TrainingTask,
@@ -33,6 +36,8 @@ const storageKeys = {
   codeforcesSubmissions: 'algolink.codeforcesSubmissions',
   atcoderSubmissions: 'algolink.atcoderSubmissions',
   luoguSubmissions: 'algolink.luoguSubmissions',
+  dailyChallenge: 'algolink.dailyChallenge',
+  leaderboard: 'algolink.leaderboard',
 }
 
 export const supportedPlatforms: OjPlatform[] = ['Codeforces', 'Luogu', 'AtCoder']
@@ -43,11 +48,23 @@ const platformColors: Record<OjPlatform, string> = {
   AtCoder: '#8db1c7',
 }
 
+const defaultLeaderboard: LeaderboardEntry[] = [
+  { username: 'tourist', score: 6200 },
+  { username: 'StudyingFather', score: 4300 },
+  { username: 'bc_focus', score: 3100 },
+  { username: 'AlgoLinkUser', score: 0 },
+]
+
 function formatDateTime(date = new Date()) {
   const pad = (value: number) => String(value).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(
     date.getHours(),
   )}:${pad(date.getMinutes())}`
+}
+
+function formatDateKey(date = new Date()) {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
 type StoredOjAccount = Partial<OjAccount> & { lastSync?: string }
@@ -95,6 +112,12 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   )
   const luoguSubmissions = ref<SubmissionRecord[]>(
     readStorage<SubmissionRecord[]>(storageKeys.luoguSubmissions, []),
+  )
+  const dailyChallenge = ref<DailyChallengeState | null>(
+    readStorage<DailyChallengeState | null>(storageKeys.dailyChallenge, null),
+  )
+  const leaderboardEntries = ref<LeaderboardEntry[]>(
+    readStorage<LeaderboardEntry[]>(storageKeys.leaderboard, defaultLeaderboard),
   )
   const syncedSubmissions = computed(() => [
     ...codeforcesSubmissions.value,
@@ -153,6 +176,22 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const activePlanCount = computed(
     () => trainingTasks.value.filter((item) => item.status !== 'done').length,
   )
+  const currentUsername = computed(() => accounts.value[0]?.handle || 'AlgoLinkUser')
+  const leaderboard = computed(() => {
+    const board = new Map<string, number>()
+
+    for (const entry of leaderboardEntries.value) {
+      board.set(entry.username, Math.max(board.get(entry.username) ?? 0, entry.score))
+    }
+
+    if (!board.has(currentUsername.value)) {
+      board.set(currentUsername.value, 0)
+    }
+
+    return [...board.entries()]
+      .map(([username, score]) => ({ username, score }))
+      .sort((left, right) => right.score - left.score || left.username.localeCompare(right.username))
+  })
   const platformSyncCards = computed(() =>
     supportedPlatforms.map((platform) => {
       const account = accounts.value.find((item) => item.platform === platform)
@@ -416,6 +455,73 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     return { ok: false, message: `${account.platform} 暂不支持同步。` }
   }
 
+  async function loadDailyChallenge(): Promise<{ ok: boolean; message: string }> {
+    const today = formatDateKey()
+
+    if (dailyChallenge.value?.date === today && dailyChallenge.value.problems.length === 2) {
+      return { ok: true, message: '今日题目已加载。' }
+    }
+
+    try {
+      const problems = await fetchDailyProblems(today)
+
+      dailyChallenge.value = {
+        date: today,
+        problems,
+        completedProblemIds: [],
+        awardedScore: 0,
+      }
+      writeStorage(storageKeys.dailyChallenge, dailyChallenge.value)
+
+      return { ok: true, message: '每日一题已刷新。' }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '每日一题题库请求失败'
+      return { ok: false, message }
+    }
+  }
+
+  function completeDailyProblem(problemId: string) {
+    if (!dailyChallenge.value) {
+      return { ok: false, message: '请先加载每日一题。' }
+    }
+
+    if (!dailyChallenge.value.completedProblemIds.includes(problemId)) {
+      dailyChallenge.value.completedProblemIds = [
+        ...dailyChallenge.value.completedProblemIds,
+        problemId,
+      ]
+    }
+
+    const completedProblems = dailyChallenge.value.problems.filter((problem) =>
+      dailyChallenge.value?.completedProblemIds.includes(problem.id),
+    )
+    const nextAwardedScore = Math.max(0, ...completedProblems.map((problem) => problem.difficulty))
+    const delta = nextAwardedScore - dailyChallenge.value.awardedScore
+
+    dailyChallenge.value.awardedScore = nextAwardedScore
+    writeStorage(storageKeys.dailyChallenge, dailyChallenge.value)
+
+    if (delta > 0) {
+      addLeaderboardScore(currentUsername.value, delta)
+    }
+
+    return { ok: true, message: `每日一题已完成，本日计分 ${nextAwardedScore}。` }
+  }
+
+  function addLeaderboardScore(username: string, score: number) {
+    const existing = leaderboardEntries.value.find((entry) => entry.username === username)
+
+    if (existing) {
+      leaderboardEntries.value = leaderboardEntries.value.map((entry) =>
+        entry.username === username ? { ...entry, score: entry.score + score } : entry,
+      )
+    } else {
+      leaderboardEntries.value = [...leaderboardEntries.value, { username, score }]
+    }
+
+    writeStorage(storageKeys.leaderboard, leaderboardEntries.value)
+  }
+
   function updateSettings(nextSettings: UserSettings) {
     settings.value = nextSettings
     writeStorage(storageKeys.settings, settings.value)
@@ -451,6 +557,10 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
     writeStorage(storageKeys.atcoderSubmissions, atcoderSubmissions.value)
     writeStorage(storageKeys.luoguSubmissions, luoguSubmissions.value)
+    dailyChallenge.value = null
+    leaderboardEntries.value = defaultLeaderboard
+    writeStorage(storageKeys.dailyChallenge, dailyChallenge.value)
+    writeStorage(storageKeys.leaderboard, leaderboardEntries.value)
   }
 
   return {
@@ -474,6 +584,9 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     totalSolved,
     acceptanceRate,
     activePlanCount,
+    currentUsername,
+    dailyChallenge,
+    leaderboard,
     addAccount,
     removeAccount,
     syncAccount,
@@ -481,6 +594,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     syncAtCoderAccount,
     syncLuoguAccount,
     syncOjAccount,
+    loadDailyChallenge,
+    completeDailyProblem,
     updateSettings,
     updateTaskStatus,
     updateWeeklyPlanStatus,

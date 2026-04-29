@@ -47,6 +47,18 @@ const router = createRouter({
       meta: { title: '训练计划' },
     },
     {
+      path: '/daily',
+      name: 'daily',
+      component: () => import('@/views/DailyChallengeView.vue'),
+      meta: { title: '每日一题' },
+    },
+    {
+      path: '/leaderboard',
+      name: 'leaderboard',
+      component: () => import('@/views/LeaderboardView.vue'),
+      meta: { title: '排行榜' },
+    },
+    {
       path: '/settings',
       name: 'settings',
       component: () => import('@/views/SettingsView.vue'),

@@ -9,7 +9,9 @@ const navItems = [
   { path: '/ai-advice', label: 'AI 训练建议', icon: '05' },
   { path: '/training-report', label: '训练报告', icon: '06' },
   { path: '/training-plan', label: '训练计划', icon: '07' },
-  { path: '/settings', label: '设置', icon: '08' },
+  { path: '/daily', label: '每日一题', icon: '08' },
+  { path: '/leaderboard', label: '排行榜', icon: '09' },
+  { path: '/settings', label: '设置', icon: '10' },
 ]
 </script>
 

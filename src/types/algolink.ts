@@ -33,6 +33,29 @@ export interface SubmissionRecord {
   runtime: string
 }
 
+export type DailyDifficulty = 'easy' | 'hard'
+
+export interface DailyProblem {
+  id: string
+  platform: 'Codeforces' | 'Luogu'
+  title: string
+  difficulty: number
+  level: DailyDifficulty
+  url: string
+}
+
+export interface DailyChallengeState {
+  date: string
+  problems: DailyProblem[]
+  completedProblemIds: string[]
+  awardedScore: number
+}
+
+export interface LeaderboardEntry {
+  username: string
+  score: number
+}
+
 export interface AbilityMetric {
   name: string
   score: number
