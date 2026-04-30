@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 
 const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:3001'
 
@@ -6,6 +6,34 @@ const apiClient = axios.create({
   baseURL: apiBase,
   timeout: 10000,
 })
+
+function getApiErrorMessage(error: unknown) {
+  if (!axios.isAxiosError(error)) {
+    return error instanceof Error ? error.message : '请求失败，请稍后重试'
+  }
+
+  const axiosError = error as AxiosError<{ error?: string }>
+  const serverMessage = axiosError.response?.data?.error
+
+  if (serverMessage) {
+    return serverMessage
+  }
+
+  if (axiosError.code === 'ECONNABORTED') {
+    return '请求超时，请稍后重试'
+  }
+
+  if (!axiosError.response) {
+    return '无法连接到服务器，已保留本地缓存'
+  }
+
+  return `服务器请求失败 (${axiosError.response.status})`
+}
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => Promise.reject(new Error(getApiErrorMessage(error))),
+)
 
 export interface LoginUserResponse {
   userId: string

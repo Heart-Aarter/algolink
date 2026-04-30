@@ -289,6 +289,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const leaderboardEntries = ref<LeaderboardEntry[]>(
     readStorage<LeaderboardEntry[]>(storageKeys.leaderboard, defaultLeaderboard),
   )
+  const serverSyncMessage = ref('')
   const autoSyncState = ref({
     running: false,
     lastRunAt: '',
@@ -308,9 +309,13 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       return
     }
 
-    saveAccounts(currentUserId.value, accounts.value).catch(() => {
-      // server push is best-effort, local data already persisted
-    })
+    saveAccounts(currentUserId.value, accounts.value)
+      .then(() => {
+        serverSyncMessage.value = ''
+      })
+      .catch(() => {
+        serverSyncMessage.value = 'Server sync failed. Local cache is kept.'
+      })
   }
 
   function getSubmissionCache() {
@@ -337,9 +342,13 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       return
     }
 
-    saveSubmissions(currentUserId.value, getSubmissionCache()).catch(() => {
-      // server push is best-effort, local data already persisted
-    })
+    saveSubmissions(currentUserId.value, getSubmissionCache())
+      .then(() => {
+        serverSyncMessage.value = ''
+      })
+      .catch(() => {
+        serverSyncMessage.value = 'Server sync failed. Local cache is kept.'
+      })
   }
 
   function getTrainingPlanCache(): TrainingPlanCache {
@@ -362,9 +371,13 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       return
     }
 
-    saveSettings(currentUserId.value, settings.value).catch(() => {
-      // server push is best-effort, local data already persisted
-    })
+    saveSettings(currentUserId.value, settings.value)
+      .then(() => {
+        serverSyncMessage.value = ''
+      })
+      .catch(() => {
+        serverSyncMessage.value = 'Server sync failed. Local cache is kept.'
+      })
   }
 
   function persistTrainingPlan() {
@@ -383,9 +396,13 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       return
     }
 
-    saveTrainingPlan(currentUserId.value, getTrainingPlanCache()).catch(() => {
-      // server push is best-effort, local data already persisted
-    })
+    saveTrainingPlan(currentUserId.value, getTrainingPlanCache())
+      .then(() => {
+        serverSyncMessage.value = ''
+      })
+      .catch(() => {
+        serverSyncMessage.value = 'Server sync failed. Local cache is kept.'
+      })
   }
 
   function persistDailyChallenge() {
@@ -400,9 +417,13 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       return
     }
 
-    saveDailyChallenge(currentUserId.value, dailyChallenge.value).catch(() => {
-      // server push is best-effort, local data already persisted
-    })
+    saveDailyChallenge(currentUserId.value, dailyChallenge.value)
+      .then(() => {
+        serverSyncMessage.value = ''
+      })
+      .catch(() => {
+        serverSyncMessage.value = 'Server sync failed. Local cache is kept.'
+      })
   }
 
   function persistLeaderboard() {
@@ -418,15 +439,48 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
         leaderboardEntries.value = serverItems
         persistLeaderboard()
       }
+      serverSyncMessage.value = ''
     } catch {
-      // keep local cached leaderboard as fallback
+      serverSyncMessage.value = 'Server unavailable. Showing local cache.'
     }
   }
 
   function pushLeaderboardScore(username: string, score: number) {
-    submitLeaderboard(username, score).catch(() => {
-      // server push is best-effort, local data already persisted
-    })
+    submitLeaderboard(username, score)
+      .then(() => {
+        serverSyncMessage.value = ''
+      })
+      .catch(() => {
+        serverSyncMessage.value = 'Server sync failed. Local cache is kept.'
+      })
+  }
+
+  function applyLocalUserCache(userId: string) {
+    accounts.value = normalizeAccounts(
+      readStorage<StoredOjAccount[]>(getUserCacheKey(userId, 'accounts'), []),
+    )
+
+    const cachedSubmissions = normalizeSubmissionCache(
+      readStorage<unknown>(getUserCacheKey(userId, 'submissions'), {}),
+    )
+    codeforcesSubmissions.value = cachedSubmissions.Codeforces
+    atcoderSubmissions.value = cachedSubmissions.AtCoder
+    luoguSubmissions.value = cachedSubmissions.Luogu
+
+    settings.value = normalizeSettings(
+      readStorage<unknown>(getUserCacheKey(userId, 'settings'), defaultSettings),
+    )
+
+    const cachedTrainingPlan = normalizeTrainingPlan(
+      readStorage<unknown>(getUserCacheKey(userId, 'trainingPlan'), {}),
+    )
+    trainingTasks.value = cachedTrainingPlan.trainingTasks
+    weeklyPlanItems.value = cachedTrainingPlan.weeklyPlanItems
+    weeklyPlanStatus.value = cachedTrainingPlan.weeklyPlanStatus
+
+    dailyChallenge.value = normalizeDailyChallenge(
+      readStorage<unknown>(getUserCacheKey(userId, 'dailyChallenge'), null),
+    )
   }
 
   const syncedSubmissions = computed(() => [
@@ -533,7 +587,16 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     const userId = currentUserId.value
     const userAccountsKey = getUserCacheKey(userId, 'accounts')
     const hasUserAccountsCache = hasStorageValue(userAccountsKey)
-    const serverData = await getUserData(userId)
+    let serverData: Awaited<ReturnType<typeof getUserData>>
+
+    try {
+      serverData = await getUserData(userId)
+    } catch {
+      serverSyncMessage.value = 'Server unavailable. Showing local cache.'
+      return
+    }
+    serverSyncMessage.value = ''
+
     const serverAccounts = normalizeAccounts(serverData.accounts as StoredOjAccount[])
 
     if (serverAccounts.length > 0) {
@@ -653,6 +716,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       currentUsername.value = user.username
       writeStorage(storageKeys.currentUserId, currentUserId.value)
       writeStorage(storageKeys.currentUsername, currentUsername.value)
+      applyLocalUserCache(user.userId)
       await initServerSync(!previousUserId)
 
       return { ok: true, message: `已切换到用户 ${user.username}` }
@@ -1210,6 +1274,10 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
   void syncLeaderboardFromServer()
 
+  if (currentUserId.value) {
+    void initServerSync()
+  }
+
   return {
     accounts,
     settings,
@@ -1235,6 +1303,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     currentUsername,
     dailyChallenge,
     leaderboard,
+    serverSyncMessage,
     autoSyncState,
     initServerSync,
     loginSimpleUser,

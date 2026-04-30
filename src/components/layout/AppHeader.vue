@@ -129,6 +129,10 @@ onMounted(() => {
         <span>训练项</span>
         <strong>{{ store.activePlanCount }}</strong>
       </div>
+      <div v-if="store.serverSyncMessage" class="sync-card server-warning">
+        <span>Sync</span>
+        <strong>{{ store.serverSyncMessage }}</strong>
+      </div>
       <RouterLink class="primary-action" to="/accounts">绑定账号</RouterLink>
     </div>
   </header>
@@ -266,6 +270,20 @@ h1 {
   font-weight: 800;
 }
 
+.server-warning {
+  max-width: 220px;
+}
+
+.server-warning strong {
+  display: block;
+  overflow: hidden;
+  color: var(--color-warning);
+  font-size: 12px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .primary-action {
   display: inline-flex;
   align-items: center;
@@ -311,6 +329,11 @@ h1 {
   .primary-action {
     justify-content: center;
     grid-column: 1 / -1;
+  }
+
+  .server-warning {
+    grid-column: 1 / -1;
+    max-width: none;
   }
 }
 </style>

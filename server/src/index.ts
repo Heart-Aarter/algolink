@@ -1,5 +1,6 @@
 import cors from 'cors'
 import express from 'express'
+import type { ErrorRequestHandler, RequestHandler } from 'express'
 import { initDatabase } from './db.js'
 import accountsRouter from './routes/accounts.js'
 import dailyRouter from './routes/daily.js'
@@ -17,6 +18,18 @@ initDatabase()
 app.use(cors())
 app.use(express.json())
 
+const requestLogger: RequestHandler = (req, res, next) => {
+  const startedAt = Date.now()
+
+  res.on('finish', () => {
+    console.log(`${req.method} ${req.originalUrl} ${res.statusCode} ${Date.now() - startedAt}ms`)
+  })
+
+  next()
+}
+
+app.use(requestLogger)
+
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true })
 })
@@ -28,6 +41,22 @@ app.use('/api/user', settingsRouter)
 app.use('/api/user', trainingPlanRouter)
 app.use('/api/user', dailyRouter)
 app.use('/api/leaderboard', leaderboardRouter)
+
+app.use('/api', (_req, res) => {
+  res.status(404).json({ error: 'api route not found' })
+})
+
+const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
+  console.error(error)
+
+  if (res.headersSent) {
+    return
+  }
+
+  res.status(500).json({ error: 'internal server error' })
+}
+
+app.use(errorHandler)
 
 app.listen(port, () => {
   console.log(`AlgoLink API server listening on http://localhost:${port}`)
