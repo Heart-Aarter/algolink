@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { NButton, NInput, useMessage } from 'naive-ui'
 import { RouterLink, useRoute } from 'vue-router'
 import { useTheme } from '@/composables/useTheme'
 import { useAlgoLinkStore } from '@/stores/algolink'
@@ -7,6 +8,9 @@ import { useAlgoLinkStore } from '@/stores/algolink'
 const route = useRoute()
 const store = useAlgoLinkStore()
 const { theme, initTheme } = useTheme()
+const message = useMessage()
+const usernameInput = ref(store.currentUsername || '')
+const userSubmitting = ref(false)
 
 const routeTitle = computed(() => {
   if (typeof route.meta.title === 'string') {
@@ -22,6 +26,24 @@ function applyTheme(nextTheme: 'dark' | 'light') {
   theme.value = nextTheme
   document.documentElement.dataset.theme = nextTheme
   localStorage.setItem('algolink.theme', nextTheme)
+}
+
+async function submitSimpleUser() {
+  userSubmitting.value = true
+
+  try {
+    const result = await store.loginSimpleUser(usernameInput.value)
+
+    if (!result.ok) {
+      message.error(result.message)
+      return
+    }
+
+    usernameInput.value = store.currentUsername
+    message.success(result.message)
+  } finally {
+    userSubmitting.value = false
+  }
 }
 
 function setThemeTransitionOrigin(event: MouseEvent) {
@@ -71,6 +93,25 @@ onMounted(() => {
     </div>
 
     <div class="header-actions">
+      <form class="user-switcher" @submit.prevent="submitSimpleUser">
+        <span>User</span>
+        <n-input
+          v-model:value="usernameInput"
+          size="small"
+          placeholder="username"
+          clearable
+          :disabled="userSubmitting"
+        />
+        <n-button
+          size="small"
+          type="primary"
+          secondary
+          attr-type="submit"
+          :loading="userSubmitting"
+        >
+          Switch
+        </n-button>
+      </form>
       <button
         class="theme-toggle"
         type="button"
@@ -128,6 +169,31 @@ h1 {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.user-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 5px 8px 5px 10px;
+  border: 1px solid var(--glass-border);
+  border-radius: 9px;
+  background:
+    linear-gradient(135deg, var(--glass-highlight), transparent 42%), var(--glass-surface);
+  color: var(--color-text-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px) saturate(130%);
+}
+
+.user-switcher span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.user-switcher :deep(.n-input) {
+  width: 136px;
 }
 
 .theme-toggle {
@@ -231,6 +297,15 @@ h1 {
   .theme-toggle {
     justify-content: space-between;
     grid-column: 1 / -1;
+  }
+
+  .user-switcher {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+  }
+
+  .user-switcher :deep(.n-input) {
+    width: min(100%, 180px);
   }
 
   .primary-action {

@@ -17,6 +17,7 @@ import {
   hasRecentAtCoderBindingCe,
 } from '@/services/atcoder'
 import { fetchDailyProblems } from '@/services/dailyChallenge'
+import { loginUser } from '@/services/api'
 import { fetchLuoguSubmissions, fetchLuoguUser } from '@/services/luogu'
 import { toSubmissionRecord } from '@/services/normalizers'
 import { weeklyTrainingPlan } from '@/mock/trainingPlan'
@@ -36,6 +37,8 @@ import { readStorage, writeStorage } from '@/utils/storage'
 import { calculateSubmissionAnalysis, getProblemKey } from '@/utils/analysis'
 
 const storageKeys = {
+  currentUserId: 'algolink:currentUserId',
+  currentUsername: 'algolink:currentUsername',
   accounts: 'algolink.accounts',
   settings: 'algolink.settings',
   tasks: 'algolink.trainingTasks',
@@ -112,8 +115,12 @@ function normalizeAccounts(value: StoredOjAccount[]): OjAccount[] {
 }
 
 export const useAlgoLinkStore = defineStore('algolink', () => {
+  const currentUserId = ref(readStorage<string>(storageKeys.currentUserId, ''))
   const accounts = ref<OjAccount[]>(
     normalizeAccounts(readStorage<StoredOjAccount[]>(storageKeys.accounts, [])),
+  )
+  const currentUsername = ref(
+    readStorage<string>(storageKeys.currentUsername, '') || accounts.value[0]?.handle || 'AlgoLinkUser',
   )
   const settings = ref<UserSettings>(
     readStorage<UserSettings>(storageKeys.settings, defaultSettings),
@@ -205,7 +212,6 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const activePlanCount = computed(
     () => trainingTasks.value.filter((item) => item.status !== 'done').length,
   )
-  const currentUsername = computed(() => accounts.value[0]?.handle || 'AlgoLinkUser')
   const leaderboard = computed(() => {
     const board = new Map<string, number>()
 
@@ -244,6 +250,29 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     return Math.round((done / Math.max(weeklyPlanDays.value.length, 1)) * 100)
   })
   const todayPlan = computed(() => weeklyPlanDays.value[0])
+
+  async function loginSimpleUser(
+    username: string,
+  ): Promise<{ ok: boolean; message: string }> {
+    const trimmedUsername = username.trim()
+
+    if (!trimmedUsername) {
+      return { ok: false, message: '请输入用户名' }
+    }
+
+    try {
+      const user = await loginUser(trimmedUsername)
+      currentUserId.value = user.userId
+      currentUsername.value = user.username
+      writeStorage(storageKeys.currentUserId, currentUserId.value)
+      writeStorage(storageKeys.currentUsername, currentUsername.value)
+
+      return { ok: true, message: `已切换到用户 ${user.username}` }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '登录失败'
+      return { ok: false, message }
+    }
+  }
 
   async function bindAccount(
     platform: OjPlatform | '',
@@ -792,10 +821,12 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     totalSolved,
     acceptanceRate,
     activePlanCount,
+    currentUserId,
     currentUsername,
     dailyChallenge,
     leaderboard,
     autoSyncState,
+    loginSimpleUser,
     bindAccount,
     addAccount,
     removeAccount,
