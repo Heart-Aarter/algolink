@@ -1,9 +1,7 @@
 import Database from 'better-sqlite3'
 import { mkdirSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
 const dataDir = join(__dirname, '..', 'data')
 const databasePath = join(dataDir, 'app.db')
 

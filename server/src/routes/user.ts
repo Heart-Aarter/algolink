@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getDatabase } from '../db.js'
+import { getDatabase } from '../db'
 
 const router = Router()
 const usernamePattern = /^[A-Za-z0-9_-]{1,32}$/

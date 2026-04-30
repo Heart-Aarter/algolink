@@ -1,14 +1,14 @@
 import cors from 'cors'
 import express from 'express'
 import type { ErrorRequestHandler, RequestHandler } from 'express'
-import { initDatabase } from './db.js'
-import accountsRouter from './routes/accounts.js'
-import dailyRouter from './routes/daily.js'
-import leaderboardRouter from './routes/leaderboard.js'
-import settingsRouter from './routes/settings.js'
-import submissionsRouter from './routes/submissions.js'
-import trainingPlanRouter from './routes/trainingPlan.js'
-import userRouter from './routes/user.js'
+import { initDatabase } from './db'
+import accountsRouter from './routes/accounts'
+import dailyRouter from './routes/daily'
+import leaderboardRouter from './routes/leaderboard'
+import settingsRouter from './routes/settings'
+import submissionsRouter from './routes/submissions'
+import trainingPlanRouter from './routes/trainingPlan'
+import userRouter from './routes/user'
 
 const app = express()
 const port = 3001
