@@ -65,8 +65,16 @@ const router = createRouter({
       meta: { title: '设置' },
     },
     {
+      path: '/about',
+      name: 'about',
+      component: () => import('@/views/AboutView.vue'),
+      meta: { title: '关于' },
+    },
+    {
       path: '/:pathMatch(.*)*',
-      redirect: '/',
+      name: 'not-found',
+      component: () => import('@/views/NotFoundView.vue'),
+      meta: { title: '404 Not Found' },
     },
   ],
 })

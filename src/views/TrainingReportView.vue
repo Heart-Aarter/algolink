@@ -7,17 +7,29 @@ import {
   sortDifficultyDistribution,
   type AnalysisResult,
 } from '@/utils/analysis'
+import type { UserSettings } from '@/types/algolink'
 
 const store = useAlgoLinkStore()
 const isGenerating = ref(false)
 const reportVisible = ref(false)
 let generationTimer: ReturnType<typeof window.setTimeout> | undefined
 
-const codeforcesAccount = computed(() =>
-  store.accounts.find((account) => account.platform === 'Codeforces'),
+const reportAccounts = computed(() =>
+  store.accounts.filter((account) =>
+    store.syncedSubmissions.some((submission) => submission.platform === account.platform),
+  ),
 )
-const reportSubmissions = computed(() => store.codeforcesSubmissions)
-const hasCodeforcesData = computed(() => reportSubmissions.value.length > 0)
+const reportSubmissions = computed(() => store.syncedSubmissions)
+const hasReportData = computed(() => reportSubmissions.value.length > 0)
+const reportPlatformLabel = computed(() =>
+  [...new Set(reportSubmissions.value.map((submission) => submission.platform))].join(' + '),
+)
+const codeforcesAccount = computed(() => ({
+  handle: reportAccounts.value
+    .map((account) => `${account.platform}:${account.handle}`)
+    .join(' / '),
+}))
+const hasCodeforcesData = hasReportData
 const analysis = computed(() => calculateSubmissionAnalysis(reportSubmissions.value))
 const recentAcceptanceRate = computed(() =>
   Math.round((analysis.value.recent30Accepted / Math.max(analysis.value.recent30Total, 1)) * 100),
@@ -44,16 +56,21 @@ const reportGeneratedAt = computed(() =>
   }).format(new Date()),
 )
 
-const trainingStage = computed(() => getTrainingStage(analysis.value))
-const nextAdvice = computed(() => getNextAdvice(analysis.value))
+const trainingStage = computed(() => getTrainingStage(analysis.value, store.settings.aiTone))
+const nextAdvice = computed(() => getNextAdvice(analysis.value, store.settings.aiTone))
 const directionCards = computed(() => getDirectionCards(analysis.value))
 
-function getTrainingStage(result: AnalysisResult) {
+function getTrainingStage(result: AnalysisResult, aiTone: UserSettings['aiTone'] = 'balanced') {
   if (result.recent30Total < 10) {
     return {
       title: '恢复训练节奏',
       level: 'Warm-up',
-      detail: '近 30 天提交量偏低，当前更适合先恢复固定训练频率，再提高难度。',
+      detail:
+        aiTone === 'strict'
+          ? '近 30 天提交量严重偏低，必须立即恢复固定训练频率。'
+          : aiTone === 'encouraging'
+            ? '最近提交量略少，给自己一点时间慢慢恢复训练节奏就很棒～'
+            : '近 30 天提交量偏低，当前更适合先恢复固定训练频率，再提高难度。',
     }
   }
 
@@ -61,7 +78,12 @@ function getTrainingStage(result: AnalysisResult) {
     return {
       title: '基础覆盖阶段',
       level: 'Foundation',
-      detail: '已解决题量仍在积累期，建议优先扩大常见算法标签覆盖面。',
+      detail:
+        aiTone === 'strict'
+          ? '已解决题量还未达标，需优先扩大算法标签覆盖面。'
+          : aiTone === 'encouraging'
+            ? '题目积累正在稳步进行中，继续扩大常见算法覆盖就能看到明显成长！'
+            : '已解决题量仍在积累期，建议优先扩大常见算法标签覆盖面。',
     }
   }
 
@@ -69,7 +91,12 @@ function getTrainingStage(result: AnalysisResult) {
     return {
       title: '稳定性修复阶段',
       level: 'Stability',
-      detail: '提交量已经形成样本，但非 AC 占比较高，下一步应加强复盘和边界检查。',
+      detail:
+        aiTone === 'strict'
+          ? '非 AC 占比过高，必须加强复盘和边界检查流程。'
+          : aiTone === 'encouraging'
+            ? '通过率还有提升空间，每次提交前多留意一下边界条件，效果会越来越好～'
+            : '提交量已经形成样本，但非 AC 占比较高，下一步应加强复盘和边界检查。',
     }
   }
 
@@ -77,35 +104,61 @@ function getTrainingStage(result: AnalysisResult) {
     return {
       title: '进阶突破阶段',
       level: 'Advanced',
-      detail: '近期训练活跃且通过量较高，可以开始挑战更高难度区间和综合题。',
+      detail:
+        aiTone === 'strict'
+          ? '近期训练活跃，已达到进阶条件，开始挑战更高难度。'
+          : aiTone === 'encouraging'
+            ? '太厉害了！近期表现非常出色，可以试着挑战更高难度的综合题啦～'
+            : '近期训练活跃且通过量较高，可以开始挑战更高难度区间和综合题。',
     }
   }
 
   return {
     title: '稳态提升阶段',
     level: 'Balanced',
-    detail: '训练数据较均衡，适合围绕薄弱标签做短周期专项提升。',
+    detail:
+      aiTone === 'strict'
+        ? '数据较均衡，围绕薄弱标签做短周期专项提升。'
+        : aiTone === 'encouraging'
+          ? '训练状态很均衡哦，继续保持节奏，偶尔挑战新标签会有惊喜！'
+          : '训练数据较均衡，适合围绕薄弱标签做短周期专项提升。',
   }
 }
 
-function getNextAdvice(result: AnalysisResult) {
+function getNextAdvice(result: AnalysisResult, aiTone: UserSettings['aiTone'] = 'balanced') {
   if (!result.total) {
-    return '同步 Codeforces 数据后，AlgoLink 会基于真实提交生成规则化训练诊断。'
+    return '同步公开账号数据后，AlgoLink 会基于真实提交生成规则化训练诊断。'
   }
 
   if (result.recent30Total < 10) {
-    return '先设定每周 3 次、每次 2-3 题的恢复计划，保证 30 天窗口内有稳定训练样本。'
+    return aiTone === 'strict'
+      ? '近 30 天训练量严重不足，本周必须设定每日固定训练时间并完成至少 5 次提交。'
+      : aiTone === 'encouraging'
+        ? '最近训练量略低没关系，试着这周找 2-3 个晚上安静刷几道题，节奏慢慢就回来了～'
+        : '先设定每周 3 次、每次 2-3 题的恢复计划，保证 30 天窗口内有稳定训练样本。'
   }
 
   if (result.acceptanceRate < 45) {
-    return `优先复盘 ${result.weakestTag} 与 WA/TLE 记录，每道失败题补充失败原因和正确做法。`
+    return aiTone === 'strict'
+      ? `优先复盘 ${result.weakestTag} 与 WA/TLE 记录，每道失败题必须记录失败原因和正确做法。`
+      : aiTone === 'encouraging'
+        ? `${result.weakestTag} 方面还有一点提升空间，试着把之前的 WA 记录翻出来温习一下，会有意外收获哦～`
+        : `优先复盘 ${result.weakestTag} 与 WA/TLE 记录，每道失败题补充失败原因和正确做法。`
   }
 
   if (result.weakTags.length) {
-    return `下一阶段围绕 ${result.weakTags.join(' / ')} 做 7 天专项训练，每天保留至少 1 道复盘题。`
+    return aiTone === 'strict'
+      ? `下一阶段围绕 ${result.weakTags.join(' / ')} 执行 7 天专项训练，每天必须保留至少 1 道复盘题。`
+      : aiTone === 'encouraging'
+        ? `接下来可以试试 ${result.weakTags.join(' / ')} 的专项训练，不用太密集，每天 1-2 道题加上复盘就很好！`
+        : `下一阶段围绕 ${result.weakTags.join(' / ')} 做 7 天专项训练，每天保留至少 1 道复盘题。`
   }
 
-  return '保持当前训练节奏，将训练重心从做题数量转向难度跨度和赛后复盘质量。'
+  return aiTone === 'strict'
+    ? '保持当前训练节奏，将重心从做题数量转移到难度跨度和赛后复盘质量。'
+    : aiTone === 'encouraging'
+      ? '当前节奏很棒！继续保持，把注意力放在题目质量和赛后反思上，你会越来越强～'
+      : '保持当前训练节奏，将训练重心从做题数量转向难度跨度和赛后复盘质量。'
 }
 
 function getDirectionCards(result: AnalysisResult) {
@@ -133,7 +186,7 @@ function getDirectionCards(result: AnalysisResult) {
 }
 
 function generateReport() {
-  if (!hasCodeforcesData.value || isGenerating.value) {
+  if (!hasReportData.value || isGenerating.value) {
     return
   }
 
@@ -165,19 +218,19 @@ onBeforeUnmount(() => {
           <button
             class="report-generate-button"
             type="button"
-            :disabled="!hasCodeforcesData || isGenerating"
+            :disabled="!hasReportData || isGenerating"
             @click="generateReport"
           >
             <span v-if="isGenerating" class="loading-dot" aria-hidden="true" />
             {{ isGenerating ? '正在生成报告...' : '生成我的训练报告' }}
           </button>
-          <RouterLink v-if="!hasCodeforcesData" class="secondary-link" to="/accounts">
+          <RouterLink v-if="!hasReportData" class="secondary-link" to="/accounts">
             去绑定并同步账号
           </RouterLink>
         </div>
       </div>
       <div class="report-id-card">
-        <span>Codeforces Handle</span>
+        <span>Synced Handles</span>
         <strong>{{ codeforcesAccount?.handle || '未同步' }}</strong>
         <p>
           {{
@@ -187,7 +240,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section v-if="!hasCodeforcesData" class="panel report-empty">
+    <section v-if="!hasReportData" class="panel report-empty">
       <p class="eyebrow">Data Required</p>
       <h3>请先绑定并同步 Codeforces 账号</h3>
       <p>

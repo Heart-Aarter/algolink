@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { NTag } from 'naive-ui'
 import StatCard from '@/components/common/StatCard.vue'
 import { useAlgoLinkStore } from '@/stores/algolink'
 
@@ -32,6 +33,7 @@ const rankedEntries = computed<RankedEntry[]>(() => {
 })
 
 const podium = computed(() => rankedEntries.value.slice(0, 3))
+const showPodium = computed(() => podium.value.length >= 2)
 const remainingEntries = computed(() => rankedEntries.value.slice(3))
 const myEntry = computed(() => rankedEntries.value.find((entry) => entry.isCurrentUser))
 const highestScore = computed(() => rankedEntries.value[0]?.score ?? 0)
@@ -71,7 +73,7 @@ const maxScore = computed(() =>
       />
     </section>
 
-    <section class="podium-wrap" aria-label="Top 3 领奖台">
+    <section v-if="showPodium" class="podium-wrap" aria-label="Top 3 领奖台">
       <article
         v-for="(entry, index) in podium"
         :key="entry.username"

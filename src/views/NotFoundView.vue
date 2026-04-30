@@ -1,0 +1,73 @@
+<script setup lang="ts">
+import { RouterLink } from 'vue-router'
+</script>
+
+<template>
+  <div class="page-stack not-found-page">
+    <section class="panel not-found-panel">
+      <div class="not-found-illustration">
+        <span class="not-found-code">404</span>
+        <span class="not-found-divider" />
+        <p class="eyebrow">Page Not Found</p>
+      </div>
+      <h2>页面不存在</h2>
+      <p>
+        你访问的路由可能已被移除或暂未实现。AlgoLink 当前提供 Dashboard、账号绑定、提交记录、
+        能力画像、AI 建议、训练报告、训练计划、每日一题、排行榜和设置等页面。
+      </p>
+      <div class="hero-actions not-found-actions">
+        <RouterLink to="/">返回 Dashboard</RouterLink>
+        <RouterLink class="secondary-link" to="/accounts">绑定 OJ 账号</RouterLink>
+      </div>
+    </section>
+  </div>
+</template>
+
+<style scoped>
+.not-found-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 60px 28px 44px;
+}
+
+.not-found-illustration {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.not-found-code {
+  color: var(--color-heading);
+  font-size: 56px;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+}
+
+.not-found-divider {
+  display: inline-block;
+  width: 1px;
+  height: 44px;
+  background: var(--color-border);
+}
+
+.not-found-panel h2 {
+  margin-bottom: 12px;
+  color: var(--color-heading);
+  font-size: 22px;
+  font-weight: 840;
+}
+
+.not-found-panel p {
+  max-width: 540px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.not-found-actions {
+  margin-top: 24px;
+}
+</style>

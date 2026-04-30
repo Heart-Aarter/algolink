@@ -264,7 +264,10 @@ export function calculateSubmissionAnalysis(
   }
 }
 
-export function getTrainingSummary(submissions: SubmissionRecord[]) {
+export function getTrainingSummary(
+  submissions: SubmissionRecord[],
+  aiTone: 'strict' | 'balanced' | 'encouraging' = 'balanced',
+) {
   const analysis = calculateSubmissionAnalysis(submissions)
   const dpCount = analysis.tagDistribution.find((item) => item.name.toLowerCase() === 'dp')?.value ?? 0
   const waCount = analysis.verdictDistribution.find((item) => item.name === 'WA')?.value ?? 0
@@ -275,23 +278,54 @@ export function getTrainingSummary(submissions: SubmissionRecord[]) {
   const suggestions: string[] = []
 
   if (analysis.total && dpCount / analysis.total < 0.08) {
-    suggestions.push('DP 标签覆盖偏低，建议加入短周期 DP 专题，重点复盘状态定义和转移方程。')
+    suggestions.push(
+      aiTone === 'strict'
+        ? 'DP 标签覆盖率不足，必须补充动态规划专题：重点训练状态定义和转移方程推导。'
+        : aiTone === 'encouraging'
+          ? 'DP 方向还有不少拓展空间，试着找几道经典状态转移题热热身吧～'
+          : 'DP 标签覆盖偏低，建议加入短周期 DP 专题，重点复盘状态定义和转移方程。',
+    )
   }
 
   if (analysis.total && waCount / analysis.total >= 0.35) {
-    suggestions.push('WA 占比较高，提交前应补充样例、边界条件和对拍检查。')
+    suggestions.push(
+      aiTone === 'strict'
+        ? 'WA 占比过高，提交前必须完成样例验证、边界条件检查和对拍测试。'
+        : aiTone === 'encouraging'
+          ? 'WA 占比略高不用太着急，每次提交前多做一步本地校验，正确率会慢慢提上来。'
+          : 'WA 占比较高，提交前应补充样例、边界条件和对拍检查。',
+    )
   }
 
   if (analysis.recent30Total < 10) {
-    suggestions.push('最近 30 天提交量偏低，建议本周先恢复 3-5 次有主题的训练提交。')
+    suggestions.push(
+      aiTone === 'strict'
+        ? '近 30 天提交量严重不足，本周必须恢复至少 5 次有主题的训练提交。'
+        : aiTone === 'encouraging'
+          ? '最近训练节奏稍有放缓，不用给自己太大压力，这周慢慢恢复几次提交就很好！'
+          : '最近 30 天提交量偏低，建议本周先恢复 3-5 次有主题的训练提交。',
+    )
   }
 
   if (analysis.total && lowerDifficultyCount / analysis.total >= 0.5) {
-    suggestions.push('难度集中在入门分段，可以开始尝试 1100-1300 的 Codeforces 题目。')
+    suggestions.push(
+      aiTone === 'strict'
+        ? '难度过度集中在入门分段，需要立即向 1100-1300 的 Codeforces 题迁移。'
+        : aiTone === 'encouraging'
+          ? '你的基础已经很扎实啦～可以适当挑战更高难度的题目，看看自己在 1100-1300 分段的表现。'
+          : '难度集中在入门分段，可以开始尝试 1100-1300 的 Codeforces 题目。',
+    )
   }
 
   if (!suggestions.length) {
-    suggestions.push(`当前节奏较稳定，建议围绕 ${analysis.weakestTag} 做小规模定向复盘。`)
+    const tag = analysis.weakestTag
+    suggestions.push(
+      aiTone === 'strict'
+        ? `当前节奏较稳定，仍需围绕 ${tag} 定向复盘薄弱环节。`
+        : aiTone === 'encouraging'
+          ? `节奏保持得很不错！如果想更进一步，可以稍微关注一下 ${tag} 的题目哦～`
+          : `当前节奏较稳定，建议围绕 ${tag} 做小规模定向复盘。`,
+    )
   }
 
   return {

@@ -1,17 +1,32 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { NIcon } from 'naive-ui'
+import {
+  Analytics,
+  Bulb,
+  Calendar,
+  DocumentText,
+  List,
+  Person,
+  Rocket,
+  Settings,
+  StatsChart,
+  Today,
+  Trophy,
+} from '@vicons/ionicons5'
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: '01' },
-  { path: '/accounts', label: 'OJ 账号绑定', icon: '02' },
-  { path: '/submissions', label: '提交记录', icon: '03' },
-  { path: '/profile', label: '能力画像', icon: '04' },
-  { path: '/ai-advice', label: 'AI 训练建议', icon: '05' },
-  { path: '/training-report', label: '训练报告', icon: '06' },
-  { path: '/training-plan', label: '训练计划', icon: '07' },
-  { path: '/daily', label: '每日一题', icon: '08' },
-  { path: '/leaderboard', label: '排行榜', icon: '09' },
-  { path: '/settings', label: '设置', icon: '10' },
+  { path: '/', label: 'Dashboard', icon: StatsChart },
+  { path: '/accounts', label: 'OJ 账号绑定', icon: Person },
+  { path: '/submissions', label: '提交记录', icon: List },
+  { path: '/profile', label: '能力画像', icon: Analytics },
+  { path: '/ai-advice', label: 'AI 训练建议', icon: Bulb },
+  { path: '/training-report', label: '训练报告', icon: DocumentText },
+  { path: '/training-plan', label: '训练计划', icon: Calendar },
+  { path: '/daily', label: '每日一题', icon: Today },
+  { path: '/leaderboard', label: '排行榜', icon: Trophy },
+  { path: '/about', label: '关于项目', icon: Rocket },
+  { path: '/settings', label: '设置', icon: Settings },
 ]
 </script>
 
@@ -21,20 +36,22 @@ const navItems = [
       <span class="brand-mark">AL</span>
       <span>
         <strong>AlgoLink</strong>
-        <small>AI 多 OJ 数据分析</small>
+        <small>AI 多 OJ 数据平台</small>
       </span>
     </RouterLink>
 
     <nav class="nav-list" aria-label="主导航">
       <RouterLink v-for="item in navItems" :key="item.path" class="nav-item" :to="item.path">
-        <span class="nav-icon">{{ item.icon }}</span>
+        <span class="nav-icon" aria-hidden="true">
+          <n-icon :component="item.icon" />
+        </span>
         {{ item.label }}
       </RouterLink>
     </nav>
 
     <div class="sidebar-note">
       <span>Mock Data</span>
-      <p>仅使用公开 handle，mock 数据与同步结果保存到 localStorage。</p>
+      <p>仅绑定公开 handle，使用 mock 与公开同步数据生成分析，结果保存在 localStorage。</p>
     </div>
   </aside>
 </template>
@@ -163,8 +180,7 @@ const navItems = [
   border-radius: 7px;
   background: rgba(255, 255, 255, 0.035);
   color: var(--color-text-muted);
-  font-size: 11px;
-  font-weight: 780;
+  font-size: 17px;
 }
 
 .nav-item > :not(.nav-icon),

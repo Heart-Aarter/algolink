@@ -26,7 +26,7 @@ AlgoLink 面向算法竞赛学习者，支持聚合 Codeforces、洛谷、AtCode
 - Pinia
 - ECharts
 - Axios
-- 普通 CSS
+- CSS
 
 ## 第一阶段目标 ✅
 
@@ -47,6 +47,7 @@ AlgoLink 面向算法竞赛学习者，支持聚合 Codeforces、洛谷、AtCode
 - [x] 基础组件结构
 
 额外完成：
+
 - [x] 训练报告页
 - [x] 每日一题页
 - [x] 排行榜页
@@ -59,7 +60,7 @@ AlgoLink 面向算法竞赛学习者，支持聚合 Codeforces、洛谷、AtCode
 1. 补全 About 页面的项目介绍、功能亮点与技术栈展示
 2. 增强排行榜页面：前三奖牌、排名序号、当前用户高亮、统计摘要
 3. 统一全局表单控件为 Naive UI（NSelect / NCheckbox）
-4. 清理 Vue 脚手架残留文件（HelloWorld / TheWelcome / WelcomeItem / counter / icons/*）
+4. 清理 Vue 脚手架残留文件（HelloWorld / TheWelcome / WelcomeItem / counter / icons/\*）
 
 ---
 

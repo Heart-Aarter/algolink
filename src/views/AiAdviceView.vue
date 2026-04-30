@@ -4,6 +4,7 @@ import { NButton, NSpin, NTag } from 'naive-ui'
 import { recommendedProblems } from '@/mock/recommendedProblems'
 import { weeklyTrainingPlan } from '@/mock/trainingPlan'
 import { useAlgoLinkStore } from '@/stores/algolink'
+import type { UserSettings } from '@/types/algolink'
 import { getTagAnalysis, getTrainingSummary } from '@/utils/analysis'
 
 const store = useAlgoLinkStore()
@@ -13,9 +14,40 @@ const isGenerating = ref(false)
 const analysisSubmissions = computed(() =>
   store.hasSyncedSubmissions ? store.syncedSubmissions : store.submissions,
 )
-const summary = computed(() => getTrainingSummary(analysisSubmissions.value))
+const summary = computed(() =>
+  getTrainingSummary(analysisSubmissions.value, store.settings.aiTone),
+)
 const weakTagDetails = computed(() => getTagAnalysis(analysisSubmissions.value).slice(0, 5))
 const dataSourceLabel = computed(() => store.submissionDataSourceLabel)
+
+const toneCopy: Record<
+  UserSettings['aiTone'],
+  { badge: string; tagType: 'error' | 'info' | 'success'; prefix: string }
+> = {
+  strict: {
+    badge: 'Strict',
+    tagType: 'error',
+    prefix: '严格模式：直接处理最高风险项，',
+  },
+  balanced: {
+    badge: 'Balanced',
+    tagType: 'info',
+    prefix: '均衡模式：兼顾补弱和稳定节奏，',
+  },
+  encouraging: {
+    badge: 'Encouraging',
+    tagType: 'success',
+    prefix: '鼓励模式：保持当前进步，同时',
+  },
+}
+
+const activeTone = computed(() => toneCopy[store.settings.aiTone])
+const tonedSummary = computed(() => ({
+  ...summary.value,
+  headline: `${activeTone.value.prefix}${summary.value.headline}`,
+  suggestion: `${activeTone.value.prefix}${summary.value.suggestion}`,
+  suggestions: summary.value.suggestions.map((item) => `${activeTone.value.prefix}${item}`),
+}))
 
 const weeklyPlanSummary = computed(() => ({
   days: weeklyTrainingPlan.length,
@@ -53,7 +85,7 @@ function generateAdvice() {
     <section class="panel ai-brief">
       <p class="eyebrow">AI Coach Mock</p>
       <h2>联动能力画像的训练建议</h2>
-      <p>{{ summary.headline }} {{ summary.focus }} {{ summary.suggestion }}</p>
+      <p>{{ tonedSummary.headline }} {{ tonedSummary.focus }} {{ tonedSummary.suggestion }}</p>
       <div class="coach-summary-grid">
         <div>
           <span>数据来源</span>
@@ -61,11 +93,11 @@ function generateAdvice() {
         </div>
         <div>
           <span>AC 率</span>
-          <strong>{{ summary.acceptanceRate }}%</strong>
+          <strong>{{ tonedSummary.acceptanceRate }}%</strong>
         </div>
         <div>
           <span>薄弱标签</span>
-          <strong>{{ summary.weakTags.join(' / ') || '-' }}</strong>
+          <strong>{{ tonedSummary.weakTags.join(' / ') || '-' }}</strong>
         </div>
       </div>
     </section>
@@ -118,10 +150,12 @@ function generateAdvice() {
       <n-spin :show="isGenerating">
         <Transition name="tab-fade" mode="out-in">
           <div v-if="activeMode === 'rules'" :key="activeMode" class="analysis-list">
-            <article v-for="item in summary.suggestions" :key="item" class="analysis-card">
+            <article v-for="item in tonedSummary.suggestions" :key="item" class="analysis-card">
               <div class="metric-top">
                 <h3>建议规则</h3>
-                <n-tag type="success" size="small" round>Mock</n-tag>
+                <n-tag :type="activeTone.tagType" size="small" round>
+                  {{ activeTone.badge }}
+                </n-tag>
               </div>
               <p>{{ item }}</p>
               <strong>由本地提交统计生成，不调用真实 AI API。</strong>

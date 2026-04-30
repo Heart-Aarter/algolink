@@ -435,7 +435,7 @@ const visibleRecommendations = computed(() =>
       <article class="panel heatmap-panel">
         <div class="panel-heading heatmap-heading">
           <div>
-            <p class="eyebrow">Codeforces Activity</p>
+            <p class="eyebrow">Multi-OJ Activity</p>
             <h2>训练热力图</h2>
           </div>
           <span class="count-badge">
@@ -462,7 +462,7 @@ const visibleRecommendations = computed(() =>
                 {{ weekday.label }}
               </span>
             </div>
-            <div class="heatmap-grid" aria-label="Codeforces activity heatmap">
+            <div class="heatmap-grid" aria-label="Multi-OJ activity heatmap">
               <span
                 v-for="day in heatmapDays"
                 :key="day.key"
@@ -520,7 +520,7 @@ const visibleRecommendations = computed(() =>
         </p>
       </div>
       <div class="report-entry-meta">
-        <span>CF Submissions</span>
+        <span>Synced Submissions</span>
         <strong>{{ store.syncedSubmissions.length }}</strong>
       </div>
       <RouterLink class="report-entry-action" to="/training-report">生成报告</RouterLink>

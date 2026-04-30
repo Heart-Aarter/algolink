@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import {
   defaultSettings,
@@ -53,6 +53,13 @@ const platformColors: Record<OjPlatform, string> = {
   AtCoder: '#8db1c7',
 }
 
+const autoSyncIntervalMs = {
+  daily: 24 * 60 * 60 * 1000,
+  weekly: 7 * 24 * 60 * 60 * 1000,
+} as const
+
+const autoSyncCheckMs = 60 * 60 * 1000
+
 const defaultLeaderboard: LeaderboardEntry[] = [
   { username: 'tourist', score: 6200 },
   { username: 'StudyingFather', score: 4300 },
@@ -70,6 +77,11 @@ function formatDateTime(date = new Date()) {
 function formatDateKey(date = new Date()) {
   const pad = (value: number) => String(value).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+function parseSyncTime(value: string) {
+  const date = new Date(value.replace(' ', 'T'))
+  return Number.isNaN(date.getTime()) ? null : date
 }
 
 type StoredOjAccount = Partial<OjAccount> & { lastSync?: string }
@@ -124,6 +136,12 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const leaderboardEntries = ref<LeaderboardEntry[]>(
     readStorage<LeaderboardEntry[]>(storageKeys.leaderboard, defaultLeaderboard),
   )
+  const autoSyncState = ref({
+    running: false,
+    lastRunAt: '',
+    message: '',
+  })
+  let autoSyncTimer: ReturnType<typeof window.setInterval> | undefined
   const syncedSubmissions = computed(() => [
     ...codeforcesSubmissions.value,
     ...atcoderSubmissions.value,
@@ -508,6 +526,71 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     return { ok: false, message: `${account.platform} 暂不支持同步。` }
   }
 
+  function shouldAutoSyncAccount(account: OjAccount) {
+    if (settings.value.syncInterval === 'manual') {
+      return false
+    }
+
+    const interval = autoSyncIntervalMs[settings.value.syncInterval]
+    const lastSyncedAt = parseSyncTime(account.lastSyncAt)
+
+    return !lastSyncedAt || Date.now() - lastSyncedAt.getTime() >= interval
+  }
+
+  async function syncDueAccounts() {
+    if (settings.value.syncInterval === 'manual' || autoSyncState.value.running) {
+      return
+    }
+
+    const dueAccounts = accounts.value.filter(shouldAutoSyncAccount)
+
+    if (!dueAccounts.length) {
+      return
+    }
+
+    autoSyncState.value = {
+      running: true,
+      lastRunAt: formatDateTime(),
+      message: `Auto syncing ${dueAccounts.length} account(s)`,
+    }
+
+    const results = await Promise.allSettled(
+      dueAccounts.map((account) => syncOjAccount(account.id)),
+    )
+    const failedCount = results.filter(
+      (item) => item.status === 'rejected' || (item.status === 'fulfilled' && !item.value.ok),
+    ).length
+
+    autoSyncState.value = {
+      running: false,
+      lastRunAt: formatDateTime(),
+      message: failedCount
+        ? `Auto sync finished with ${failedCount} failed account(s)`
+        : `Auto synced ${dueAccounts.length} account(s)`,
+    }
+  }
+
+  function restartAutoSyncScheduler() {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    window.clearInterval(autoSyncTimer)
+    autoSyncTimer = undefined
+
+    if (settings.value.syncInterval === 'manual') {
+      autoSyncState.value = {
+        ...autoSyncState.value,
+        running: false,
+        message: 'Auto sync disabled',
+      }
+      return
+    }
+
+    window.setTimeout(syncDueAccounts, 0)
+    autoSyncTimer = window.setInterval(syncDueAccounts, autoSyncCheckMs)
+  }
+
   async function loadDailyChallenge(): Promise<{ ok: boolean; message: string }> {
     const today = formatDateKey()
 
@@ -616,6 +699,14 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     writeStorage(storageKeys.leaderboard, leaderboardEntries.value)
   }
 
+  watch(
+    () => settings.value.syncInterval,
+    () => {
+      restartAutoSyncScheduler()
+    },
+    { immediate: true },
+  )
+
   return {
     accounts,
     settings,
@@ -640,6 +731,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     currentUsername,
     dailyChallenge,
     leaderboard,
+    autoSyncState,
     bindAccount,
     addAccount,
     removeAccount,
@@ -648,6 +740,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     syncAtCoderAccount,
     syncLuoguAccount,
     syncOjAccount,
+    syncDueAccounts,
     loadDailyChallenge,
     completeDailyProblem,
     updateSettings,
