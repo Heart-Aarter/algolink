@@ -10,10 +10,10 @@ import { RouterLink } from 'vue-router'
         <span class="not-found-divider" />
         <p class="eyebrow">Page Not Found</p>
       </div>
-      <h2>页面不存在</h2>
+      <h2>没有找到这个页面</h2>
       <p>
-        你访问的路由可能已被移除或暂未实现。AlgoLink 当前提供 Dashboard、账号绑定、提交记录、
-        能力画像、AI 建议、训练报告、训练计划、每日一题、排行榜和设置等页面。
+        这个地址不在 AlgoLink 当前路由中。你可以回到 Dashboard 查看多 OJ 数据概览，或进入账号页绑定公开
+        handle 后继续同步训练数据。
       </p>
       <div class="hero-actions not-found-actions">
         <RouterLink to="/">返回 Dashboard</RouterLink>
@@ -28,8 +28,8 @@ import { RouterLink } from 'vue-router'
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
   padding: 60px 28px 44px;
+  text-align: center;
 }
 
 .not-found-illustration {

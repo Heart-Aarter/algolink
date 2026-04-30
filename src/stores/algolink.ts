@@ -24,11 +24,13 @@ import type {
   OjAccount,
   OjPlatform,
   DailyChallengeState,
+  DailyProblem,
   LeaderboardEntry,
   SubmissionRecord,
   TrainingPlanStatus,
   TrainingTask,
   UserSettings,
+  WeeklyTrainingPlanDay,
 } from '@/types/algolink'
 import { readStorage, writeStorage } from '@/utils/storage'
 import { calculateSubmissionAnalysis, getProblemKey } from '@/utils/analysis'
@@ -37,6 +39,7 @@ const storageKeys = {
   accounts: 'algolink.accounts',
   settings: 'algolink.settings',
   tasks: 'algolink.trainingTasks',
+  weeklyPlanDays: 'algolink.weeklyPlanDays',
   weeklyPlanStatus: 'algolink.weeklyPlanStatus',
   codeforcesSubmissions: 'algolink.codeforcesSubmissions',
   atcoderSubmissions: 'algolink.atcoderSubmissions',
@@ -117,6 +120,9 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   )
   const trainingTasks = ref<TrainingTask[]>(
     readStorage<TrainingTask[]>(storageKeys.tasks, mockTrainingTasks),
+  )
+  const weeklyPlanItems = ref<WeeklyTrainingPlanDay[]>(
+    readStorage<WeeklyTrainingPlanDay[]>(storageKeys.weeklyPlanDays, weeklyTrainingPlan),
   )
   const weeklyPlanStatus = ref<Record<string, TrainingPlanStatus>>(
     readStorage<Record<string, TrainingPlanStatus>>(storageKeys.weeklyPlanStatus, {}),
@@ -228,7 +234,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     }),
   )
   const weeklyPlanDays = computed(() =>
-    weeklyTrainingPlan.map((day) => ({
+    weeklyPlanItems.value.map((day) => ({
       ...day,
       status: weeklyPlanStatus.value[day.id] ?? 'not-started',
     })),
@@ -644,6 +650,51 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     return { ok: true, message: `每日一题已完成，本日计分 ${nextAwardedScore}。` }
   }
 
+  function hasAcceptedDailyProblem(problem: DailyProblem) {
+    const expectedId = problem.id.startsWith('cf-')
+      ? problem.id.replace(/^cf-/, '')
+      : problem.id
+
+    return syncedSubmissions.value.some((submission) => {
+      if (submission.platform !== problem.platform || submission.status !== 'Accepted') {
+        return false
+      }
+
+      return (
+        submission.problemId === expectedId ||
+        submission.problemId === problem.id ||
+        submission.problem.includes(problem.title) ||
+        problem.title.includes(submission.problemId ?? '')
+      )
+    })
+  }
+
+  async function verifyAndCompleteDailyProblem(problem: DailyProblem) {
+    const account = accounts.value.find((item) => item.platform === problem.platform)
+
+    if (!account) {
+      return {
+        ok: false,
+        message: `请先绑定并同步 ${problem.platform} 账号，再验证每日一题完成状态。`,
+      }
+    }
+
+    const syncResult = await syncOjAccount(account.id)
+
+    if (!syncResult.ok) {
+      return syncResult
+    }
+
+    if (!hasAcceptedDailyProblem(problem)) {
+      return {
+        ok: false,
+        message: `未在 ${problem.platform} 公开提交中检测到该题 AC，请完成后再验证。`,
+      }
+    }
+
+    return completeDailyProblem(problem.id)
+  }
+
   function addLeaderboardScore(username: string, score: number) {
     const existing = leaderboardEntries.value.find((entry) => entry.username === username)
 
@@ -678,10 +729,22 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     writeStorage(storageKeys.weeklyPlanStatus, weeklyPlanStatus.value)
   }
 
+  function addWeeklyPlanDay(day: Omit<WeeklyTrainingPlanDay, 'id'>) {
+    const nextDay: WeeklyTrainingPlanDay = {
+      ...day,
+      id: `custom-${Date.now()}`,
+    }
+
+    weeklyPlanItems.value = [...weeklyPlanItems.value, nextDay]
+    writeStorage(storageKeys.weeklyPlanDays, weeklyPlanItems.value)
+    return nextDay
+  }
+
   function resetLocalData() {
     accounts.value = []
     settings.value = defaultSettings
     trainingTasks.value = mockTrainingTasks
+    weeklyPlanItems.value = weeklyTrainingPlan
     weeklyPlanStatus.value = {}
     codeforcesSubmissions.value = []
     atcoderSubmissions.value = []
@@ -689,6 +752,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     writeStorage(storageKeys.accounts, accounts.value)
     writeStorage(storageKeys.settings, settings.value)
     writeStorage(storageKeys.tasks, trainingTasks.value)
+    writeStorage(storageKeys.weeklyPlanDays, weeklyPlanItems.value)
     writeStorage(storageKeys.weeklyPlanStatus, weeklyPlanStatus.value)
     writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
     writeStorage(storageKeys.atcoderSubmissions, atcoderSubmissions.value)
@@ -743,9 +807,11 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     syncDueAccounts,
     loadDailyChallenge,
     completeDailyProblem,
+    verifyAndCompleteDailyProblem,
     updateSettings,
     updateTaskStatus,
     updateWeeklyPlanStatus,
+    addWeeklyPlanDay,
     resetLocalData,
   }
 })

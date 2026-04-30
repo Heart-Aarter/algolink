@@ -21,15 +21,11 @@ const reportAccounts = computed(() =>
 )
 const reportSubmissions = computed(() => store.syncedSubmissions)
 const hasReportData = computed(() => reportSubmissions.value.length > 0)
-const reportPlatformLabel = computed(() =>
-  [...new Set(reportSubmissions.value.map((submission) => submission.platform))].join(' + '),
-)
 const codeforcesAccount = computed(() => ({
   handle: reportAccounts.value
-    .map((account) => `${account.platform}:${account.handle}`)
-    .join(' / '),
+  .map((account) => `${account.platform}:${account.handle}`)
+  .join(' / '),
 }))
-const hasCodeforcesData = hasReportData
 const analysis = computed(() => calculateSubmissionAnalysis(reportSubmissions.value))
 const recentAcceptanceRate = computed(() =>
   Math.round((analysis.value.recent30Accepted / Math.max(analysis.value.recent30Total, 1)) * 100),
@@ -211,8 +207,7 @@ onBeforeUnmount(() => {
         <p class="eyebrow">Training Diagnostic Report</p>
         <h2>算法训练报告</h2>
         <p>
-          基于已同步的 Codeforces
-          公开提交记录，生成一份产品化训练诊断书，覆盖近期状态、能力强弱项、难度结构和下一阶段训练建议。
+          基于已同步的公开提交记录，生成一份产品化训练诊断书，覆盖近期状态、能力强弱项、难度结构和下一阶段训练建议。
         </p>
         <div class="hero-actions">
           <button
@@ -234,7 +229,7 @@ onBeforeUnmount(() => {
         <strong>{{ codeforcesAccount?.handle || '未同步' }}</strong>
         <p>
           {{
-            hasCodeforcesData ? `${reportSubmissions.length} 条真实提交记录` : '等待公开数据同步'
+            hasReportData ? `${reportSubmissions.length} 条真实提交记录` : '等待公开数据同步'
           }}
         </p>
       </div>
@@ -242,9 +237,9 @@ onBeforeUnmount(() => {
 
     <section v-if="!hasReportData" class="panel report-empty">
       <p class="eyebrow">Data Required</p>
-      <h3>请先绑定并同步 Codeforces 账号</h3>
+      <h3>请先绑定并同步 OJ 公开账号</h3>
       <p>
-        训练报告只使用真实 Codeforces submissions 生成，不使用 mock
+        训练报告使用已同步的真实提交记录生成，不使用 mock
         提交记录。同步完成后，这里会展示“生成我的训练报告”入口。
       </p>
       <RouterLink class="text-link" to="/accounts">前往 OJ 账号绑定</RouterLink>
@@ -359,7 +354,7 @@ onBeforeUnmount(() => {
       <p class="eyebrow">Ready</p>
       <h3>数据已就绪，可以生成训练报告</h3>
       <p>
-        当前已读取 {{ reportSubmissions.length }} 条 Codeforces
+        当前已读取 {{ reportSubmissions.length }} 条公开
         真实提交记录。点击上方按钮后会生成规则化 mock 报告，不调用真实 AI API。
       </p>
     </section>
