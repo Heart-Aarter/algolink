@@ -1,8 +1,11 @@
 import cors from 'cors'
 import express from 'express'
+import { initDatabase } from './db.js'
 
 const app = express()
 const port = 3001
+
+initDatabase()
 
 app.use(cors())
 app.use(express.json())
