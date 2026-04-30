@@ -3,8 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "server"
+  ],
   "scripts": {
-    "dev": "vite",
+    "dev": "run-p dev:client dev:server",
+    "dev:client": "vite",
+    "dev:server": "npm --workspace server run dev",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
