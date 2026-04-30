@@ -21,11 +21,6 @@ import {
   getUserData,
   loginUser,
   saveAccounts,
-  saveDailyChallenge,
-  saveSettings,
-  saveSubmissions,
-  saveTrainingPlan,
-  submitLeaderboard,
 } from '@/services/api'
 import { fetchLuoguSubmissions, fetchLuoguUser } from '@/services/luogu'
 import { toSubmissionRecord } from '@/services/normalizers'
@@ -123,10 +118,23 @@ function normalizeAccounts(value: StoredOjAccount[]): OjAccount[] {
     }))
 }
 
+function getUserAccountsStorageKey(userId: string) {
+  return `algolink:${userId}:accounts`
+}
+
+function hasStorageValue(key: string) {
+  return localStorage.getItem(key) !== null
+}
+
 export const useAlgoLinkStore = defineStore('algolink', () => {
   const currentUserId = ref(readStorage<string>(storageKeys.currentUserId, ''))
   const accounts = ref<OjAccount[]>(
-    normalizeAccounts(readStorage<StoredOjAccount[]>(storageKeys.accounts, [])),
+    normalizeAccounts(
+      readStorage<StoredOjAccount[]>(
+        currentUserId.value ? getUserAccountsStorageKey(currentUserId.value) : storageKeys.accounts,
+        [],
+      ),
+    ),
   )
   const currentUsername = ref(
     readStorage<string>(storageKeys.currentUsername, '') || accounts.value[0]?.handle || 'AlgoLinkUser',
@@ -165,12 +173,19 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   })
   let autoSyncTimer: ReturnType<typeof window.setInterval> | undefined
 
-  function pushToServer(action: () => Promise<unknown>) {
+  function persistAccounts() {
+    const key = currentUserId.value
+      ? getUserAccountsStorageKey(currentUserId.value)
+      : storageKeys.accounts
+    writeStorage(key, accounts.value)
+  }
+
+  function pushAccountsToServer() {
     if (!currentUserId.value) {
       return
     }
 
-    action().catch(() => {
+    saveAccounts(currentUserId.value, accounts.value).catch(() => {
       // server push is best-effort, local data already persisted
     })
   }
@@ -271,6 +286,40 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   })
   const todayPlan = computed(() => weeklyPlanDays.value[0])
 
+  async function initServerSync(allowLegacyAccountsMigration = false) {
+    if (!currentUserId.value) {
+      return
+    }
+
+    const userId = currentUserId.value
+    const userAccountsKey = getUserAccountsStorageKey(userId)
+    const hasUserAccountsCache = hasStorageValue(userAccountsKey)
+    const serverData = await getUserData(userId)
+    const serverAccounts = normalizeAccounts(serverData.accounts as StoredOjAccount[])
+
+    if (serverAccounts.length > 0) {
+      accounts.value = serverAccounts
+      persistAccounts()
+      return
+    }
+
+    if (allowLegacyAccountsMigration && !hasUserAccountsCache) {
+      const legacyAccounts = normalizeAccounts(
+        readStorage<StoredOjAccount[]>(storageKeys.accounts, []),
+      )
+
+      if (legacyAccounts.length > 0) {
+        accounts.value = legacyAccounts
+        persistAccounts()
+        await saveAccounts(userId, accounts.value)
+        return
+      }
+    }
+
+    accounts.value = []
+    persistAccounts()
+  }
+
   async function loginSimpleUser(
     username: string,
   ): Promise<{ ok: boolean; message: string }> {
@@ -281,11 +330,13 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     }
 
     try {
+      const previousUserId = currentUserId.value
       const user = await loginUser(trimmedUsername)
       currentUserId.value = user.userId
       currentUsername.value = user.username
       writeStorage(storageKeys.currentUserId, currentUserId.value)
       writeStorage(storageKeys.currentUsername, currentUsername.value)
+      await initServerSync(!previousUserId)
 
       return { ok: true, message: `已切换到用户 ${user.username}` }
     } catch (error) {
@@ -370,8 +421,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     }
 
     accounts.value = [nextAccount, ...accounts.value]
-    writeStorage(storageKeys.accounts, accounts.value)
-    pushToServer(() => saveAccounts(currentUserId.value, accounts.value))
+    persistAccounts()
+    pushAccountsToServer()
     return { ok: true, message: `${platform} 账号绑定成功` }
   }
 
@@ -387,8 +438,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       clearSyncedSubmissions(removedAccount.platform)
     }
 
-    writeStorage(storageKeys.accounts, accounts.value)
-    pushToServer(() => saveAccounts(currentUserId.value, accounts.value))
+    persistAccounts()
+    pushAccountsToServer()
   }
 
   function clearSyncedSubmissions(platform: OjPlatform) {
@@ -412,7 +463,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     accounts.value = accounts.value.map((item) =>
       item.id === id ? { ...item, lastSyncAt: formatDateTime() } : item,
     )
-    writeStorage(storageKeys.accounts, accounts.value)
+    persistAccounts()
+    pushAccountsToServer()
   }
 
   async function syncCodeforcesAccount(id: string): Promise<{ ok: boolean; message: string }> {
@@ -453,12 +505,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
           : item,
       )
       writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
-      writeStorage(storageKeys.accounts, accounts.value)
-      pushToServer(() =>
-        saveSubmissions(currentUserId.value, {
-          Codeforces: codeforcesSubmissions.value,
-        }),
-      )
+      persistAccounts()
+      pushAccountsToServer()
 
       return {
         ok: true,
@@ -506,12 +554,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
           : item,
       )
       writeStorage(storageKeys.atcoderSubmissions, atcoderSubmissions.value)
-      writeStorage(storageKeys.accounts, accounts.value)
-      pushToServer(() =>
-        saveSubmissions(currentUserId.value, {
-          AtCoder: atcoderSubmissions.value,
-        }),
-      )
+      persistAccounts()
+      pushAccountsToServer()
 
       return {
         ok: true,
@@ -559,12 +603,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
           : item,
       )
       writeStorage(storageKeys.luoguSubmissions, luoguSubmissions.value)
-      writeStorage(storageKeys.accounts, accounts.value)
-      pushToServer(() =>
-        saveSubmissions(currentUserId.value, {
-          Luogu: luoguSubmissions.value,
-        }),
-      )
+      persistAccounts()
+      pushAccountsToServer()
 
       return {
         ok: true,
@@ -680,7 +720,6 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
         awardedScore: 0,
       }
       writeStorage(storageKeys.dailyChallenge, dailyChallenge.value)
-      pushToServer(() => saveDailyChallenge(currentUserId.value, dailyChallenge.value))
 
       return { ok: true, message: '每日一题已刷新。' }
     } catch (error) {
@@ -709,7 +748,6 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
     dailyChallenge.value.awardedScore = nextAwardedScore
     writeStorage(storageKeys.dailyChallenge, dailyChallenge.value)
-    pushToServer(() => saveDailyChallenge(currentUserId.value, dailyChallenge.value))
 
     if (delta > 0) {
       addLeaderboardScore(currentUsername.value, delta)
@@ -775,13 +813,11 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     }
 
     writeStorage(storageKeys.leaderboard, leaderboardEntries.value)
-    pushToServer(() => submitLeaderboard(username, score))
   }
 
   function updateSettings(nextSettings: UserSettings) {
     settings.value = nextSettings
     writeStorage(storageKeys.settings, settings.value)
-    pushToServer(() => saveSettings(currentUserId.value, settings.value))
   }
 
   function updateTaskStatus(id: string, status: TrainingTask['status']) {
@@ -797,7 +833,6 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       [id]: status,
     }
     writeStorage(storageKeys.weeklyPlanStatus, weeklyPlanStatus.value)
-    pushToServer(() => saveTrainingPlan(currentUserId.value, weeklyPlanStatus.value))
   }
 
   function addWeeklyPlanDay(day: Omit<WeeklyTrainingPlanDay, 'id'>) {
@@ -808,7 +843,6 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
     weeklyPlanItems.value = [...weeklyPlanItems.value, nextDay]
     writeStorage(storageKeys.weeklyPlanDays, weeklyPlanItems.value)
-    pushToServer(() => saveTrainingPlan(currentUserId.value, weeklyPlanStatus.value))
     return nextDay
   }
 
@@ -821,7 +855,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     codeforcesSubmissions.value = []
     atcoderSubmissions.value = []
     luoguSubmissions.value = []
-    writeStorage(storageKeys.accounts, accounts.value)
+    persistAccounts()
+    pushAccountsToServer()
     writeStorage(storageKeys.settings, settings.value)
     writeStorage(storageKeys.tasks, trainingTasks.value)
     writeStorage(storageKeys.weeklyPlanDays, weeklyPlanItems.value)
@@ -869,6 +904,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     dailyChallenge,
     leaderboard,
     autoSyncState,
+    initServerSync,
     loginSimpleUser,
     bindAccount,
     addAccount,
