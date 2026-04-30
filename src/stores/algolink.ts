@@ -124,28 +124,16 @@ function normalizeAccounts(value: StoredOjAccount[]): OjAccount[] {
     }))
 }
 
-function getUserAccountsStorageKey(userId: string) {
-  return `algolink:${userId}:accounts`
-}
-
-function getUserSubmissionsStorageKey(userId: string) {
-  return `algolink:${userId}:submissions`
-}
-
-function getUserSettingsStorageKey(userId: string) {
-  return `algolink:${userId}:settings`
-}
-
-function getUserTrainingPlanStorageKey(userId: string) {
-  return `algolink:${userId}:trainingPlan`
-}
-
-function getUserDailyChallengeStorageKey(userId: string) {
-  return `algolink:${userId}:dailyChallenge`
+function getUserCacheKey(userId: string, key: string) {
+  return `algolink:${userId}:${key}`
 }
 
 function hasStorageValue(key: string) {
   return localStorage.getItem(key) !== null
+}
+
+function hasSubmissionCache(value: Record<OjPlatform, SubmissionRecord[]>) {
+  return Object.values(value).some((items) => items.length > 0)
 }
 
 interface TrainingPlanCache {
@@ -246,7 +234,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const accounts = ref<OjAccount[]>(
     normalizeAccounts(
       readStorage<StoredOjAccount[]>(
-        currentUserId.value ? getUserAccountsStorageKey(currentUserId.value) : storageKeys.accounts,
+        currentUserId.value ? getUserCacheKey(currentUserId.value, 'accounts') : storageKeys.accounts,
         [],
       ),
     ),
@@ -257,13 +245,13 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const settings = ref<UserSettings>(
     normalizeSettings(
       currentUserId.value
-        ? readStorage<unknown>(getUserSettingsStorageKey(currentUserId.value), defaultSettings)
+        ? readStorage<unknown>(getUserCacheKey(currentUserId.value, 'settings'), defaultSettings)
         : readStorage<UserSettings>(storageKeys.settings, defaultSettings),
     ),
   )
   const initialTrainingPlan = currentUserId.value
     ? normalizeTrainingPlan(
-        readStorage<unknown>(getUserTrainingPlanStorageKey(currentUserId.value), {}),
+        readStorage<unknown>(getUserCacheKey(currentUserId.value, 'trainingPlan'), {}),
       )
     : {
         trainingTasks: readStorage<TrainingTask[]>(storageKeys.tasks, mockTrainingTasks),
@@ -282,7 +270,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     initialTrainingPlan.weeklyPlanStatus,
   )
   const initialSubmissionCache = currentUserId.value
-    ? normalizeSubmissionCache(readStorage<unknown>(getUserSubmissionsStorageKey(currentUserId.value), {}))
+    ? normalizeSubmissionCache(readStorage<unknown>(getUserCacheKey(currentUserId.value, 'submissions'), {}))
     : {
         Codeforces: readStorage<SubmissionRecord[]>(storageKeys.codeforcesSubmissions, []),
         Luogu: readStorage<SubmissionRecord[]>(storageKeys.luoguSubmissions, []),
@@ -294,7 +282,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const dailyChallenge = ref<DailyChallengeState | null>(
     currentUserId.value
       ? normalizeDailyChallenge(
-          readStorage<unknown>(getUserDailyChallengeStorageKey(currentUserId.value), null),
+          readStorage<unknown>(getUserCacheKey(currentUserId.value, 'dailyChallenge'), null),
         )
       : readStorage<DailyChallengeState | null>(storageKeys.dailyChallenge, null),
   )
@@ -310,7 +298,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
   function persistAccounts() {
     const key = currentUserId.value
-      ? getUserAccountsStorageKey(currentUserId.value)
+      ? getUserCacheKey(currentUserId.value, 'accounts')
       : storageKeys.accounts
     writeStorage(key, accounts.value)
   }
@@ -335,7 +323,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
   function persistSubmissions() {
     if (currentUserId.value) {
-      writeStorage(getUserSubmissionsStorageKey(currentUserId.value), getSubmissionCache())
+      writeStorage(getUserCacheKey(currentUserId.value, 'submissions'), getSubmissionCache())
       return
     }
 
@@ -364,7 +352,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
   function persistSettings() {
     const key = currentUserId.value
-      ? getUserSettingsStorageKey(currentUserId.value)
+      ? getUserCacheKey(currentUserId.value, 'settings')
       : storageKeys.settings
     writeStorage(key, settings.value)
   }
@@ -381,7 +369,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
   function persistTrainingPlan() {
     if (currentUserId.value) {
-      writeStorage(getUserTrainingPlanStorageKey(currentUserId.value), getTrainingPlanCache())
+      writeStorage(getUserCacheKey(currentUserId.value, 'trainingPlan'), getTrainingPlanCache())
       return
     }
 
@@ -402,7 +390,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
   function persistDailyChallenge() {
     const key = currentUserId.value
-      ? getUserDailyChallengeStorageKey(currentUserId.value)
+      ? getUserCacheKey(currentUserId.value, 'dailyChallenge')
       : storageKeys.dailyChallenge
     writeStorage(key, dailyChallenge.value)
   }
@@ -537,13 +525,13 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   })
   const todayPlan = computed(() => weeklyPlanDays.value[0])
 
-  async function initServerSync(allowLegacyAccountsMigration = false) {
+  async function initServerSync(allowLegacyMigration = false) {
     if (!currentUserId.value) {
       return
     }
 
     const userId = currentUserId.value
-    const userAccountsKey = getUserAccountsStorageKey(userId)
+    const userAccountsKey = getUserCacheKey(userId, 'accounts')
     const hasUserAccountsCache = hasStorageValue(userAccountsKey)
     const serverData = await getUserData(userId)
     const serverAccounts = normalizeAccounts(serverData.accounts as StoredOjAccount[])
@@ -551,7 +539,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     if (serverAccounts.length > 0) {
       accounts.value = serverAccounts
       persistAccounts()
-    } else if (allowLegacyAccountsMigration && !hasUserAccountsCache) {
+    } else if (allowLegacyMigration && !hasUserAccountsCache) {
       const legacyAccounts = normalizeAccounts(
         readStorage<StoredOjAccount[]>(storageKeys.accounts, []),
       )
@@ -570,34 +558,83 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     }
 
     const serverSubmissions = normalizeSubmissionCache(serverData.submissions)
-    codeforcesSubmissions.value = serverSubmissions.Codeforces
-    atcoderSubmissions.value = serverSubmissions.AtCoder
-    luoguSubmissions.value = serverSubmissions.Luogu
+    const userSubmissionsKey = getUserCacheKey(userId, 'submissions')
+    const hasUserSubmissionsCache = hasStorageValue(userSubmissionsKey)
+    const nextSubmissions =
+      hasSubmissionCache(serverSubmissions) || !allowLegacyMigration || hasUserSubmissionsCache
+        ? serverSubmissions
+        : normalizeSubmissionCache({
+            Codeforces: readStorage<SubmissionRecord[]>(storageKeys.codeforcesSubmissions, []),
+            Luogu: readStorage<SubmissionRecord[]>(storageKeys.luoguSubmissions, []),
+            AtCoder: readStorage<SubmissionRecord[]>(storageKeys.atcoderSubmissions, []),
+          })
+    codeforcesSubmissions.value = nextSubmissions.Codeforces
+    atcoderSubmissions.value = nextSubmissions.AtCoder
+    luoguSubmissions.value = nextSubmissions.Luogu
     persistSubmissions()
+    if (!hasSubmissionCache(serverSubmissions) && hasSubmissionCache(nextSubmissions)) {
+      await saveSubmissions(userId, getSubmissionCache())
+    }
 
+    const userSettingsKey = getUserCacheKey(userId, 'settings')
+    const hasUserSettingsCache = hasStorageValue(userSettingsKey)
     settings.value = serverData.settings
       ? normalizeSettings(serverData.settings)
       : normalizeSettings(
-          readStorage<unknown>(getUserSettingsStorageKey(userId), defaultSettings),
+          allowLegacyMigration && !hasUserSettingsCache
+            ? readStorage<UserSettings>(storageKeys.settings, defaultSettings)
+            : readStorage<unknown>(userSettingsKey, defaultSettings),
         )
     persistSettings()
+    if (!serverData.settings && allowLegacyMigration && !hasUserSettingsCache) {
+      await saveSettings(userId, settings.value)
+    }
 
+    const userTrainingPlanKey = getUserCacheKey(userId, 'trainingPlan')
+    const hasUserTrainingPlanCache = hasStorageValue(userTrainingPlanKey)
     const nextTrainingPlan = serverData.trainingPlan
       ? normalizeTrainingPlan(serverData.trainingPlan)
       : normalizeTrainingPlan(
-          readStorage<unknown>(getUserTrainingPlanStorageKey(userId), {}),
+          allowLegacyMigration && !hasUserTrainingPlanCache
+            ? {
+                trainingTasks: readStorage<TrainingTask[]>(storageKeys.tasks, mockTrainingTasks),
+                weeklyPlanItems: readStorage<WeeklyTrainingPlanDay[]>(
+                  storageKeys.weeklyPlanDays,
+                  weeklyTrainingPlan,
+                ),
+                weeklyPlanStatus: readStorage<Record<string, TrainingPlanStatus>>(
+                  storageKeys.weeklyPlanStatus,
+                  {},
+                ),
+              }
+            : readStorage<unknown>(userTrainingPlanKey, {}),
         )
     trainingTasks.value = nextTrainingPlan.trainingTasks
     weeklyPlanItems.value = nextTrainingPlan.weeklyPlanItems
     weeklyPlanStatus.value = nextTrainingPlan.weeklyPlanStatus
     persistTrainingPlan()
+    if (!serverData.trainingPlan && allowLegacyMigration && !hasUserTrainingPlanCache) {
+      await saveTrainingPlan(userId, getTrainingPlanCache())
+    }
 
+    const userDailyChallengeKey = getUserCacheKey(userId, 'dailyChallenge')
+    const hasUserDailyChallengeCache = hasStorageValue(userDailyChallengeKey)
     dailyChallenge.value = serverData.dailyChallenge
       ? normalizeDailyChallenge(serverData.dailyChallenge)
       : normalizeDailyChallenge(
-          readStorage<unknown>(getUserDailyChallengeStorageKey(userId), null),
+          allowLegacyMigration && !hasUserDailyChallengeCache
+            ? readStorage<DailyChallengeState | null>(storageKeys.dailyChallenge, null)
+            : readStorage<unknown>(userDailyChallengeKey, null),
         )
     persistDailyChallenge()
+    if (
+      !serverData.dailyChallenge &&
+      allowLegacyMigration &&
+      !hasUserDailyChallengeCache &&
+      dailyChallenge.value
+    ) {
+      await saveDailyChallenge(userId, dailyChallenge.value)
+    }
   }
 
   async function loginSimpleUser(
