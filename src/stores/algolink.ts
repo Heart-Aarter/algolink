@@ -18,6 +18,7 @@ import {
 } from '@/services/atcoder'
 import { fetchDailyProblems } from '@/services/dailyChallenge'
 import {
+  getLeaderboard,
   getUserData,
   loginUser,
   saveAccounts,
@@ -25,6 +26,7 @@ import {
   saveSettings,
   saveSubmissions,
   saveTrainingPlan,
+  submitLeaderboard,
 } from '@/services/api'
 import { fetchLuoguSubmissions, fetchLuoguUser } from '@/services/luogu'
 import { toSubmissionRecord } from '@/services/normalizers'
@@ -205,6 +207,23 @@ function normalizeDailyChallenge(value: unknown): DailyChallengeState | null {
     completedProblemIds: source.completedProblemIds,
     awardedScore: Number(source.awardedScore ?? 0),
   }
+}
+
+function normalizeLeaderboard(value: unknown): LeaderboardEntry[] {
+  return Array.isArray(value)
+    ? value
+        .filter(
+          (entry): entry is Partial<LeaderboardEntry> & { username: string; score: number } =>
+            !!entry &&
+            typeof entry === 'object' &&
+            typeof entry.username === 'string' &&
+            Number.isFinite(entry.score),
+        )
+        .map((entry) => ({
+          username: entry.username,
+          score: Math.max(0, Math.floor(entry.score)),
+        }))
+    : []
 }
 
 function normalizeSubmissionCache(value: unknown): Record<OjPlatform, SubmissionRecord[]> {
@@ -394,6 +413,30 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     }
 
     saveDailyChallenge(currentUserId.value, dailyChallenge.value).catch(() => {
+      // server push is best-effort, local data already persisted
+    })
+  }
+
+  function persistLeaderboard() {
+    writeStorage(storageKeys.leaderboard, leaderboardEntries.value)
+  }
+
+  async function syncLeaderboardFromServer() {
+    try {
+      const response = await getLeaderboard()
+      const serverItems = normalizeLeaderboard(response.items)
+
+      if (serverItems.length > 0) {
+        leaderboardEntries.value = serverItems
+        persistLeaderboard()
+      }
+    } catch {
+      // keep local cached leaderboard as fallback
+    }
+  }
+
+  function pushLeaderboardScore(username: string, score: number) {
+    submitLeaderboard(username, score).catch(() => {
       // server push is best-effort, local data already persisted
     })
   }
@@ -1057,7 +1100,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       leaderboardEntries.value = [...leaderboardEntries.value, { username, score }]
     }
 
-    writeStorage(storageKeys.leaderboard, leaderboardEntries.value)
+    persistLeaderboard()
+    pushLeaderboardScore(username, score)
   }
 
   function updateSettings(nextSettings: UserSettings) {
@@ -1116,7 +1160,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     leaderboardEntries.value = defaultLeaderboard
     persistDailyChallenge()
     pushDailyChallengeToServer()
-    writeStorage(storageKeys.leaderboard, leaderboardEntries.value)
+    persistLeaderboard()
   }
 
   watch(
@@ -1126,6 +1170,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     },
     { immediate: true },
   )
+
+  void syncLeaderboardFromServer()
 
   return {
     accounts,
