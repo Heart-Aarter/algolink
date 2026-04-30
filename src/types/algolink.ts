@@ -37,7 +37,7 @@ export type DailyDifficulty = 'easy' | 'hard'
 
 export interface DailyProblem {
   id: string
-  platform: 'Codeforces' | 'Luogu'
+  platform: 'Codeforces' | 'Luogu' | 'AtCoder'
   title: string
   difficulty: number
   level: DailyDifficulty

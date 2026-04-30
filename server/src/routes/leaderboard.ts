@@ -43,7 +43,7 @@ router.post('/', (req, res) => {
     `
       INSERT INTO leaderboard (username, score)
       VALUES (?, ?)
-      ON CONFLICT(username) DO UPDATE SET score = excluded.score
+      ON CONFLICT(username) DO UPDATE SET score = leaderboard.score + excluded.score
     `,
   ).run(username, score)
 
