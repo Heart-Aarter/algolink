@@ -21,6 +21,7 @@ import {
   getUserData,
   loginUser,
   saveAccounts,
+  saveSubmissions,
 } from '@/services/api'
 import { fetchLuoguSubmissions, fetchLuoguUser } from '@/services/luogu'
 import { toSubmissionRecord } from '@/services/normalizers'
@@ -122,8 +123,27 @@ function getUserAccountsStorageKey(userId: string) {
   return `algolink:${userId}:accounts`
 }
 
+function getUserSubmissionsStorageKey(userId: string) {
+  return `algolink:${userId}:submissions`
+}
+
 function hasStorageValue(key: string) {
   return localStorage.getItem(key) !== null
+}
+
+function normalizeSubmissionCache(value: unknown): Record<OjPlatform, SubmissionRecord[]> {
+  const source =
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {}
+
+  return {
+    Codeforces: Array.isArray(source.Codeforces)
+      ? (source.Codeforces as SubmissionRecord[])
+      : [],
+    Luogu: Array.isArray(source.Luogu) ? (source.Luogu as SubmissionRecord[]) : [],
+    AtCoder: Array.isArray(source.AtCoder) ? (source.AtCoder as SubmissionRecord[]) : [],
+  }
 }
 
 export const useAlgoLinkStore = defineStore('algolink', () => {
@@ -151,15 +171,16 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const weeklyPlanStatus = ref<Record<string, TrainingPlanStatus>>(
     readStorage<Record<string, TrainingPlanStatus>>(storageKeys.weeklyPlanStatus, {}),
   )
-  const codeforcesSubmissions = ref<SubmissionRecord[]>(
-    readStorage<SubmissionRecord[]>(storageKeys.codeforcesSubmissions, []),
-  )
-  const atcoderSubmissions = ref<SubmissionRecord[]>(
-    readStorage<SubmissionRecord[]>(storageKeys.atcoderSubmissions, []),
-  )
-  const luoguSubmissions = ref<SubmissionRecord[]>(
-    readStorage<SubmissionRecord[]>(storageKeys.luoguSubmissions, []),
-  )
+  const initialSubmissionCache = currentUserId.value
+    ? normalizeSubmissionCache(readStorage<unknown>(getUserSubmissionsStorageKey(currentUserId.value), {}))
+    : {
+        Codeforces: readStorage<SubmissionRecord[]>(storageKeys.codeforcesSubmissions, []),
+        Luogu: readStorage<SubmissionRecord[]>(storageKeys.luoguSubmissions, []),
+        AtCoder: readStorage<SubmissionRecord[]>(storageKeys.atcoderSubmissions, []),
+      }
+  const codeforcesSubmissions = ref<SubmissionRecord[]>(initialSubmissionCache.Codeforces)
+  const atcoderSubmissions = ref<SubmissionRecord[]>(initialSubmissionCache.AtCoder)
+  const luoguSubmissions = ref<SubmissionRecord[]>(initialSubmissionCache.Luogu)
   const dailyChallenge = ref<DailyChallengeState | null>(
     readStorage<DailyChallengeState | null>(storageKeys.dailyChallenge, null),
   )
@@ -186,6 +207,35 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     }
 
     saveAccounts(currentUserId.value, accounts.value).catch(() => {
+      // server push is best-effort, local data already persisted
+    })
+  }
+
+  function getSubmissionCache() {
+    return {
+      Codeforces: codeforcesSubmissions.value,
+      Luogu: luoguSubmissions.value,
+      AtCoder: atcoderSubmissions.value,
+    }
+  }
+
+  function persistSubmissions() {
+    if (currentUserId.value) {
+      writeStorage(getUserSubmissionsStorageKey(currentUserId.value), getSubmissionCache())
+      return
+    }
+
+    writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
+    writeStorage(storageKeys.atcoderSubmissions, atcoderSubmissions.value)
+    writeStorage(storageKeys.luoguSubmissions, luoguSubmissions.value)
+  }
+
+  function pushSubmissionsToServer() {
+    if (!currentUserId.value) {
+      return
+    }
+
+    saveSubmissions(currentUserId.value, getSubmissionCache()).catch(() => {
       // server push is best-effort, local data already persisted
     })
   }
@@ -300,10 +350,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     if (serverAccounts.length > 0) {
       accounts.value = serverAccounts
       persistAccounts()
-      return
-    }
-
-    if (allowLegacyAccountsMigration && !hasUserAccountsCache) {
+    } else if (allowLegacyAccountsMigration && !hasUserAccountsCache) {
       const legacyAccounts = normalizeAccounts(
         readStorage<StoredOjAccount[]>(storageKeys.accounts, []),
       )
@@ -312,12 +359,20 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
         accounts.value = legacyAccounts
         persistAccounts()
         await saveAccounts(userId, accounts.value)
-        return
+      } else {
+        accounts.value = []
+        persistAccounts()
       }
+    } else {
+      accounts.value = []
+      persistAccounts()
     }
 
-    accounts.value = []
-    persistAccounts()
+    const serverSubmissions = normalizeSubmissionCache(serverData.submissions)
+    codeforcesSubmissions.value = serverSubmissions.Codeforces
+    atcoderSubmissions.value = serverSubmissions.AtCoder
+    luoguSubmissions.value = serverSubmissions.Luogu
+    persistSubmissions()
   }
 
   async function loginSimpleUser(
@@ -445,18 +500,21 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   function clearSyncedSubmissions(platform: OjPlatform) {
     if (platform === 'Codeforces') {
       codeforcesSubmissions.value = []
-      writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
+      persistSubmissions()
+      pushSubmissionsToServer()
       return
     }
 
     if (platform === 'AtCoder') {
       atcoderSubmissions.value = []
-      writeStorage(storageKeys.atcoderSubmissions, atcoderSubmissions.value)
+      persistSubmissions()
+      pushSubmissionsToServer()
       return
     }
 
     luoguSubmissions.value = []
-    writeStorage(storageKeys.luoguSubmissions, luoguSubmissions.value)
+    persistSubmissions()
+    pushSubmissionsToServer()
   }
 
   function syncAccount(id: string) {
@@ -504,7 +562,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
             }
           : item,
       )
-      writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
+      persistSubmissions()
+      pushSubmissionsToServer()
       persistAccounts()
       pushAccountsToServer()
 
@@ -553,7 +612,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
             }
           : item,
       )
-      writeStorage(storageKeys.atcoderSubmissions, atcoderSubmissions.value)
+      persistSubmissions()
+      pushSubmissionsToServer()
       persistAccounts()
       pushAccountsToServer()
 
@@ -602,7 +662,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
             }
           : item,
       )
-      writeStorage(storageKeys.luoguSubmissions, luoguSubmissions.value)
+      persistSubmissions()
+      pushSubmissionsToServer()
       persistAccounts()
       pushAccountsToServer()
 
@@ -857,13 +918,12 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     luoguSubmissions.value = []
     persistAccounts()
     pushAccountsToServer()
+    persistSubmissions()
+    pushSubmissionsToServer()
     writeStorage(storageKeys.settings, settings.value)
     writeStorage(storageKeys.tasks, trainingTasks.value)
     writeStorage(storageKeys.weeklyPlanDays, weeklyPlanItems.value)
     writeStorage(storageKeys.weeklyPlanStatus, weeklyPlanStatus.value)
-    writeStorage(storageKeys.codeforcesSubmissions, codeforcesSubmissions.value)
-    writeStorage(storageKeys.atcoderSubmissions, atcoderSubmissions.value)
-    writeStorage(storageKeys.luoguSubmissions, luoguSubmissions.value)
     dailyChallenge.value = null
     leaderboardEntries.value = defaultLeaderboard
     writeStorage(storageKeys.dailyChallenge, dailyChallenge.value)
