@@ -1,6 +1,7 @@
 import cors from 'cors'
 import express from 'express'
 import { initDatabase } from './db.js'
+import accountsRouter from './routes/accounts.js'
 import userRouter from './routes/user.js'
 
 const app = express()
@@ -16,6 +17,7 @@ app.get('/api/health', (_req, res) => {
 })
 
 app.use('/api/user', userRouter)
+app.use('/api/user', accountsRouter)
 
 app.listen(port, () => {
   console.log(`AlgoLink API server listening on http://localhost:${port}`)
