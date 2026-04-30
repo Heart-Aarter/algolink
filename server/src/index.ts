@@ -3,6 +3,7 @@ import express from 'express'
 import { initDatabase } from './db.js'
 import accountsRouter from './routes/accounts.js'
 import dailyRouter from './routes/daily.js'
+import leaderboardRouter from './routes/leaderboard.js'
 import settingsRouter from './routes/settings.js'
 import submissionsRouter from './routes/submissions.js'
 import trainingPlanRouter from './routes/trainingPlan.js'
@@ -26,6 +27,7 @@ app.use('/api/user', submissionsRouter)
 app.use('/api/user', settingsRouter)
 app.use('/api/user', trainingPlanRouter)
 app.use('/api/user', dailyRouter)
+app.use('/api/leaderboard', leaderboardRouter)
 
 app.listen(port, () => {
   console.log(`AlgoLink API server listening on http://localhost:${port}`)
