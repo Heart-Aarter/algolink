@@ -28,20 +28,46 @@ AlgoLink 面向算法竞赛学习者，支持聚合 Codeforces、洛谷、AtCode
 - Axios
 - 普通 CSS
 
-## 第一阶段目标
+## 第一阶段目标 ✅
 
 搭建一个可运行的前端基础框架，包括：
 
-- 顶部 Header
-- 左侧 Sidebar
-- 主内容区域
-- 首页 Dashboard
-- OJ 账号绑定页
-- 提交记录页
-- 能力画像页
-- AI 训练建议页
-- 训练计划页
-- 设置页
-- mock 数据文件
-- 基础路由结构
-- 基础组件结构
+- [x] 顶部 Header
+- [x] 左侧 Sidebar
+- [x] 主内容区域
+- [x] 首页 Dashboard
+- [x] OJ 账号绑定页
+- [x] 提交记录页
+- [x] 能力画像页
+- [x] AI 训练建议页
+- [x] 训练计划页
+- [x] 设置页
+- [x] mock 数据文件
+- [x] 基础路由结构
+- [x] 基础组件结构
+
+额外完成：
+- [x] 训练报告页
+- [x] 每日一题页
+- [x] 排行榜页
+- [x] 关于页
+
+---
+
+## 第二阶段目标
+
+1. 补全 About 页面的项目介绍、功能亮点与技术栈展示
+2. 增强排行榜页面：前三奖牌、排名序号、当前用户高亮、统计摘要
+3. 统一全局表单控件为 Naive UI（NSelect / NCheckbox）
+4. 清理 Vue 脚手架残留文件（HelloWorld / TheWelcome / WelcomeItem / counter / icons/*）
+
+---
+
+## 代码约定
+
+- 所有表单控件统一使用 Naive UI（n-select / n-checkbox / n-input 等），禁止原生 `<select>` / `<input type="checkbox">` 等裸控件
+- 新增页面优先复用 `StatCard`、`ChartPanel`、`.panel`、`.policy-card` 等现有组件和样式类
+- route meta.title 用于页面 `<h1>` 标题和浏览器 tab 标题同步
+- 删除文件前确认 `grep` 无其他引用；每次修改后必须保证 `npm run dev` 和 `npm run build` 通过
+- 数据展示优先使用 store computed，不直接在模板中写复杂逻辑
+- Mock 数据写在 `src/mock/` 目录，类型定义在 `src/types/algolink.ts`

@@ -1,10 +1,30 @@
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { computed, reactive, watch } from 'vue'
+import { NCheckbox, NSelect } from 'naive-ui'
 import { useAlgoLinkStore } from '@/stores/algolink'
-import type { UserSettings } from '@/types/algolink'
+import type { UserSettings, OjPlatform } from '@/types/algolink'
 
 const store = useAlgoLinkStore()
 const form = reactive<UserSettings>({ ...store.settings })
+
+const syncIntervalOptions = [
+  { label: '手动同步', value: 'manual' as const },
+  { label: '每日同步', value: 'daily' as const },
+  { label: '每周同步', value: 'weekly' as const },
+]
+
+const aiToneOptions = [
+  { label: '严格', value: 'strict' as const },
+  { label: '均衡', value: 'balanced' as const },
+  { label: '鼓励', value: 'encouraging' as const },
+]
+
+const platformOptions = computed(() =>
+  store.supportedPlatforms.map((item: OjPlatform) => ({
+    label: item,
+    value: item,
+  })),
+)
 
 watch(
   form,
@@ -27,29 +47,31 @@ watch(
       <div class="settings-grid">
         <label>
           同步频率
-          <select v-model="form.syncInterval">
-            <option value="manual">手动同步</option>
-            <option value="daily">每日同步</option>
-            <option value="weekly">每周同步</option>
-          </select>
+          <n-select
+            v-model:value="form.syncInterval"
+            :options="syncIntervalOptions"
+            consistent-menu-width
+          />
         </label>
         <label>
           AI 建议语气
-          <select v-model="form.aiTone">
-            <option value="strict">严格</option>
-            <option value="balanced">均衡</option>
-            <option value="encouraging">鼓励</option>
-          </select>
+          <n-select
+            v-model:value="form.aiTone"
+            :options="aiToneOptions"
+            consistent-menu-width
+          />
         </label>
         <label>
           默认平台
-          <select v-model="form.defaultPlatform">
-            <option v-for="item in store.supportedPlatforms" :key="item" :value="item">{{ item }}</option>
-          </select>
+          <n-select
+            v-model:value="form.defaultPlatform"
+            :options="platformOptions"
+            consistent-menu-width
+          />
         </label>
         <label class="check-row">
-          <input v-model="form.showOnlyPublicData" type="checkbox" />
-          仅展示公开数据
+          <n-checkbox v-model:checked="form.showOnlyPublicData" />
+          <span>仅展示公开数据</span>
         </label>
       </div>
     </section>
@@ -78,3 +100,26 @@ watch(
     </section>
   </div>
 </template>
+
+<style scoped>
+.settings-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.settings-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: var(--color-text-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.check-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+</style>
