@@ -21,7 +21,10 @@ import {
   getUserData,
   loginUser,
   saveAccounts,
+  saveDailyChallenge,
+  saveSettings,
   saveSubmissions,
+  saveTrainingPlan,
 } from '@/services/api'
 import { fetchLuoguSubmissions, fetchLuoguUser } from '@/services/luogu'
 import { toSubmissionRecord } from '@/services/normalizers'
@@ -127,8 +130,81 @@ function getUserSubmissionsStorageKey(userId: string) {
   return `algolink:${userId}:submissions`
 }
 
+function getUserSettingsStorageKey(userId: string) {
+  return `algolink:${userId}:settings`
+}
+
+function getUserTrainingPlanStorageKey(userId: string) {
+  return `algolink:${userId}:trainingPlan`
+}
+
+function getUserDailyChallengeStorageKey(userId: string) {
+  return `algolink:${userId}:dailyChallenge`
+}
+
 function hasStorageValue(key: string) {
   return localStorage.getItem(key) !== null
+}
+
+interface TrainingPlanCache {
+  trainingTasks: TrainingTask[]
+  weeklyPlanItems: WeeklyTrainingPlanDay[]
+  weeklyPlanStatus: Record<string, TrainingPlanStatus>
+}
+
+function normalizeSettings(value: unknown): UserSettings {
+  const source =
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Partial<UserSettings>)
+      : {}
+
+  return {
+    ...defaultSettings,
+    ...source,
+  }
+}
+
+function normalizeTrainingPlan(value: unknown): TrainingPlanCache {
+  const source =
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Partial<TrainingPlanCache>)
+      : {}
+
+  return {
+    trainingTasks: Array.isArray(source.trainingTasks) ? source.trainingTasks : mockTrainingTasks,
+    weeklyPlanItems: Array.isArray(source.weeklyPlanItems)
+      ? source.weeklyPlanItems
+      : weeklyTrainingPlan,
+    weeklyPlanStatus:
+      source.weeklyPlanStatus &&
+      typeof source.weeklyPlanStatus === 'object' &&
+      !Array.isArray(source.weeklyPlanStatus)
+        ? source.weeklyPlanStatus
+        : {},
+  }
+}
+
+function normalizeDailyChallenge(value: unknown): DailyChallengeState | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null
+  }
+
+  const source = value as Partial<DailyChallengeState>
+
+  if (
+    typeof source.date !== 'string' ||
+    !Array.isArray(source.problems) ||
+    !Array.isArray(source.completedProblemIds)
+  ) {
+    return null
+  }
+
+  return {
+    date: source.date,
+    problems: source.problems,
+    completedProblemIds: source.completedProblemIds,
+    awardedScore: Number(source.awardedScore ?? 0),
+  }
 }
 
 function normalizeSubmissionCache(value: unknown): Record<OjPlatform, SubmissionRecord[]> {
@@ -160,16 +236,31 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     readStorage<string>(storageKeys.currentUsername, '') || accounts.value[0]?.handle || 'AlgoLinkUser',
   )
   const settings = ref<UserSettings>(
-    readStorage<UserSettings>(storageKeys.settings, defaultSettings),
+    normalizeSettings(
+      currentUserId.value
+        ? readStorage<unknown>(getUserSettingsStorageKey(currentUserId.value), defaultSettings)
+        : readStorage<UserSettings>(storageKeys.settings, defaultSettings),
+    ),
   )
-  const trainingTasks = ref<TrainingTask[]>(
-    readStorage<TrainingTask[]>(storageKeys.tasks, mockTrainingTasks),
-  )
-  const weeklyPlanItems = ref<WeeklyTrainingPlanDay[]>(
-    readStorage<WeeklyTrainingPlanDay[]>(storageKeys.weeklyPlanDays, weeklyTrainingPlan),
-  )
+  const initialTrainingPlan = currentUserId.value
+    ? normalizeTrainingPlan(
+        readStorage<unknown>(getUserTrainingPlanStorageKey(currentUserId.value), {}),
+      )
+    : {
+        trainingTasks: readStorage<TrainingTask[]>(storageKeys.tasks, mockTrainingTasks),
+        weeklyPlanItems: readStorage<WeeklyTrainingPlanDay[]>(
+          storageKeys.weeklyPlanDays,
+          weeklyTrainingPlan,
+        ),
+        weeklyPlanStatus: readStorage<Record<string, TrainingPlanStatus>>(
+          storageKeys.weeklyPlanStatus,
+          {},
+        ),
+      }
+  const trainingTasks = ref<TrainingTask[]>(initialTrainingPlan.trainingTasks)
+  const weeklyPlanItems = ref<WeeklyTrainingPlanDay[]>(initialTrainingPlan.weeklyPlanItems)
   const weeklyPlanStatus = ref<Record<string, TrainingPlanStatus>>(
-    readStorage<Record<string, TrainingPlanStatus>>(storageKeys.weeklyPlanStatus, {}),
+    initialTrainingPlan.weeklyPlanStatus,
   )
   const initialSubmissionCache = currentUserId.value
     ? normalizeSubmissionCache(readStorage<unknown>(getUserSubmissionsStorageKey(currentUserId.value), {}))
@@ -182,7 +273,11 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const atcoderSubmissions = ref<SubmissionRecord[]>(initialSubmissionCache.AtCoder)
   const luoguSubmissions = ref<SubmissionRecord[]>(initialSubmissionCache.Luogu)
   const dailyChallenge = ref<DailyChallengeState | null>(
-    readStorage<DailyChallengeState | null>(storageKeys.dailyChallenge, null),
+    currentUserId.value
+      ? normalizeDailyChallenge(
+          readStorage<unknown>(getUserDailyChallengeStorageKey(currentUserId.value), null),
+        )
+      : readStorage<DailyChallengeState | null>(storageKeys.dailyChallenge, null),
   )
   const leaderboardEntries = ref<LeaderboardEntry[]>(
     readStorage<LeaderboardEntry[]>(storageKeys.leaderboard, defaultLeaderboard),
@@ -236,6 +331,69 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     }
 
     saveSubmissions(currentUserId.value, getSubmissionCache()).catch(() => {
+      // server push is best-effort, local data already persisted
+    })
+  }
+
+  function getTrainingPlanCache(): TrainingPlanCache {
+    return {
+      trainingTasks: trainingTasks.value,
+      weeklyPlanItems: weeklyPlanItems.value,
+      weeklyPlanStatus: weeklyPlanStatus.value,
+    }
+  }
+
+  function persistSettings() {
+    const key = currentUserId.value
+      ? getUserSettingsStorageKey(currentUserId.value)
+      : storageKeys.settings
+    writeStorage(key, settings.value)
+  }
+
+  function pushSettingsToServer() {
+    if (!currentUserId.value) {
+      return
+    }
+
+    saveSettings(currentUserId.value, settings.value).catch(() => {
+      // server push is best-effort, local data already persisted
+    })
+  }
+
+  function persistTrainingPlan() {
+    if (currentUserId.value) {
+      writeStorage(getUserTrainingPlanStorageKey(currentUserId.value), getTrainingPlanCache())
+      return
+    }
+
+    writeStorage(storageKeys.tasks, trainingTasks.value)
+    writeStorage(storageKeys.weeklyPlanDays, weeklyPlanItems.value)
+    writeStorage(storageKeys.weeklyPlanStatus, weeklyPlanStatus.value)
+  }
+
+  function pushTrainingPlanToServer() {
+    if (!currentUserId.value) {
+      return
+    }
+
+    saveTrainingPlan(currentUserId.value, getTrainingPlanCache()).catch(() => {
+      // server push is best-effort, local data already persisted
+    })
+  }
+
+  function persistDailyChallenge() {
+    const key = currentUserId.value
+      ? getUserDailyChallengeStorageKey(currentUserId.value)
+      : storageKeys.dailyChallenge
+    writeStorage(key, dailyChallenge.value)
+  }
+
+  function pushDailyChallengeToServer() {
+    if (!currentUserId.value) {
+      return
+    }
+
+    saveDailyChallenge(currentUserId.value, dailyChallenge.value).catch(() => {
       // server push is best-effort, local data already persisted
     })
   }
@@ -373,6 +531,30 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     atcoderSubmissions.value = serverSubmissions.AtCoder
     luoguSubmissions.value = serverSubmissions.Luogu
     persistSubmissions()
+
+    settings.value = serverData.settings
+      ? normalizeSettings(serverData.settings)
+      : normalizeSettings(
+          readStorage<unknown>(getUserSettingsStorageKey(userId), defaultSettings),
+        )
+    persistSettings()
+
+    const nextTrainingPlan = serverData.trainingPlan
+      ? normalizeTrainingPlan(serverData.trainingPlan)
+      : normalizeTrainingPlan(
+          readStorage<unknown>(getUserTrainingPlanStorageKey(userId), {}),
+        )
+    trainingTasks.value = nextTrainingPlan.trainingTasks
+    weeklyPlanItems.value = nextTrainingPlan.weeklyPlanItems
+    weeklyPlanStatus.value = nextTrainingPlan.weeklyPlanStatus
+    persistTrainingPlan()
+
+    dailyChallenge.value = serverData.dailyChallenge
+      ? normalizeDailyChallenge(serverData.dailyChallenge)
+      : normalizeDailyChallenge(
+          readStorage<unknown>(getUserDailyChallengeStorageKey(userId), null),
+        )
+    persistDailyChallenge()
   }
 
   async function loginSimpleUser(
@@ -780,7 +962,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
         completedProblemIds: [],
         awardedScore: 0,
       }
-      writeStorage(storageKeys.dailyChallenge, dailyChallenge.value)
+      persistDailyChallenge()
+      pushDailyChallengeToServer()
 
       return { ok: true, message: '每日一题已刷新。' }
     } catch (error) {
@@ -808,7 +991,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     const delta = nextAwardedScore - dailyChallenge.value.awardedScore
 
     dailyChallenge.value.awardedScore = nextAwardedScore
-    writeStorage(storageKeys.dailyChallenge, dailyChallenge.value)
+    persistDailyChallenge()
+    pushDailyChallengeToServer()
 
     if (delta > 0) {
       addLeaderboardScore(currentUsername.value, delta)
@@ -878,14 +1062,16 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
   function updateSettings(nextSettings: UserSettings) {
     settings.value = nextSettings
-    writeStorage(storageKeys.settings, settings.value)
+    persistSettings()
+    pushSettingsToServer()
   }
 
   function updateTaskStatus(id: string, status: TrainingTask['status']) {
     trainingTasks.value = trainingTasks.value.map((task) =>
       task.id === id ? { ...task, status } : task,
     )
-    writeStorage(storageKeys.tasks, trainingTasks.value)
+    persistTrainingPlan()
+    pushTrainingPlanToServer()
   }
 
   function updateWeeklyPlanStatus(id: string, status: TrainingPlanStatus) {
@@ -893,7 +1079,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       ...weeklyPlanStatus.value,
       [id]: status,
     }
-    writeStorage(storageKeys.weeklyPlanStatus, weeklyPlanStatus.value)
+    persistTrainingPlan()
+    pushTrainingPlanToServer()
   }
 
   function addWeeklyPlanDay(day: Omit<WeeklyTrainingPlanDay, 'id'>) {
@@ -903,7 +1090,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     }
 
     weeklyPlanItems.value = [...weeklyPlanItems.value, nextDay]
-    writeStorage(storageKeys.weeklyPlanDays, weeklyPlanItems.value)
+    persistTrainingPlan()
+    pushTrainingPlanToServer()
     return nextDay
   }
 
@@ -920,13 +1108,14 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     pushAccountsToServer()
     persistSubmissions()
     pushSubmissionsToServer()
-    writeStorage(storageKeys.settings, settings.value)
-    writeStorage(storageKeys.tasks, trainingTasks.value)
-    writeStorage(storageKeys.weeklyPlanDays, weeklyPlanItems.value)
-    writeStorage(storageKeys.weeklyPlanStatus, weeklyPlanStatus.value)
+    persistSettings()
+    pushSettingsToServer()
+    persistTrainingPlan()
+    pushTrainingPlanToServer()
     dailyChallenge.value = null
     leaderboardEntries.value = defaultLeaderboard
-    writeStorage(storageKeys.dailyChallenge, dailyChallenge.value)
+    persistDailyChallenge()
+    pushDailyChallengeToServer()
     writeStorage(storageKeys.leaderboard, leaderboardEntries.value)
   }
 
