@@ -1,8 +1,13 @@
 # AlgoLink
 
-AlgoLink 是一个面向算法竞赛学习者的 AI 多 OJ 刷题数据分析平台。项目聚合 Codeforces、洛谷、AtCoder 等平台的公开刷题数据，用于展示刷题趋势、提交记录、能力画像、训练计划、每日一题和排行榜。
+AlgoLink 是一个面向算法竞赛学习者的 **AI 多 OJ 刷题数据分析平台**。项目聚合 Codeforces、洛谷、AtCoder 等平台的公开刷题数据，用于展示刷题趋势、提交记录、能力画像、训练建议、训练计划、每日一题和排行榜。
 
-当前版本使用简易用户名制和本地 SQLite 后端保存数据。它不是 Online Judge，不提供代码评测能力，也不要求用户输入任何 OJ 密码。
+本项目是网页设计比赛作品，定位是“数据分析平台”和“算法训练工具”，不是 Online Judge：
+
+- 不实现代码评测系统。
+- 不要求用户输入其他 OJ 的密码。
+- 只允许绑定公开 username / handle。
+- 可使用 mock 数据兜底展示，但后端 SQLite 已作为主要持久化数据源。
 
 ## 技术栈
 
@@ -11,6 +16,7 @@ AlgoLink 是一个面向算法竞赛学习者的 AI 多 OJ 刷题数据分析平
 - TypeScript
 - Vue Router
 - Pinia
+- Naive UI
 - ECharts
 - Axios
 - Express.js + TypeScript
@@ -42,11 +48,17 @@ npm run dev:client
 npm run dev:server
 ```
 
-构建前端：
+构建检查：
 
 ```sh
 npm run build
 ```
+
+`npm run build` 会同时检查前端和后端：
+
+- `vue-tsc --build`
+- `vite build`
+- `npm --workspace server run build`
 
 默认地址：
 
@@ -54,39 +66,68 @@ npm run build
 - 后端：`http://localhost:3001`
 - 健康检查：`http://localhost:3001/api/health`
 
+## 环境变量
+
+前端 API 地址通过 `VITE_API_BASE` 配置。
+
+本地开发默认值：
+
+```env
+VITE_API_BASE=http://localhost:3001
+```
+
+如果前端和后端同域部署，生产环境可以使用：
+
+```env
+VITE_API_BASE=/api
+```
+
 ## 项目结构
 
 ```text
 src/
-  components/     前端组件
-  mock/           前端 mock 数据
+  components/     通用组件与布局组件
+  mock/           mock 数据和推荐题目数据
   router/         Vue Router 路由
-  services/       前端 API Client 与 OJ 数据服务
-  stores/         Pinia 主 Store
+  services/       API Client 和 OJ 数据同步服务
+  stores/         Pinia Store
   types/          TypeScript 类型定义
-  utils/          分析、缓存等工具函数
+  utils/          数据分析、过滤、存储等工具函数
   views/          页面视图
 
 server/
   src/
-    db.ts         SQLite 初始化与数据库连接
-    index.ts      Express 应用入口
+    db.ts         SQLite 初始化
+    index.ts      Express 入口
     routes/       后端 API 路由
   data/
-    app.db        本地 SQLite 数据库文件，运行时自动创建
+    .gitkeep      保留数据目录
+    app.db        运行时自动生成，不提交到 Git
 ```
 
 ## 数据存储策略
 
-SQLite 是当前真实数据源。后端使用 `server/data/app.db` 保存用户、账号绑定、提交记录、用户状态和排行榜。
+SQLite 是主要持久化数据源，数据库文件运行时自动创建：
 
-localStorage 是前端缓存，用于：
+```text
+server/data/app.db
+```
 
-- 后端关闭或请求失败时继续显示已有数据
-- 页面刷新时先展示本地缓存，再等待服务器数据覆盖
-- 未登录用户继续使用原有本地体验
+数据库包含：
 
-用户相关缓存都会带上 `userId`，格式为：
+- `users`
+- `user_accounts`
+- `user_submissions`
+- `user_state`
+- `leaderboard`
+
+`localStorage` 是前端缓存：
+
+- 后端关闭时保留可用界面。
+- 页面刷新时先显示本地缓存。
+- 服务器成功返回后再覆盖 Store。
+
+用户相关缓存必须包含 `userId`：
 
 ```text
 algolink:${userId}:accounts
@@ -96,25 +137,32 @@ algolink:${userId}:trainingPlan
 algolink:${userId}:dailyChallenge
 ```
 
-以下 key 是全局 key：
+允许继续使用全局 key：
 
 ```text
 algolink:currentUserId
 algolink:currentUsername
-algolink.leaderboard
 algolink.theme
+algolink.leaderboard
 ```
 
-## 用户区分方案
+不要提交数据库文件。`.gitignore` 已忽略：
 
-当前使用简易用户名制：
+```text
+server/data/*.db
+server/data/*.db-*
+```
 
-- 用户在前端输入 `username`
-- 前端调用 `POST /api/user`
-- 后端使用 `username` 作为 `userId`
-- 不同用户的数据通过 `userId` 隔离
+## 用户方案
 
-这不是正式权限系统。当前没有实现密码、JWT、角色权限或会话管理。
+当前是简易用户名制，不是正式认证系统：
+
+1. 前端输入 `username`。
+2. 前端调用 `POST /api/user`。
+3. 后端使用 `username` 作为 `userId`。
+4. 账号、提交、设置、训练计划、每日一题通过 `userId` 隔离。
+
+不要把当前实现描述成已经支持 JWT、密码登录、权限系统或安全会话。
 
 ## API 列表
 
@@ -124,7 +172,7 @@ algolink.theme
 GET /api/health
 ```
 
-返回：
+响应：
 
 ```json
 { "ok": true }
@@ -139,7 +187,7 @@ Content-Type: application/json
 { "username": "Aarter" }
 ```
 
-返回：
+响应：
 
 ```json
 { "userId": "Aarter", "username": "Aarter" }
@@ -149,7 +197,7 @@ Content-Type: application/json
 GET /api/user/:userId
 ```
 
-返回用户全量数据：
+响应示例：
 
 ```json
 {
@@ -166,7 +214,7 @@ GET /api/user/:userId
 }
 ```
 
-### OJ 账号绑定
+### OJ 账号
 
 ```http
 PUT /api/user/:userId/accounts
@@ -215,13 +263,13 @@ Content-Type: application/json
 
 ### 排行榜
 
-排行榜是全局共享数据，不按 `userId` 隔离。
+排行榜是全局数据，不按 `userId` 隔离。
 
 ```http
 GET /api/leaderboard
 ```
 
-返回：
+响应：
 
 ```json
 {
@@ -238,7 +286,7 @@ Content-Type: application/json
 { "username": "Aarter", "score": 100 }
 ```
 
-## 错误格式
+## 错误响应
 
 后端错误响应统一为：
 
@@ -246,14 +294,157 @@ Content-Type: application/json
 { "error": "message" }
 ```
 
-前端 API Client 会将错误转换成友好提示。服务器不可用时，页面保留 localStorage 缓存，不应白屏。
+前端 API Client 会把后端错误、超时、无法连接服务器等情况转换成用户可读提示，并保留本地缓存。
+
+## 临时把电脑当服务器
+
+比赛展示或局域网演示时，可以临时把自己的电脑当服务器。
+
+启动：
+
+```sh
+npm run dev -- --host 0.0.0.0
+```
+
+查看本机局域网 IP：
+
+```powershell
+ipconfig
+```
+
+假设 IPv4 地址是 `192.168.1.23`，同一 Wi-Fi / 局域网中的其他设备访问：
+
+```text
+http://192.168.1.23:5173
+```
+
+同时需要让前端请求这台电脑上的后端。创建 `.env.local`：
+
+```env
+VITE_API_BASE=http://192.168.1.23:3001
+```
+
+然后重启开发服务。Windows 防火墙需要允许 Node.js，或放行 `5173` 和 `3001` 端口。
+
+## Linux 服务器部署
+
+推荐生产部署方式：
+
+- 前端 `dist/` 作为静态文件。
+- 后端 `server/dist/` 作为 Node 服务。
+- Nginx 对外提供静态文件和 `/api` 反向代理。
+- SQLite 数据库保存在 `server/data/app.db`。
+
+### 构建
+
+```sh
+npm install
+npm run build
+```
+
+如果前后端同域部署，建议创建 `.env.production`：
+
+```env
+VITE_API_BASE=/api
+```
+
+然后重新构建：
+
+```sh
+npm run build
+```
+
+### systemd 后端服务示例
+
+`/etc/systemd/system/algolink.service`：
+
+```ini
+[Unit]
+Description=AlgoLink API Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/algolink/server
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
+```
+
+启动：
+
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable algolink
+sudo systemctl start algolink
+sudo systemctl status algolink
+```
+
+### Nginx 示例
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    root /var/www/algolink/dist;
+    index index.html;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:3001/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+启用后检查：
+
+```sh
+sudo nginx -t
+sudo systemctl reload nginx
+curl http://localhost:3001/api/health
+```
+
+## GitHub Pages 部署说明
+
+GitHub Pages 只能托管静态前端，不能运行 Express 后端和 SQLite 数据库。
+
+因此：
+
+- 完整项目不适合只部署到 GitHub Pages。
+- 如果只想展示 UI，可以把 GitHub Pages 当作“前端展示版”。
+- 如果要完整运行，需要 GitHub Pages 前端 + 独立后端服务，或直接使用 Linux 服务器部署完整项目。
+
+如果仓库名不是根域名，需要在 `vite.config.ts` 中配置 `base`：
+
+```ts
+export default defineConfig({
+  base: '/your-repo-name/',
+  plugins: [vue(), vueDevTools()],
+})
+```
+
+如果前端托管在 GitHub Pages，后端单独部署，需要配置：
+
+```env
+VITE_API_BASE=https://your-api-domain.com
+```
 
 ## 后续可升级方向
 
-- 使用 JWT 登录替代简易用户名制
-- 增加正式权限系统和用户会话
-- 将 SQLite 升级为 PostgreSQL 或 MySQL
-- 将后端部署到云服务器
-- 增加数据备份和迁移脚本
-- 将 AI 建议接入真实 AI API
-
+- JWT 登录。
+- 正式权限系统。
+- PostgreSQL / MySQL。
+- 云服务器部署和 HTTPS。
+- 数据备份和迁移脚本。
+- 接入真实 AI API 生成训练建议。
