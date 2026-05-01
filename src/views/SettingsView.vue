@@ -82,8 +82,8 @@ watch(
         <p>只允许绑定公开 handle，不采集密码、cookie 或私有 token。</p>
       </article>
       <article class="policy-card">
-        <strong>前端阶段边界</strong>
-        <p>所有分析结果来自 mock 数据与 localStorage，不接真实后端。</p>
+        <strong>数据与隐私边界</strong>
+        <p>分析结果优先使用后端 SQLite 数据，本地缓存用于保留刷新和离线可用状态。</p>
       </article>
       <article class="policy-card">
         <strong>后续扩展点</strong>
@@ -93,7 +93,7 @@ watch(
 
     <section class="panel danger-panel">
       <div>
-        <h2>重置本地 mock 数据</h2>
+        <h2>重置当前用户数据</h2>
         <p>会恢复账号、设置与训练计划到默认示例数据。</p>
       </div>
       <button class="ghost-button" type="button" @click="store.resetLocalData">重置</button>

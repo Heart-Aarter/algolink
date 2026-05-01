@@ -394,7 +394,7 @@ const visibleRecommendations = computed(() =>
         <h2>AlgoLink 训练数据看板</h2>
         <p>
           Dashboard 优先使用 {{ dataSourceLabel }} 生成摘要、趋势、标签压力和 AI Coach
-          联动；本阶段不新增 OJ API、后端、登录、评测或真实 AI API。
+          联动；本阶段不新增 OJ 密码登录、评测或真实 AI API。
         </p>
         <div class="hero-actions">
           <RouterLink to="/accounts">同步 Codeforces</RouterLink>
@@ -427,7 +427,7 @@ const visibleRecommendations = computed(() =>
       <StatCard
         label="最近同步"
         :value="dashboardAccount?.lastSyncAt || '-'"
-        helper="保存在 localStorage"
+        helper="SQLite 持久化"
       />
     </section>
 

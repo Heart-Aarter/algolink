@@ -85,8 +85,8 @@ const designPrinciples = [
     text: '只绑定公开 username / handle，不收集密码、cookie 或私有 token，杜绝隐私风险。',
   },
   {
-    title: '前端独立运行',
-    text: '基于 mock 数据与 localStorage，无需后端和数据库，部署后即可完整展示所有功能。',
+    title: '分层数据持久化',
+    text: '后端 SQLite 作为主要持久化数据源，localStorage 仅作为前端缓存，后端不可用时仍可展示最近状态。',
   },
   {
     title: '科技感 UI',
@@ -127,10 +127,10 @@ const designPrinciples = [
     </section>
 
     <section class="stats-grid">
-      <StatCard label="数据来源" :value="techStack.filter(t => t.category === 'http').length" helper="公开 API + mock 占位" />
+      <StatCard label="数据来源" :value="techStack.filter(t => t.category === 'http').length" helper="公开 API + mock 兜底" />
       <StatCard label="可视化图表" :value="techStack.filter(t => t.category === 'chart').length" helper="ECharts 交互图表" />
       <StatCard label="路由页面" :value="10" helper="Dashboard 到 Settings 全覆盖" />
-      <StatCard label="数据存储" value="localStorage" helper="绑定与训练状态持久化" />
+      <StatCard label="数据存储" value="SQLite" helper="绑定、提交与训练状态持久化" />
     </section>
 
     <section class="panel">

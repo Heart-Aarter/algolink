@@ -88,7 +88,7 @@ function addPlan() {
         <p class="eyebrow">Training Roadmap</p>
         <h2>训练计划完成度 {{ store.weeklyPlanCompletion }}%</h2>
         <p>
-          计划内容保存在 localStorage，可在默认 7 天计划基础上继续添加自定义训练日，并独立记录每一天的执行状态。
+          计划内容优先保存到后端 SQLite，并同步保留本地缓存；可在默认 7 天计划基础上继续添加自定义训练日，并独立记录每一天的执行状态。
         </p>
       </div>
       <div class="plan-ring">
@@ -101,7 +101,7 @@ function addPlan() {
       <StatCard label="训练天数" :value="store.weeklyPlanDays.length" helper="默认计划 + 自定义计划" />
       <StatCard label="题目总量" :value="totalProblems" helper="所有计划题量汇总" />
       <StatCard label="已启动天数" :value="activeDays" helper="进行中或已完成的计划" />
-      <StatCard label="存储方式" value="localStorage" helper="刷新后保留自定义计划和状态" />
+      <StatCard label="存储方式" value="SQLite" helper="本地缓存用于刷新和离线兜底" />
     </section>
 
     <section class="panel custom-plan-panel">

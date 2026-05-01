@@ -50,8 +50,8 @@ const navItems = [
     </nav>
 
     <div class="sidebar-note">
-      <span>Mock Data</span>
-      <p>仅绑定公开 handle，使用 mock 与公开同步数据生成分析，结果保存在 localStorage。</p>
+      <span>SQLite + Cache</span>
+      <p>仅绑定公开 handle，公开同步数据写入后端 SQLite，localStorage 保留离线可用缓存。</p>
     </div>
   </aside>
 </template>
