@@ -160,7 +160,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <LoginModal ref="loginModal" />
+        <LoginModal v-if="!showIntro" ref="loginModal" />
       </n-dialog-provider>
     </n-message-provider>
   </n-config-provider>
