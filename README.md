@@ -2,12 +2,29 @@
 
 AlgoLink 是一个面向算法竞赛学习者的 **AI 多 OJ 刷题数据分析平台**。项目聚合 Codeforces、洛谷、AtCoder 等平台的公开刷题数据，用于展示刷题趋势、提交记录、能力画像、训练建议、训练计划、每日一题和排行榜。
 
-本项目是网页设计比赛作品，定位是“数据分析平台”和“算法训练工具”，不是 Online Judge：
+本项目是网页设计比赛作品，定位是"数据分析平台"和"算法训练工具"，不是 Online Judge：
 
 - 不实现代码评测系统。
 - 不要求用户输入其他 OJ 的密码。
 - 只允许绑定公开 username / handle。
 - 可使用 mock 数据兜底展示，但后端 SQLite 已作为主要持久化数据源。
+
+## 页面功能
+
+| 页面 | 路由 | 说明 |
+|------|------|------|
+| Dashboard | `/` | 训练热力图、提交趋势、标签/难度分布、推荐训练入口 |
+| OJ 账号绑定 | `/accounts` | 绑定 Codeforces / Luogu / AtCoder 公开 handle，同步公开数据 |
+| 提交记录 | `/submissions` | 多维度筛选、分页、统计卡片 |
+| 能力画像 | `/profile` | 标签/难度/结果/语言分布图表、标签通过率 |
+| AI 训练建议 | `/ai-advice` | 规则引擎建议，严格/均衡/鼓励三档语气可切换 |
+| 训练报告 | `/training-report` | 基于真实提交的诊断书，阶段识别与方向建议 |
+| 训练计划 | `/training-plan` | 7 天路线图，每日状态可切换，进度持久化 |
+| 每日一题 | `/daily` | 从 CF 题库抽取 Easy + Hard 两题，验证 OJ AC 后计分 |
+| 排行榜 | `/leaderboard` | 前三领奖台、排名进度条、当前用户高亮 |
+| 关于 | `/about` | 项目介绍、6 大功能卡片、技术栈展示、设计原则 |
+| 设置 | `/settings` | 同步频率、AI 语气、默认平台、重置本地数据 |
+| 404 | `/*` | 未匹配路由提示页面 |
 
 ## 技术栈
 
@@ -86,23 +103,30 @@ VITE_API_BASE=/api
 
 ```text
 src/
-  components/     通用组件与布局组件
-  mock/           mock 数据和推荐题目数据
-  router/         Vue Router 路由
-  services/       API Client 和 OJ 数据同步服务
-  stores/         Pinia Store
+  assets/         全局样式（base.css, main.css）、品牌资源
+  components/
+    charts/       图表面板组件（ChartPanel）
+    common/       通用组件（StatCard）
+    icons/        图标组件
+    layout/       布局组件（AppHeader, AppSidebar）
+  composables/    组合式函数（useTheme）
+  mock/           mock 数据、推荐题目、训练计划数据
+  router/         Vue Router 路由配置（12 条路由 + 404 通配）
+  services/       API Client（axios 封装）、OJ 数据同步服务
+  stores/         Pinia Store（algolink），含 localStorage 缓存与服务器持久化
   types/          TypeScript 类型定义
-  utils/          数据分析、过滤、存储等工具函数
-  views/          页面视图
+  utils/          数据分析、提交过滤、存储工具函数
+  views/          12 个页面视图
 
 server/
   src/
-    db.ts         SQLite 初始化
-    index.ts      Express 入口
-    routes/       后端 API 路由
+    db.ts         SQLite 初始化与建表
+    index.ts      Express 入口（请求日志、CORS、路由挂载、错误处理）
+    routes/       7 个 API 路由（user, accounts, submissions, settings, trainingPlan, daily, leaderboard）
   data/
-    .gitkeep      保留数据目录
-    app.db        运行时自动生成，不提交到 Git
+    .gitkeep      保留数据目录，数据库运行时自动生成
+    app.db        SQLite 数据库，不提交到 Git
+  dist/           生产构建输出，不提交到 Git
 ```
 
 ## 数据存储策略
@@ -442,9 +466,11 @@ VITE_API_BASE=https://your-api-domain.com
 
 ## 后续可升级方向
 
-- JWT 登录。
-- 正式权限系统。
-- PostgreSQL / MySQL。
+- 接入真实 AI API 生成训练建议（目前使用规则引擎 mock）。
+- JWT 登录与正式权限系统。
+- PostgreSQL / MySQL 替代 SQLite。
 - 云服务器部署和 HTTPS。
 - 数据备份和迁移脚本。
-- 接入真实 AI API 生成训练建议。
+- 单元测试和 E2E 测试。
+- CI/CD 自动化部署。
+- 响应式移动端适配。
