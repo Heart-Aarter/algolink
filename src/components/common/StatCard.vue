@@ -29,6 +29,7 @@ defineProps<{
     linear-gradient(180deg, rgba(255, 255, 255, 0.038), transparent), var(--color-panel);
   box-shadow: var(--shadow-panel);
   backdrop-filter: blur(8px);
+  contain: layout style;
 }
 
 .stat-card::before {

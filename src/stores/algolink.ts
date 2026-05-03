@@ -1,4 +1,4 @@
-import { computed, ref, watch } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import { defineStore } from 'pinia'
 import {
   defaultSettings,
@@ -231,7 +231,7 @@ function normalizeSubmissionCache(value: unknown): Record<OjPlatform, Submission
 
 export const useAlgoLinkStore = defineStore('algolink', () => {
   const currentUserId = ref(readStorage<string>(storageKeys.currentUserId, ''))
-  const accounts = ref<OjAccount[]>(
+  const accounts = shallowRef<OjAccount[]>(
     normalizeAccounts(
       readStorage<StoredOjAccount[]>(
         currentUserId.value ? getUserCacheKey(currentUserId.value, 'accounts') : storageKeys.accounts,
@@ -264,9 +264,9 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
           {},
         ),
       }
-  const trainingTasks = ref<TrainingTask[]>(initialTrainingPlan.trainingTasks)
-  const weeklyPlanItems = ref<WeeklyTrainingPlanDay[]>(initialTrainingPlan.weeklyPlanItems)
-  const weeklyPlanStatus = ref<Record<string, TrainingPlanStatus>>(
+  const trainingTasks = shallowRef<TrainingTask[]>(initialTrainingPlan.trainingTasks)
+  const weeklyPlanItems = shallowRef<WeeklyTrainingPlanDay[]>(initialTrainingPlan.weeklyPlanItems)
+  const weeklyPlanStatus = shallowRef<Record<string, TrainingPlanStatus>>(
     initialTrainingPlan.weeklyPlanStatus,
   )
   const initialSubmissionCache = currentUserId.value
@@ -276,9 +276,9 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
         Luogu: readStorage<SubmissionRecord[]>(storageKeys.luoguSubmissions, []),
         AtCoder: readStorage<SubmissionRecord[]>(storageKeys.atcoderSubmissions, []),
       }
-  const codeforcesSubmissions = ref<SubmissionRecord[]>(initialSubmissionCache.Codeforces)
-  const atcoderSubmissions = ref<SubmissionRecord[]>(initialSubmissionCache.AtCoder)
-  const luoguSubmissions = ref<SubmissionRecord[]>(initialSubmissionCache.Luogu)
+  const codeforcesSubmissions = shallowRef<SubmissionRecord[]>(initialSubmissionCache.Codeforces)
+  const atcoderSubmissions = shallowRef<SubmissionRecord[]>(initialSubmissionCache.AtCoder)
+  const luoguSubmissions = shallowRef<SubmissionRecord[]>(initialSubmissionCache.Luogu)
   const dailyChallenge = ref<DailyChallengeState | null>(
     currentUserId.value
       ? normalizeDailyChallenge(
@@ -286,7 +286,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
         )
       : readStorage<DailyChallengeState | null>(storageKeys.dailyChallenge, null),
   )
-  const leaderboardEntries = ref<LeaderboardEntry[]>(
+  const leaderboardEntries = shallowRef<LeaderboardEntry[]>(
     readStorage<LeaderboardEntry[]>(storageKeys.leaderboard, defaultLeaderboard),
   )
   const serverSyncMessage = ref('')

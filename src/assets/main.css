@@ -502,6 +502,7 @@
   transition:
     opacity 0.22s ease,
     transform 0.22s ease;
+  will-change: transform, opacity;
 }
 
 .page-slide-enter-from,
@@ -515,6 +516,7 @@
   transition:
     opacity 0.18s ease,
     transform 0.18s ease;
+  will-change: transform, opacity;
 }
 
 .tab-fade-enter-from,
@@ -530,6 +532,7 @@
 
 .page-stack > * {
   animation: content-rise 0.42s cubic-bezier(0.2, 0.72, 0.18, 1) backwards;
+  will-change: transform, opacity;
 }
 
 .page-stack > *:nth-child(2) {
@@ -542,6 +545,8 @@
 
 .page-stack > *:nth-child(n + 4) {
   animation-delay: 0.1s;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 120px;
 }
 
 .hero-panel,
@@ -557,6 +562,7 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 42%), var(--color-panel);
   box-shadow: var(--shadow-panel);
   backdrop-filter: blur(8px);
+  contain: layout style;
 }
 
 .hero-panel::before,

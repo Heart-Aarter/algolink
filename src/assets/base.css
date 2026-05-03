@@ -219,6 +219,7 @@ h3 {
   animation-duration: 0.48s;
   animation-timing-function: cubic-bezier(0.2, 0.72, 0.18, 1);
   mix-blend-mode: normal;
+  will-change: clip-path;
 }
 
 html.theme-transitioning::view-transition-new(root) {
@@ -227,6 +228,12 @@ html.theme-transitioning::view-transition-new(root) {
 
 html.theme-transitioning::view-transition-old(root) {
   animation-name: theme-fade;
+}
+
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition-duration: 0s !important;
 }
 
 @keyframes theme-reveal {

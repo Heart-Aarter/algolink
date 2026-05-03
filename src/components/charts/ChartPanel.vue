@@ -12,6 +12,8 @@ const chart = shallowRef<echarts.ECharts | null>(null)
 const slots = useSlots()
 const hasSideContent = computed(() => !!slots.default)
 
+let resizeTimer: ReturnType<typeof setTimeout> | undefined
+
 function renderChart() {
   if (!chartEl.value) {
     return
@@ -22,7 +24,10 @@ function renderChart() {
 }
 
 function resizeChart() {
-  chart.value?.resize()
+  clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(() => {
+    chart.value?.resize()
+  }, 100)
 }
 
 onMounted(() => {
@@ -30,9 +35,17 @@ onMounted(() => {
   window.addEventListener('resize', resizeChart)
 })
 
-watch(() => props.option, renderChart, { deep: true })
+watch(
+  () => props.option,
+  (next, prev) => {
+    if (next !== prev) {
+      renderChart()
+    }
+  },
+)
 
 onBeforeUnmount(() => {
+  clearTimeout(resizeTimer)
   window.removeEventListener('resize', resizeChart)
   chart.value?.dispose()
 })
