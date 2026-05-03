@@ -21,7 +21,7 @@ export const mockAccounts: OjAccount[] = [
     rating: 1684,
     solved: 2,
     lastSyncAt: '2026-04-27 21:30',
-    color: '#7fa4d8',
+    color: '#8cab9f',
   },
   {
     id: 'luogu-sample',
@@ -31,7 +31,7 @@ export const mockAccounts: OjAccount[] = [
     rating: 2380,
     solved: 2,
     lastSyncAt: '2026-04-27 20:12',
-    color: '#78c891',
+    color: '#8f9f79',
   },
 ]
 

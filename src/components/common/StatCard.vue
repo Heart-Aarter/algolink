@@ -23,11 +23,12 @@ defineProps<{
   padding: 20px;
   overflow: hidden;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(102, 214, 203, 0.055), transparent 42%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.026), transparent), var(--color-panel);
+    linear-gradient(90deg, rgba(142, 39, 36, 0.12), transparent 4px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.038), transparent), var(--color-panel);
   box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(8px);
 }
 
 .stat-card::before {
@@ -37,9 +38,22 @@ defineProps<{
   left: 18px;
   height: 2px;
   border-radius: 999px;
-  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+  background: linear-gradient(90deg, transparent, var(--stripe-red), var(--stripe-gold), var(--stripe-teal), transparent);
   content: '';
-  opacity: 0.55;
+  opacity: 0.72;
+}
+
+.stat-card::after {
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  width: 46px;
+  height: 46px;
+  border-top: 1px solid rgba(194, 138, 46, 0.18);
+  border-right: 1px solid rgba(142, 39, 36, 0.16);
+  content: '';
+  opacity: 0.72;
+  transform: skew(-12deg);
 }
 
 span {
@@ -51,10 +65,16 @@ span {
 strong {
   display: block;
   margin-top: 12px;
-  color: var(--color-heading);
+  width: fit-content;
+  max-width: 100%;
+  background: linear-gradient(90deg, var(--color-heading), var(--color-gold));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   font-size: 34px;
   font-weight: 900;
   line-height: 1;
+  overflow-wrap: anywhere;
 }
 
 p {

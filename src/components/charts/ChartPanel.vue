@@ -57,18 +57,37 @@ onBeforeUnmount(() => {
   padding: 22px;
   overflow: hidden;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(127, 164, 216, 0.06), transparent 45%), var(--color-panel);
+    linear-gradient(90deg, rgba(142, 39, 36, 0.1), transparent 4px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 48%), var(--color-panel);
   box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(8px);
 }
 
 .chart-panel::before {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 38%);
+  background-image:
+    linear-gradient(rgba(155, 177, 205, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(155, 177, 205, 0.035) 1px, transparent 1px);
+  background-size: 28px 28px;
   content: '';
+  opacity: 0.52;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.42), transparent 82%);
+  pointer-events: none;
+}
+
+.chart-panel::after {
+  position: absolute;
+  top: 0;
+  right: 18px;
+  left: 18px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--stripe-red), var(--stripe-gold), var(--stripe-teal), transparent);
+  content: '';
+  opacity: 0.66;
   pointer-events: none;
 }
 

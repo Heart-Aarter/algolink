@@ -49,14 +49,14 @@ export type DifficultyBucket = (typeof difficultyBucketOptions)[number]['value']
 type ActualDifficultyBucket = Exclude<DifficultyBucket, 'All'>
 
 const difficultyBucketColors: Record<ActualDifficultyBucket, string> = {
-  '2400-plus': '#b7354b',
-  '2100-2399': '#ff9f1c',
-  '1900-2099': '#9b7bd8',
-  '1600-1899': '#3d73ad',
-  '1400-1599': '#25b8c7',
-  '1200-1399': '#2e9160',
-  'lt-1200': '#9aa4b2',
-  unknown: '#5f6b7a',
+  '2400-plus': '#8e2724',
+  '2100-2399': '#c28a2e',
+  '1900-2099': '#b77955',
+  '1600-1899': '#8cab9f',
+  '1400-1599': '#6e9286',
+  '1200-1399': '#8f9f79',
+  'lt-1200': '#b3aa9b',
+  unknown: '#8f877a',
 }
 
 const difficultyBucketOrder = new Map<string, number>(

@@ -64,9 +64,9 @@ const storageKeys = {
 export const supportedPlatforms: OjPlatform[] = ['Codeforces', 'Luogu', 'AtCoder']
 
 const platformColors: Record<OjPlatform, string> = {
-  Codeforces: '#7fa4d8',
-  Luogu: '#78c891',
-  AtCoder: '#8db1c7',
+  Codeforces: '#8cab9f',
+  Luogu: '#8f9f79',
+  AtCoder: '#c28a2e',
 }
 
 const autoSyncIntervalMs = {
@@ -1250,17 +1250,12 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     atcoderSubmissions.value = []
     luoguSubmissions.value = []
     persistAccounts()
-    pushAccountsToServer()
     persistSubmissions()
-    pushSubmissionsToServer()
     persistSettings()
-    pushSettingsToServer()
     persistTrainingPlan()
-    pushTrainingPlanToServer()
     dailyChallenge.value = null
     leaderboardEntries.value = defaultLeaderboard
     persistDailyChallenge()
-    pushDailyChallengeToServer()
     persistLeaderboard()
   }
 

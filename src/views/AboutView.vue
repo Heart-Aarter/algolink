@@ -237,9 +237,11 @@ const designPrinciples = [
 .feature-card {
   padding: 22px 18px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 48%), var(--color-surface);
+    linear-gradient(135deg, rgba(194, 138, 46, 0.06), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 48%), var(--color-surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .feature-icon {
@@ -249,7 +251,7 @@ const designPrinciples = [
   place-items: center;
   margin-bottom: 14px;
   border-radius: 8px;
-  background: rgba(102, 214, 203, 0.1);
+  background: rgba(140, 171, 159, 0.14);
   color: var(--color-accent);
   font-size: 13px;
   font-weight: 800;
@@ -309,9 +311,11 @@ const designPrinciples = [
 .design-card {
   padding: 20px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 48%), var(--color-surface);
+    linear-gradient(135deg, rgba(245, 211, 125, 0.045), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 48%), var(--color-surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .design-card h3 {

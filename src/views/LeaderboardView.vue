@@ -133,9 +133,11 @@ const maxScore = computed(() =>
   gap: 8px;
   padding: 28px 16px 20px;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: 8px;
   background:
+    linear-gradient(135deg, rgba(194, 138, 46, 0.055), transparent 42%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 44%), var(--color-surface);
+  box-shadow: var(--shadow-panel);
 }
 
 .podium-gold {
@@ -157,7 +159,7 @@ const maxScore = computed(() =>
 }
 
 .podium-current {
-  box-shadow: 0 0 0 1px rgba(102, 214, 203, 0.22), 0 8px 24px rgba(102, 214, 203, 0.06);
+  box-shadow: 0 0 0 1px rgba(194, 138, 46, 0.28), 0 12px 30px rgba(0, 0, 0, 0.12);
 }
 
 .podium-avatar {
@@ -215,7 +217,7 @@ const maxScore = computed(() =>
   gap: 12px;
   padding: 12px 14px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 8px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.025), transparent 42%), var(--color-surface);
 }
@@ -225,8 +227,8 @@ const maxScore = computed(() =>
 }
 
 .leaderboard-row.is-current-user {
-  border-color: rgba(102, 214, 203, 0.18);
-  background: linear-gradient(135deg, rgba(102, 214, 203, 0.06), transparent 44%),
+  border-color: rgba(194, 138, 46, 0.28);
+  background: linear-gradient(135deg, rgba(142, 39, 36, 0.07), transparent 44%),
     var(--color-surface);
 }
 
@@ -268,7 +270,7 @@ const maxScore = computed(() =>
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--color-accent), #7fa4d8);
+  background: linear-gradient(90deg, var(--color-accent), var(--color-blue), var(--color-violet));
   opacity: 0.6;
 }
 

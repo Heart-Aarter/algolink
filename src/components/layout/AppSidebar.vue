@@ -60,6 +60,7 @@ const navItems = [
 .app-sidebar {
   position: sticky;
   top: 0;
+  z-index: 22;
   display: flex;
   flex-direction: column;
   align-self: start;
@@ -69,10 +70,30 @@ const navItems = [
   overflow-y: auto;
   border-right: 1px solid var(--color-border);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 36%), var(--color-sidebar);
+    linear-gradient(180deg, transparent 0 calc(100% - 8px), var(--stripe-red) calc(100% - 8px) calc(100% - 5px), var(--stripe-gold) calc(100% - 5px) calc(100% - 2px), var(--stripe-teal) calc(100% - 2px)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045), transparent 24%),
+    var(--color-sidebar);
+  box-shadow:
+    18px 0 48px rgba(0, 0, 0, 0.2),
+    inset -1px 0 0 rgba(194, 138, 46, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.app-sidebar::before {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(155, 177, 205, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(155, 177, 205, 0.028) 1px, transparent 1px);
+  background-size: 28px 28px;
+  content: '';
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.66), transparent 86%);
+  pointer-events: none;
 }
 
 .brand {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -86,18 +107,22 @@ const navItems = [
 }
 
 .brand-mark {
+  position: relative;
   display: inline-grid;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   place-items: center;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 10px;
+  border: 1px solid rgba(194, 138, 46, 0.38);
+  border-radius: 8px;
   background:
-    linear-gradient(135deg, var(--glass-highlight), transparent 46%), rgba(255, 255, 255, 0.035);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 46%),
+    linear-gradient(160deg, rgba(142, 39, 36, 0.18), rgba(194, 138, 46, 0.13));
   color: var(--color-heading);
   font-size: 14px;
   font-weight: 850;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 14px 32px rgba(0, 0, 0, 0.14);
 }
 
 .brand strong,
@@ -116,6 +141,8 @@ const navItems = [
 }
 
 .nav-list {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 6px;
 }
@@ -130,7 +157,7 @@ const navItems = [
   padding: 0 11px;
   overflow: hidden;
   border: 1px solid transparent;
-  border-radius: 9px;
+  border-radius: 8px;
   color: var(--color-text-muted);
   font-size: 14px;
   font-weight: 690;
@@ -157,9 +184,11 @@ const navItems = [
 }
 
 .nav-item.router-link-active {
-  border-color: rgba(102, 214, 203, 0.24);
+  border-color: rgba(194, 138, 46, 0.38);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent 48%), var(--glass-surface-strong);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.14), transparent 48%),
+    linear-gradient(90deg, rgba(142, 39, 36, 0.2), transparent 5px),
+    var(--glass-surface-strong);
   color: var(--color-heading);
   box-shadow:
     0 10px 24px rgba(0, 0, 0, 0.12),
@@ -190,15 +219,17 @@ const navItems = [
 }
 
 .nav-item.router-link-active .nav-icon {
-  background: rgba(102, 214, 203, 0.12);
+  background: rgba(194, 138, 46, 0.16);
   color: var(--color-heading);
 }
 
 .sidebar-note {
+  position: relative;
+  z-index: 1;
   margin-top: auto;
   padding: 14px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: 8px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 45%), rgba(255, 255, 255, 0.025);
   backdrop-filter: blur(14px);

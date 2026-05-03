@@ -147,12 +147,28 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  min-height: 82px;
+  min-height: 86px;
   padding: 0 40px;
   border-bottom: 1px solid var(--color-border);
-  background: var(--color-header);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(18px) saturate(130%);
+  background:
+    linear-gradient(90deg, rgba(142, 39, 36, 0.08), transparent 5px),
+    linear-gradient(90deg, rgba(194, 138, 46, 0.07), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent), var(--color-header);
+  box-shadow:
+    0 16px 42px rgba(0, 0, 0, 0.16),
+    inset 0 -1px 0 rgba(194, 138, 46, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.app-header::after {
+  position: absolute;
+  right: 40px;
+  bottom: -1px;
+  width: min(42vw, 520px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--stripe-red), var(--stripe-gold), var(--stripe-teal));
+  content: '';
+  opacity: 0.72;
 }
 
 .eyebrow {
@@ -165,8 +181,9 @@ onMounted(() => {
 
 h1 {
   color: var(--color-heading);
-  font-size: 24px;
+  font-size: 25px;
   font-weight: 840;
+  line-height: 1.16;
 }
 
 .header-actions {
@@ -182,7 +199,7 @@ h1 {
   min-height: 40px;
   padding: 5px 8px 5px 10px;
   border: 1px solid var(--glass-border);
-  border-radius: 9px;
+  border-radius: 8px;
   background:
     linear-gradient(135deg, var(--glass-highlight), transparent 42%), var(--glass-surface);
   color: var(--color-text-soft);
@@ -229,6 +246,7 @@ h1 {
   width: 34px;
   height: 18px;
   border-radius: 999px;
+  border: 1px solid rgba(155, 177, 205, 0.14);
   background: rgba(154, 170, 190, 0.18);
 }
 
@@ -252,7 +270,7 @@ h1 {
   min-width: 78px;
   padding: 6px 10px;
   border: 1px solid var(--glass-border);
-  border-radius: 7px;
+  border-radius: 8px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.055), transparent 42%), rgba(255, 255, 255, 0.025);
   backdrop-filter: blur(12px);
@@ -289,13 +307,16 @@ h1 {
   align-items: center;
   min-height: 40px;
   padding: 0 17px;
-  border-radius: 9px;
+  border: 1px solid rgba(194, 138, 46, 0.38);
+  border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.34), transparent 44%), var(--color-accent);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.38), transparent 44%), var(--color-accent);
   color: #071015;
   font-size: 14px;
   font-weight: 820;
-  box-shadow: 0 10px 26px rgba(102, 214, 203, 0.16);
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 @media (max-width: 760px) {

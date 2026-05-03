@@ -40,8 +40,8 @@ const productHighlights = computed(() => [
   { label: 'AI Coach', value: 'Rules', text: '规则化 mock 分析建议' },
 ])
 
-const chartAxis = '#738195'
-const chartGrid = 'rgba(154, 170, 190, 0.1)'
+const chartAxis = '#8f877a'
+const chartGrid = 'rgba(142, 39, 36, 0.11)'
 const dayMs = 24 * 60 * 60 * 1000
 const monthNames = [
   'Jan',
@@ -174,13 +174,13 @@ const dailyStats = computed(() => {
 })
 
 const trendOption = computed<EChartsOption>(() => ({
-  color: ['#7fa4d8', '#66d6cb'],
+  color: ['#8cab9f', '#c28a2e'],
   grid: { top: 36, right: 18, bottom: 34, left: 38 },
   tooltip: {
     trigger: 'axis',
-    backgroundColor: '#151d29',
-    borderColor: 'rgba(154, 170, 190, 0.18)',
-    textStyle: { color: '#dce5ef' },
+    backgroundColor: '#1c1d1b',
+    borderColor: 'rgba(194, 138, 46, 0.28)',
+    textStyle: { color: '#f5f0e7' },
   },
   xAxis: {
     type: 'category',
@@ -218,13 +218,13 @@ const tagOption = computed<EChartsOption>(() => {
   const items = analysis.value.tagDistribution.slice(0, 8).reverse()
 
   return {
-    color: ['#8db1c7'],
+    color: ['#c28a2e'],
     grid: { top: 36, right: 18, bottom: 34, left: 96 },
     tooltip: {
       trigger: 'axis',
-      backgroundColor: '#151d29',
-      borderColor: 'rgba(154, 170, 190, 0.18)',
-      textStyle: { color: '#dce5ef' },
+      backgroundColor: '#1c1d1b',
+      borderColor: 'rgba(194, 138, 46, 0.28)',
+      textStyle: { color: '#f5f0e7' },
     },
     xAxis: {
       type: 'value',
@@ -237,7 +237,7 @@ const tagOption = computed<EChartsOption>(() => {
       data: items.map((item) => item.name),
       axisLine: { lineStyle: { color: 'rgba(154, 170, 190, 0.18)' } },
       axisTick: { show: false },
-      axisLabel: { color: '#aab6c5' },
+      axisLabel: { color: '#b3aa9b' },
     },
     series: [
       {
@@ -323,9 +323,9 @@ const difficultyOption = computed<EChartsOption>(() => ({
   ],
   tooltip: {
     trigger: 'item',
-    backgroundColor: '#151d29',
-    borderColor: 'rgba(154, 170, 190, 0.18)',
-    textStyle: { color: '#dce5ef' },
+    backgroundColor: '#1c1d1b',
+    borderColor: 'rgba(194, 138, 46, 0.28)',
+    textStyle: { color: '#f5f0e7' },
   },
   series: [
     {
@@ -359,7 +359,14 @@ const visibleRecommendations = computed(() =>
   <div class="page-stack dashboard-page">
     <section class="product-hero">
       <div class="product-hero-copy">
-        <p class="eyebrow">AI Multi-OJ Training Intelligence</p>
+        <div class="product-brand-row">
+          <p class="eyebrow">AI Multi-OJ Training Intelligence</p>
+          <span>ALGOLINK 2026</span>
+        </div>
+        <div class="product-event-band">
+          <span>公开数据聚合</span>
+          <strong>AI TRAINING ANALYTICS</strong>
+        </div>
         <h2>AlgoLink</h2>
         <p class="product-slogan">
           面向算法竞赛学习者的 AI 多 OJ
@@ -373,6 +380,7 @@ const visibleRecommendations = computed(() =>
       </div>
 
       <div class="product-hero-visual" aria-label="AlgoLink product summary">
+        <div class="product-live-pill">AI REPORT</div>
         <div class="hero-scoreboard hero-scoreboard-prominent">
           <span>已解决题目</span>
           <strong>{{ analysis.solvedProblems }}</strong>

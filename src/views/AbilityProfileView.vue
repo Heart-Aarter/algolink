@@ -20,8 +20,8 @@ const analysisSubmissions = computed(() =>
 const analysis = computed(() => calculateSubmissionAnalysis(analysisSubmissions.value))
 const dataSourceLabel = computed(() => store.submissionDataSourceLabel)
 
-const chartAxis = '#738195'
-const chartGrid = 'rgba(154, 170, 190, 0.1)'
+const chartAxis = '#8f877a'
+const chartGrid = 'rgba(142, 39, 36, 0.11)'
 
 function barOption(
   items: DistributionItem[],
@@ -35,9 +35,9 @@ function barOption(
     grid: { top: 26, right: 18, bottom: 26, left: 104 },
     tooltip: {
       trigger: 'axis',
-      backgroundColor: '#151d29',
-      borderColor: 'rgba(154, 170, 190, 0.18)',
-      textStyle: { color: '#dce5ef' },
+      backgroundColor: '#1c1d1b',
+      borderColor: 'rgba(194, 138, 46, 0.28)',
+      textStyle: { color: '#f5f0e7' },
     },
     xAxis: {
       type: 'value',
@@ -49,7 +49,7 @@ function barOption(
       type: 'category',
       data: visibleItems.map((item) => item.name),
       axisTick: { show: false },
-      axisLabel: { color: '#aab6c5' },
+      axisLabel: { color: '#b3aa9b' },
     },
     series: [
       {
@@ -70,9 +70,9 @@ function pieOption(items: DistributionItem[], colors: string[]): EChartsOption {
     color: colors,
     tooltip: {
       trigger: 'item',
-      backgroundColor: '#151d29',
-      borderColor: 'rgba(154, 170, 190, 0.18)',
-      textStyle: { color: '#dce5ef' },
+      backgroundColor: '#1c1d1b',
+      borderColor: 'rgba(194, 138, 46, 0.28)',
+      textStyle: { color: '#f5f0e7' },
     },
     series: [
       {
@@ -80,31 +80,31 @@ function pieOption(items: DistributionItem[], colors: string[]): EChartsOption {
         type: 'pie',
         radius: ['46%', '70%'],
         data: items,
-        label: { color: '#aab6c5' },
+        label: { color: '#b3aa9b' },
       },
     ],
   }
 }
 
-const tagOption = computed(() => barOption(analysis.value.tagDistribution, '#66d6cb'))
+const tagOption = computed(() => barOption(analysis.value.tagDistribution, '#8cab9f'))
 const difficultyOption = computed(() =>
   barOption(
     sortDifficultyDistribution(analysis.value.difficultyDistribution),
-    '#d9a76f',
+    '#c28a2e',
     getDifficultyLabelColor,
   ),
 )
 const verdictOption = computed(() =>
   pieOption(analysis.value.verdictDistribution, [
-    '#78c891',
-    '#d77b8a',
-    '#d9a76f',
-    '#b98fd8',
-    '#8db1c7',
-    '#6f7d90',
+    '#8cab9f',
+    '#8e2724',
+    '#c28a2e',
+    '#b77955',
+    '#6e9286',
+    '#8f877a',
   ]),
 )
-const languageOption = computed(() => barOption(analysis.value.languageDistribution, '#7fa4d8'))
+const languageOption = computed(() => barOption(analysis.value.languageDistribution, '#8cab9f'))
 </script>
 
 <template>
