@@ -1,14 +1,22 @@
 <script setup lang="ts">
 import { darkTheme, type GlobalThemeOverrides } from 'naive-ui'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, provide, ref, useTemplateRef } from 'vue'
 import { RouterView } from 'vue-router'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
+import LoginModal from '@/components/common/LoginModal.vue'
 import { useTheme } from '@/composables/useTheme'
 
 const { theme } = useTheme()
 const sidebarCollapsed = ref(false)
 const showIntro = ref(true)
+const loginModalRef = useTemplateRef<InstanceType<typeof LoginModal>>('loginModal')
+
+function openLogin() {
+  loginModalRef.value?.open()
+}
+
+provide('openLogin', openLogin)
 const naiveTheme = computed(() => (theme.value === 'dark' ? darkTheme : null))
 const shellClass = computed(() => ({
   'sidebar-collapsed': sidebarCollapsed.value,
@@ -151,6 +159,8 @@ onMounted(() => {
             </main>
           </div>
         </div>
+
+        <LoginModal ref="loginModal" />
       </n-dialog-provider>
     </n-message-provider>
   </n-config-provider>

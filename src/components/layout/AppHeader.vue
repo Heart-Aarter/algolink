@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { NButton, NInput, useMessage } from 'naive-ui'
+import { computed, inject, onMounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useTheme } from '@/composables/useTheme'
 import { useAlgoLinkStore } from '@/stores/algolink'
@@ -8,9 +7,7 @@ import { useAlgoLinkStore } from '@/stores/algolink'
 const route = useRoute()
 const store = useAlgoLinkStore()
 const { theme, initTheme } = useTheme()
-const message = useMessage()
-const usernameInput = ref(store.currentUsername || '')
-const userSubmitting = ref(false)
+const openLogin = inject<() => void>('openLogin', () => {})
 
 const routeTitle = computed(() => {
   if (typeof route.meta.title === 'string') {
@@ -26,24 +23,6 @@ function applyTheme(nextTheme: 'dark' | 'light') {
   theme.value = nextTheme
   document.documentElement.dataset.theme = nextTheme
   localStorage.setItem('algolink.theme', nextTheme)
-}
-
-async function submitSimpleUser() {
-  userSubmitting.value = true
-
-  try {
-    const result = await store.loginSimpleUser(usernameInput.value)
-
-    if (!result.ok) {
-      message.error(result.message)
-      return
-    }
-
-    usernameInput.value = store.currentUsername
-    message.success(result.message)
-  } finally {
-    userSubmitting.value = false
-  }
 }
 
 function setThemeTransitionOrigin(event: MouseEvent) {
@@ -93,25 +72,10 @@ onMounted(() => {
     </div>
 
     <div class="header-actions">
-      <form class="user-switcher" @submit.prevent="submitSimpleUser">
-        <span>User</span>
-        <n-input
-          v-model:value="usernameInput"
-          size="small"
-          placeholder="username"
-          clearable
-          :disabled="userSubmitting"
-        />
-        <n-button
-          size="small"
-          type="primary"
-          secondary
-          attr-type="submit"
-          :loading="userSubmitting"
-        >
-          Switch
-        </n-button>
-      </form>
+      <button class="user-tag" type="button" @click="openLogin">
+        <span class="user-tag-avatar">{{ store.currentUsername.slice(0, 1).toUpperCase() }}</span>
+        <span class="user-tag-name">{{ store.currentUsername }}</span>
+      </button>
       <button
         class="theme-toggle"
         type="button"
@@ -192,29 +156,42 @@ h1 {
   gap: 12px;
 }
 
-.user-switcher {
+.user-tag {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   min-height: 40px;
-  padding: 5px 8px 5px 10px;
+  padding: 0 12px;
   border: 1px solid var(--glass-border);
-  border-radius: 8px;
+  border-radius: 999px;
   background:
     linear-gradient(135deg, var(--glass-highlight), transparent 42%), var(--glass-surface);
   color: var(--color-text-soft);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(14px) saturate(130%);
+  cursor: pointer;
 }
 
-.user-switcher span {
-  color: var(--color-text-muted);
+.user-tag:hover {
+  transform: translateY(-1px);
+}
+
+.user-tag-avatar {
+  display: inline-grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(194, 138, 46, 0.18);
+  color: var(--color-heading);
   font-size: 12px;
-  font-weight: 760;
+  font-weight: 800;
 }
 
-.user-switcher :deep(.n-input) {
-  width: 136px;
+.user-tag-name {
+  color: var(--color-heading);
+  font-size: 13px;
+  font-weight: 720;
 }
 
 .theme-toggle {
@@ -336,15 +313,6 @@ h1 {
   .theme-toggle {
     justify-content: space-between;
     grid-column: 1 / -1;
-  }
-
-  .user-switcher {
-    grid-column: 1 / -1;
-    justify-content: space-between;
-  }
-
-  .user-switcher :deep(.n-input) {
-    width: min(100%, 180px);
   }
 
   .primary-action {

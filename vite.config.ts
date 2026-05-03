@@ -22,6 +22,11 @@ export default defineConfig({
           'x-lentille-request': 'content-only',
         },
       },
+      '/atcoder-api': {
+        target: 'https://kenkoooo.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/atcoder-api/, '/atcoder'),
+      },
     },
   },
 })

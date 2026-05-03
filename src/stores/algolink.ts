@@ -14,7 +14,6 @@ import {
 import {
   fetchAtCoderSubmissions,
   fetchAtCoderUser,
-  hasRecentAtCoderBindingCe,
 } from '@/services/atcoder'
 import { fetchDailyProblems } from '@/services/dailyChallenge'
 import {
@@ -744,8 +743,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       return { ok: false, message: `${platform} 已绑定账号，不能重复绑定同一平台` }
     }
 
-    try {
-      if (platform === 'Codeforces') {
+    if (platform === 'Codeforces') {
+      try {
         const verified = await hasRecentCodeforcesBindingCe(trimmedHandle)
 
         if (!verified) {
@@ -754,21 +753,10 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
             message: '未检测到 10 分钟内在 Codeforces 1A 的 CE 提交，请提交后再绑定。',
           }
         }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Codeforces 公开提交读取失败'
+        return { ok: false, message: `Codeforces 绑定验证失败：${message}` }
       }
-
-      if (platform === 'AtCoder') {
-        const verified = await hasRecentAtCoderBindingCe(trimmedHandle)
-
-        if (!verified) {
-          return {
-            ok: false,
-            message: '未检测到 10 分钟内在 AtCoder practice_1 的 CE 提交，请提交后再绑定。',
-          }
-        }
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : `${platform} 公开提交读取失败`
-      return { ok: false, message: `${platform} 绑定验证失败：${message}` }
     }
 
     return addAccount(platform, trimmedHandle)

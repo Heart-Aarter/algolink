@@ -60,6 +60,27 @@ function getSyncButtonText(platformName: OjPlatform) {
 function shouldShowRating(platformName: OjPlatform) {
   return platformName === 'Codeforces'
 }
+
+const platformProfileUrls: Record<OjPlatform, (handle: string) => string> = {
+  Codeforces: (handle) => `https://codeforces.com/profile/${handle}`,
+  Luogu: (handle) => `https://www.luogu.com.cn/user/${handle}`,
+  AtCoder: (handle) => `https://atcoder.jp/users/${handle}`,
+}
+
+function getPlatformProfileUrl(platform: OjPlatform, handle: string) {
+  return platformProfileUrls[platform]?.(handle) ?? '#'
+}
+
+const bindingHintLinks: Partial<Record<OjPlatform, { label: string; url: string }>> = {
+  Codeforces: {
+    label: 'CF 1A（提交 CE 验证）',
+    url: 'https://codeforces.com/problemset/problem/1/A',
+  },
+  AtCoder: {
+    label: '个人主页',
+    url: 'https://atcoder.jp',
+  },
+}
 </script>
 
 <template>
@@ -90,14 +111,22 @@ function shouldShowRating(platformName: OjPlatform) {
         <n-button type="primary" attr-type="submit" strong>绑定账号</n-button>
       </form>
 
-      <p class="form-note">
-        Codeforces 绑定：10 分钟内去 CF 1A 提交一发 CE；AtCoder 绑定：10 分钟内去
-        practice_1 提交一发 CE。验证只读取公开提交记录。
-      </p>
+      <Transition name="tab-fade">
+        <p v-if="platform && bindingHintLinks[platform]" class="bind-hint">
+          <span>{{ platform }} 验证：</span>
+          <a
+            :href="bindingHintLinks[platform]!.url"
+            target="_blank"
+            rel="noreferrer"
+            class="oj-link"
+          >
+            {{ bindingHintLinks[platform]!.label }}
+          </a>
+        </p>
+      </Transition>
 
       <p class="form-note">
-        Codeforces 使用官方公开 API；AtCoder 使用 AtCoder Problems 公开 API；Luogu 使用公开练习页数据。
-        AlgoLink 只保存公开用户名，不收集任何 OJ 密码。
+        Codeforces 绑定需 10 分钟内去 CF 1A 提交一发 CE 验证；AtCoder 和 Luogu 输入 handle 即可直接绑定。AlgoLink 只保存公开用户名，不收集任何 OJ 密码。
       </p>
     </section>
 
@@ -114,7 +143,14 @@ function shouldShowRating(platformName: OjPlatform) {
         <article v-for="account in store.accounts" :key="account.id" class="account-card">
           <span class="account-dot" :style="{ background: account.color }" />
           <h3>{{ account.platform }}</h3>
-          <p>@{{ account.handle }}</p>
+          <p>
+            <a
+              :href="getPlatformProfileUrl(account.platform, account.handle)"
+              target="_blank"
+              rel="noreferrer"
+              class="oj-link"
+            >@{{ account.handle }}</a>
+          </p>
           <dl>
             <div v-if="shouldShowRating(account.platform)">
               <dt>当前 rating</dt>

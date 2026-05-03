@@ -9,7 +9,7 @@ import {
 } from './normalizers'
 
 const atcoderClient = axios.create({
-  baseURL: 'https://kenkoooo.com/atcoder',
+  baseURL: import.meta.env.DEV ? '/atcoder-api' : 'https://kenkoooo.com/atcoder',
   timeout: 10000,
 })
 
@@ -109,7 +109,8 @@ export async function fetchAtCoderSubmissions(handle: string): Promise<OjSubmiss
 
 export async function hasRecentAtCoderBindingCe(handle: string): Promise<boolean> {
   const normalizedHandle = normalizeHandle(handle)
-  const tenMinutesAgoSeconds = Math.floor(Date.now() / 1000) - 10 * 60
+  const windowSeconds = 15 * 60
+  const fromSecond = Math.floor(Date.now() / 1000) - windowSeconds
 
   try {
     const response = await atcoderClient.get<AtCoderProblemsSubmission[]>(
@@ -117,15 +118,14 @@ export async function hasRecentAtCoderBindingCe(handle: string): Promise<boolean
       {
         params: {
           user: normalizedHandle,
-          from_second: tenMinutesAgoSeconds,
+          from_second: fromSecond,
         },
       },
     )
 
     return response.data.some(
       (submission) =>
-        submission.epoch_second >= tenMinutesAgoSeconds &&
-        submission.problem_id === 'practice_1' &&
+        submission.epoch_second >= fromSecond &&
         submission.result === 'CE',
     )
   } catch (error) {
