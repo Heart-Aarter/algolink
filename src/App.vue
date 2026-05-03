@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { darkTheme, type GlobalThemeOverrides } from 'naive-ui'
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterView } from 'vue-router'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { useTheme } from '@/composables/useTheme'
 
 const { theme } = useTheme()
+const sidebarCollapsed = ref(false)
+const showIntro = ref(true)
 const naiveTheme = computed(() => (theme.value === 'dark' ? darkTheme : null))
+const shellClass = computed(() => ({
+  'sidebar-collapsed': sidebarCollapsed.value,
+  'intro-visible': showIntro.value,
+}))
 const naiveThemeOverrides = computed<GlobalThemeOverrides>(() => {
   const isLight = theme.value === 'light'
 
@@ -57,14 +63,83 @@ const naiveThemeOverrides = computed<GlobalThemeOverrides>(() => {
     },
   }
 })
+
+function toggleSidebar() {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+  localStorage.setItem('algolink.sidebarCollapsed', sidebarCollapsed.value ? '1' : '0')
+}
+
+function closeIntro() {
+  showIntro.value = false
+}
+
+onMounted(() => {
+  sidebarCollapsed.value = localStorage.getItem('algolink.sidebarCollapsed') === '1'
+})
 </script>
 
 <template>
   <n-config-provider :theme="naiveTheme" :theme-overrides="naiveThemeOverrides">
     <n-message-provider>
       <n-dialog-provider>
-        <div class="app-shell">
-          <AppSidebar />
+        <Transition name="intro-shell">
+          <section v-if="showIntro" class="intro-screen" aria-label="AlgoLink intro">
+            <div class="intro-starfield" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+
+            <div class="intro-launchscape">
+              <div class="intro-system-label" aria-hidden="true">
+                <span>ALGO LINK</span>
+                <b>ORBITAL TRAINING OS</b>
+              </div>
+
+              <div class="intro-logo-stage">
+                <div class="intro-logo-frame" aria-label="AlgoLink">
+                  <div class="intro-logo-glyph">
+                    <span class="glyph-a">A</span>
+                    <span class="glyph-l">L</span>
+                    <i class="glyph-orbit" />
+                    <i class="glyph-dot glyph-dot-top" />
+                    <i class="glyph-dot glyph-dot-right" />
+                    <i class="glyph-dot glyph-dot-bottom" />
+                    <i class="glyph-link" />
+                    <i class="glyph-hub" />
+                  </div>
+                </div>
+                <strong class="intro-wordmark">Algo<span>Link</span></strong>
+                <div class="intro-launch-core" aria-hidden="true" />
+                <div class="intro-launch-flare" aria-hidden="true" />
+              </div>
+
+              <div class="intro-gantry" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+              <div class="intro-rail intro-rail-left" aria-hidden="true" />
+              <div class="intro-rail intro-rail-right" aria-hidden="true" />
+              <div class="intro-groundline" aria-hidden="true" />
+
+              <div class="intro-mission">
+                <span>BREAKTHROUGH / 多 OJ 数据聚合</span>
+                <h2>算法训练进入深空轨道</h2>
+                <p>公开 handle 聚合、提交轨迹回放、能力画像与 AI 训练策略，在一个控制台内完成。</p>
+                <div class="intro-meter" aria-hidden="true">
+                  <i />
+                </div>
+                <button class="intro-enter" type="button" @click="closeIntro">进入控制台</button>
+              </div>
+            </div>
+          </section>
+        </Transition>
+
+        <div class="app-shell" :class="shellClass">
+          <AppSidebar :collapsed="sidebarCollapsed" @toggle="toggleSidebar" />
           <div class="app-main">
             <AppHeader />
             <main class="app-content">

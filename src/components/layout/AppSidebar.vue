@@ -5,6 +5,8 @@ import {
   Analytics,
   Bulb,
   Calendar,
+  ChevronBack,
+  ChevronForward,
   DocumentText,
   List,
   Person,
@@ -14,6 +16,14 @@ import {
   Today,
   Trophy,
 } from '@vicons/ionicons5'
+
+defineProps<{
+  collapsed: boolean
+}>()
+
+defineEmits<{
+  toggle: []
+}>()
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: StatsChart },
@@ -31,21 +41,37 @@ const navItems = [
 </script>
 
 <template>
-  <aside class="app-sidebar">
+  <aside class="app-sidebar" :class="{ collapsed }">
     <RouterLink class="brand" to="/">
       <span class="brand-mark">AL</span>
-      <span>
+      <span class="brand-text">
         <strong>AlgoLink</strong>
         <small>AI 多 OJ 数据平台</small>
       </span>
     </RouterLink>
 
+    <button
+      class="sidebar-toggle"
+      type="button"
+      :aria-label="collapsed ? '展开菜单' : '折叠菜单'"
+      @click="$emit('toggle')"
+    >
+      <n-icon :component="collapsed ? ChevronForward : ChevronBack" />
+      <span>{{ collapsed ? '展开' : '折叠' }}</span>
+    </button>
+
     <nav class="nav-list" aria-label="主导航">
-      <RouterLink v-for="item in navItems" :key="item.path" class="nav-item" :to="item.path">
+      <RouterLink
+        v-for="item in navItems"
+        :key="item.path"
+        class="nav-item"
+        :to="item.path"
+        :title="collapsed ? item.label : undefined"
+      >
         <span class="nav-icon" aria-hidden="true">
           <n-icon :component="item.icon" />
         </span>
-        {{ item.label }}
+        <span class="nav-label">{{ item.label }}</span>
       </RouterLink>
     </nav>
 
@@ -77,6 +103,10 @@ const navItems = [
     18px 0 48px rgba(0, 0, 0, 0.2),
     inset -1px 0 0 rgba(194, 138, 46, 0.12);
   backdrop-filter: blur(8px);
+  transition:
+    width 0.24s ease,
+    padding 0.24s ease,
+    box-shadow 0.24s ease;
 }
 
 .app-sidebar::before {
@@ -100,6 +130,7 @@ const navItems = [
   margin-bottom: 30px;
   padding: 0 6px;
   color: var(--color-heading);
+  min-width: 0;
 }
 
 .brand:hover {
@@ -138,6 +169,36 @@ const navItems = [
 .brand small {
   color: var(--color-text-muted);
   font-size: 12px;
+}
+
+.sidebar-toggle {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  margin: 0 0 18px;
+  padding: 0 12px;
+  border: 1px solid rgba(194, 138, 46, 0.32);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(142, 39, 36, 0.1), transparent 5px),
+    var(--glass-surface);
+  color: var(--color-text-soft);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.sidebar-toggle:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-heading);
+  transform: translateY(-1px);
+}
+
+.sidebar-toggle .n-icon {
+  font-size: 17px;
 }
 
 .nav-list {
@@ -218,6 +279,13 @@ const navItems = [
   z-index: 1;
 }
 
+.nav-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .nav-item.router-link-active .nav-icon {
   background: rgba(194, 138, 46, 0.16);
   color: var(--color-heading);
@@ -249,6 +317,51 @@ const navItems = [
   line-height: 1.6;
 }
 
+.app-sidebar.collapsed {
+  padding: 24px 10px;
+  box-shadow:
+    12px 0 34px rgba(0, 0, 0, 0.16),
+    inset -1px 0 0 rgba(194, 138, 46, 0.1);
+}
+
+.app-sidebar.collapsed .brand {
+  justify-content: center;
+  margin-bottom: 20px;
+  padding: 0;
+}
+
+.app-sidebar.collapsed .brand-text,
+.app-sidebar.collapsed .nav-label,
+.app-sidebar.collapsed .sidebar-toggle span,
+.app-sidebar.collapsed .sidebar-note {
+  display: none;
+}
+
+.app-sidebar.collapsed .brand-mark {
+  width: 42px;
+  height: 42px;
+}
+
+.app-sidebar.collapsed .sidebar-toggle {
+  width: 42px;
+  margin: 0 auto 18px;
+  padding: 0;
+}
+
+.app-sidebar.collapsed .nav-list {
+  justify-items: center;
+}
+
+.app-sidebar.collapsed .nav-item {
+  justify-content: center;
+  width: 46px;
+  padding: 0;
+}
+
+.app-sidebar.collapsed .nav-icon {
+  width: 30px;
+}
+
 @media (max-width: 960px) {
   .app-sidebar {
     position: relative;
@@ -256,6 +369,34 @@ const navItems = [
     min-height: auto;
     padding: 16px;
     overflow: visible;
+  }
+
+  .app-sidebar.collapsed {
+    padding: 16px;
+  }
+
+  .app-sidebar.collapsed .brand-text,
+  .app-sidebar.collapsed .nav-label,
+  .app-sidebar.collapsed .sidebar-toggle span {
+    display: block;
+  }
+
+  .app-sidebar.collapsed .brand {
+    justify-content: flex-start;
+  }
+
+  .app-sidebar.collapsed .sidebar-toggle {
+    width: 100%;
+  }
+
+  .app-sidebar.collapsed .nav-list {
+    justify-items: stretch;
+  }
+
+  .app-sidebar.collapsed .nav-item {
+    justify-content: flex-start;
+    width: auto;
+    padding: 0 11px;
   }
 
   .nav-list {
