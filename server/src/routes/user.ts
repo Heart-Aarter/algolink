@@ -1,8 +1,13 @@
 import { Router } from 'express'
+import { pbkdf2Sync, randomBytes, timingSafeEqual } from 'node:crypto'
 import { getDatabase } from '../db'
 
 const router = Router()
 const usernamePattern = /^[A-Za-z0-9_-]{1,32}$/
+const passwordPattern = /^.{6,64}$/
+const passwordKeyLength = 32
+const passwordIterations = 120000
+const passwordDigest = 'sha256'
 const defaultSubmissions = {
   Codeforces: [],
   Luogu: [],
@@ -11,6 +16,8 @@ const defaultSubmissions = {
 
 type UserRow = {
   id: string
+  password_hash: string | null
+  password_salt: string | null
 }
 
 type AccountsRow = {
@@ -40,8 +47,29 @@ function parseJson<T>(value: string | null | undefined, fallback: T): T {
   }
 }
 
+function hashPassword(password: string, salt = randomBytes(16).toString('hex')) {
+  const hash = pbkdf2Sync(
+    password,
+    salt,
+    passwordIterations,
+    passwordKeyLength,
+    passwordDigest,
+  ).toString('hex')
+
+  return { hash, salt }
+}
+
+function verifyPassword(password: string, expectedHash: string, salt: string) {
+  const { hash } = hashPassword(password, salt)
+  const actual = Buffer.from(hash, 'hex')
+  const expected = Buffer.from(expectedHash, 'hex')
+
+  return actual.length === expected.length && timingSafeEqual(actual, expected)
+}
+
 router.post('/', (req, res) => {
   const username = typeof req.body?.username === 'string' ? req.body.username.trim() : ''
+  const password = typeof req.body?.password === 'string' ? req.body.password : ''
 
   if (!usernamePattern.test(username)) {
     return res.status(400).json({
@@ -49,10 +77,35 @@ router.post('/', (req, res) => {
     })
   }
 
+  if (!passwordPattern.test(password)) {
+    return res.status(400).json({ error: 'password must be 6-64 characters' })
+  }
+
   const db = getDatabase()
   const created = new Date().toISOString()
+  const existingUser = db
+    .prepare('SELECT id, password_hash, password_salt FROM users WHERE id = ?')
+    .get(username) as UserRow | undefined
 
-  db.prepare('INSERT OR IGNORE INTO users (id, created) VALUES (?, ?)').run(username, created)
+  if (existingUser?.password_hash && existingUser.password_salt) {
+    if (!verifyPassword(password, existingUser.password_hash, existingUser.password_salt)) {
+      return res.status(401).json({ error: 'invalid username or password' })
+    }
+  } else {
+    const { hash, salt } = hashPassword(password)
+
+    if (existingUser) {
+      db.prepare('UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?').run(
+        hash,
+        salt,
+        username,
+      )
+    } else {
+      db.prepare(
+        'INSERT INTO users (id, created, password_hash, password_salt) VALUES (?, ?, ?, ?)',
+      ).run(username, created, hash, salt)
+    }
+  }
 
   return res.json({
     userId: username,

@@ -5,6 +5,7 @@ import { useAlgoLinkStore } from '@/stores/algolink'
 
 const store = useAlgoLinkStore()
 const username = ref('')
+const password = ref('')
 const submitting = ref(false)
 const errorMessage = ref('')
 const visible = ref(false)
@@ -14,6 +15,7 @@ function open() {
   visible.value = true
   errorMessage.value = ''
   username.value = ''
+  password.value = ''
   nextTick(() => {
     inputRef.value?.focus()
   })
@@ -25,6 +27,7 @@ function close() {
 
 async function submit() {
   const trimmed = username.value.trim()
+  const rawPassword = password.value
 
   if (!trimmed) {
     errorMessage.value = '请输入用户名'
@@ -41,11 +44,16 @@ async function submit() {
     return
   }
 
+  if (rawPassword.length < 6 || rawPassword.length > 64) {
+    errorMessage.value = '密码长度必须为 6-64 位'
+    return
+  }
+
   submitting.value = true
   errorMessage.value = ''
 
   try {
-    const result = await store.loginSimpleUser(trimmed)
+    const result = await store.loginSimpleUser(trimmed, rawPassword)
 
     if (!result.ok) {
       errorMessage.value = result.message
@@ -114,6 +122,20 @@ onMounted(() => {
                   v-model:value="username"
                   size="large"
                   placeholder="username"
+                  :disabled="submitting"
+                  :status="errorMessage ? 'error' : undefined"
+                  @keydown.enter="submit"
+                />
+              </div>
+
+              <div class="auth-input-wrap">
+                <span class="auth-input-prefix">#</span>
+                <n-input
+                  v-model:value="password"
+                  type="password"
+                  show-password-on="click"
+                  size="large"
+                  placeholder="password"
                   :disabled="submitting"
                   :status="errorMessage ? 'error' : undefined"
                   @keydown.enter="submit"

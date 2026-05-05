@@ -15,7 +15,9 @@ export function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
-      created TEXT NOT NULL
+      created TEXT NOT NULL,
+      password_hash TEXT,
+      password_salt TEXT
     );
 
     CREATE TABLE IF NOT EXISTS user_accounts (
@@ -42,6 +44,14 @@ export function initDatabase() {
       score INTEGER NOT NULL
     );
   `)
+
+  for (const column of ['password_hash', 'password_salt']) {
+    try {
+      db.prepare(`ALTER TABLE users ADD COLUMN ${column} TEXT`).run()
+    } catch {
+      // Existing databases already have this column.
+    }
+  }
 
   return db
 }

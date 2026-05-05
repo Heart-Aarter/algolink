@@ -716,8 +716,13 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
   async function loginSimpleUser(
     username: string,
+    password: string,
   ): Promise<{ ok: boolean; message: string }> {
     const trimmedUsername = username.trim()
+
+    if (password.length < 6 || password.length > 64) {
+      return { ok: false, message: '密码长度必须为 6-64 位' }
+    }
 
     if (!trimmedUsername) {
       return { ok: false, message: '请输入用户名' }
@@ -725,7 +730,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
     try {
       const previousUserId = currentUserId.value
-      const user = await loginUser(trimmedUsername)
+      const user = await loginUser(trimmedUsername, password)
       currentUserId.value = user.userId
       currentUsername.value = user.username
       writeStorage(storageKeys.currentUserId, currentUserId.value)

@@ -112,17 +112,21 @@ const bindingHintLinks: Partial<Record<OjPlatform, { label: string; url: string 
       </form>
 
       <Transition name="tab-fade">
-        <p v-if="platform && bindingHintLinks[platform]" class="bind-hint">
+        <div v-if="platform === 'Codeforces'" class="cf-verify-card">
+          <div class="cf-verify-copy">
+            <strong>Codeforces 绑定验证</strong>
+            <span>请先打开 CF 1A，在 10 分钟内提交一次 CE，再回到这里绑定 handle。</span>
+          </div>
           <span>{{ platform }} 验证：</span>
           <a
-            :href="bindingHintLinks[platform]!.url"
+            :href="bindingHintLinks.Codeforces!.url"
             target="_blank"
             rel="noreferrer"
-            class="oj-link"
+            class="cf-verify-button"
           >
-            {{ bindingHintLinks[platform]!.label }}
+            打开 CF 1A 验证题
           </a>
-        </p>
+        </div>
       </Transition>
 
       <p class="form-note">
@@ -205,3 +209,80 @@ const bindingHintLinks: Partial<Record<OjPlatform, { label: string; url: string 
     </section>
   </div>
 </template>
+
+<style scoped>
+.cf-verify-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(194, 138, 46, 0.45);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, rgba(194, 138, 46, 0.16), transparent 46%),
+    rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.cf-verify-card > span {
+  display: none;
+}
+
+.cf-verify-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.cf-verify-copy strong {
+  color: var(--color-heading);
+  font-size: 16px;
+  font-weight: 820;
+}
+
+.cf-verify-copy span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.cf-verify-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid rgba(194, 138, 46, 0.66);
+  border-radius: 8px;
+  background: var(--stripe-gold);
+  color: #17130d;
+  font-size: 14px;
+  font-weight: 820;
+  text-decoration: none;
+  box-shadow: 0 10px 24px rgba(194, 138, 46, 0.18);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.cf-verify-button:hover {
+  color: #17130d;
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(194, 138, 46, 0.28);
+}
+
+@media (max-width: 720px) {
+  .cf-verify-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cf-verify-button {
+    width: 100%;
+  }
+}
+</style>

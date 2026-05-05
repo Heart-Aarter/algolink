@@ -158,6 +158,12 @@ function addCount(map: Map<string, number>, key: string, count = 1) {
   map.set(key, (map.get(key) ?? 0) + count)
 }
 
+function isActualLanguage(language: string) {
+  const normalized = language.trim().toLowerCase()
+
+  return Boolean(normalized) && normalized !== 'n/a' && normalized !== 'unknown' && normalized !== '-'
+}
+
 export function getStatusCounts(submissions: SubmissionRecord[]) {
   return submissions.reduce<Record<SubmissionStatus, number>>(
     (acc, submission) => {
@@ -225,7 +231,9 @@ export function calculateSubmissionAnalysis(
 
     addCount(difficultyCounts, getDifficultyBucketLabel(getDifficultyBucket(submission.difficulty)))
     addCount(verdictCounts, getVerdictCode(submission.status))
-    addCount(languageCounts, submission.language || 'Unknown')
+    if (isActualLanguage(submission.language)) {
+      addCount(languageCounts, submission.language)
+    }
 
     const submittedAt = parseSubmittedAt(submission.submittedAt)
     if (submittedAt && submittedAt.getTime() >= recentCutoff && submittedAt.getTime() <= now.getTime()) {

@@ -58,8 +58,8 @@ export interface LeaderboardResponse {
   items: LeaderboardItem[]
 }
 
-export async function loginUser(username: string) {
-  const response = await apiClient.post<LoginUserResponse>('/api/user', { username })
+export async function loginUser(username: string, password: string) {
+  const response = await apiClient.post<LoginUserResponse>('/api/user', { username, password })
   return response.data
 }
 
