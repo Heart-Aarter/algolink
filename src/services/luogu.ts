@@ -11,7 +11,7 @@ import {
 } from './normalizers'
 
 const luoguClient = axios.create({
-  baseURL: import.meta.env.DEV ? '/luogu-api' : 'https://www.luogu.com.cn',
+  baseURL: '/luogu-api',
   timeout: 10000,
   headers: {
     'x-lentille-request': 'content-only',

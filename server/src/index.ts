@@ -11,7 +11,7 @@ import trainingPlanRouter from './routes/trainingPlan'
 import userRouter from './routes/user'
 
 const app = express()
-const port = 3001
+const port = Number(process.env.PORT) || 3001
 
 initDatabase()
 

@@ -9,7 +9,7 @@ import {
 } from './normalizers'
 
 const atcoderClient = axios.create({
-  baseURL: import.meta.env.DEV ? '/atcoder-api' : 'https://kenkoooo.com/atcoder',
+  baseURL: '/atcoder-api',
   timeout: 10000,
 })
 
