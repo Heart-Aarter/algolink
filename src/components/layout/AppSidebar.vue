@@ -84,6 +84,8 @@ const navItems = [
 
 <style scoped>
 .app-sidebar {
+  --sidebar-motion: 0.34s cubic-bezier(0.2, 0.72, 0.18, 1);
+
   position: sticky;
   top: 0;
   z-index: 22;
@@ -104,9 +106,8 @@ const navItems = [
     inset -1px 0 0 rgba(194, 138, 46, 0.12);
   backdrop-filter: blur(8px);
   transition:
-    width 0.24s ease,
-    padding 0.24s ease,
-    box-shadow 0.24s ease;
+    padding var(--sidebar-motion),
+    box-shadow var(--sidebar-motion);
 }
 
 .app-sidebar::before {
@@ -131,6 +132,10 @@ const navItems = [
   padding: 0 6px;
   color: var(--color-heading);
   min-width: 0;
+  transition:
+    gap var(--sidebar-motion),
+    margin var(--sidebar-motion),
+    padding var(--sidebar-motion);
 }
 
 .brand:hover {
@@ -154,6 +159,24 @@ const navItems = [
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     0 14px 32px rgba(0, 0, 0, 0.14);
+  flex: 0 0 auto;
+  transition:
+    width var(--sidebar-motion),
+    height var(--sidebar-motion),
+    box-shadow var(--sidebar-motion);
+}
+
+.brand-text {
+  min-width: 0;
+  max-width: 160px;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 1;
+  transform: translateX(0);
+  transition:
+    max-width var(--sidebar-motion),
+    opacity 0.2s ease,
+    transform var(--sidebar-motion);
 }
 
 .brand strong,
@@ -189,6 +212,14 @@ const navItems = [
   color: var(--color-text-soft);
   font-size: 13px;
   font-weight: 800;
+  overflow: hidden;
+  transition:
+    width var(--sidebar-motion),
+    padding var(--sidebar-motion),
+    margin var(--sidebar-motion),
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .sidebar-toggle:hover {
@@ -198,7 +229,20 @@ const navItems = [
 }
 
 .sidebar-toggle .n-icon {
+  flex: 0 0 auto;
   font-size: 17px;
+}
+
+.sidebar-toggle span {
+  max-width: 48px;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 1;
+  transform: translateX(0);
+  transition:
+    max-width var(--sidebar-motion),
+    opacity 0.18s ease,
+    transform var(--sidebar-motion);
 }
 
 .nav-list {
@@ -206,6 +250,7 @@ const navItems = [
   z-index: 1;
   display: grid;
   gap: 6px;
+  transition: justify-items var(--sidebar-motion);
 }
 
 .nav-item {
@@ -222,6 +267,15 @@ const navItems = [
   color: var(--color-text-muted);
   font-size: 14px;
   font-weight: 690;
+  transition:
+    width var(--sidebar-motion),
+    padding var(--sidebar-motion),
+    gap var(--sidebar-motion),
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .nav-item::before {
@@ -271,6 +325,11 @@ const navItems = [
   background: rgba(255, 255, 255, 0.035);
   color: var(--color-text-muted);
   font-size: 17px;
+  flex: 0 0 auto;
+  transition:
+    width var(--sidebar-motion),
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .nav-item > :not(.nav-icon),
@@ -281,9 +340,16 @@ const navItems = [
 
 .nav-label {
   min-width: 0;
+  max-width: 168px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  opacity: 1;
+  transform: translateX(0);
+  transition:
+    max-width var(--sidebar-motion),
+    opacity 0.18s ease,
+    transform var(--sidebar-motion);
 }
 
 .nav-item.router-link-active .nav-icon {
@@ -301,6 +367,17 @@ const navItems = [
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 45%), rgba(255, 255, 255, 0.025);
   backdrop-filter: blur(14px);
+  max-height: 180px;
+  overflow: hidden;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    max-height var(--sidebar-motion),
+    margin var(--sidebar-motion),
+    padding var(--sidebar-motion),
+    opacity 0.18s ease,
+    transform var(--sidebar-motion),
+    border-color 0.2s ease;
 }
 
 .sidebar-note span {
@@ -326,15 +403,37 @@ const navItems = [
 
 .app-sidebar.collapsed .brand {
   justify-content: center;
+  gap: 0;
   margin-bottom: 20px;
   padding: 0;
 }
 
 .app-sidebar.collapsed .brand-text,
 .app-sidebar.collapsed .nav-label,
-.app-sidebar.collapsed .sidebar-toggle span,
+.app-sidebar.collapsed .sidebar-toggle span {
+  max-width: 0;
+  opacity: 0;
+  transform: translateX(-6px);
+  pointer-events: none;
+}
+
+.app-sidebar.collapsed .brand-text {
+  transform: translateX(-8px);
+}
+
+.app-sidebar.collapsed .nav-label {
+  transform: translateX(-10px);
+}
+
 .app-sidebar.collapsed .sidebar-note {
-  display: none;
+  max-height: 0;
+  margin-top: auto;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-color: transparent;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
 }
 
 .app-sidebar.collapsed .brand-mark {
@@ -354,6 +453,7 @@ const navItems = [
 
 .app-sidebar.collapsed .nav-item {
   justify-content: center;
+  gap: 0;
   width: 46px;
   padding: 0;
 }
@@ -378,7 +478,14 @@ const navItems = [
   .app-sidebar.collapsed .brand-text,
   .app-sidebar.collapsed .nav-label,
   .app-sidebar.collapsed .sidebar-toggle span {
-    display: block;
+    max-width: 168px;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  .app-sidebar.collapsed .sidebar-toggle span {
+    max-width: 48px;
   }
 
   .app-sidebar.collapsed .brand {

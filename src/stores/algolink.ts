@@ -99,6 +99,21 @@ function parseSyncTime(value: string) {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
+function getCodeforcesRatingSnapshot(
+  profile: { rating: number; maxRating: number },
+  ratingChanges: { newRating: number }[],
+) {
+  const historyMaxRating = ratingChanges.reduce(
+    (maxRating, change) => Math.max(maxRating, change.newRating),
+    0,
+  )
+
+  return {
+    rating: profile.rating,
+    maxRating: Math.max(profile.maxRating, historyMaxRating, profile.rating),
+  }
+}
+
 type StoredOjAccount = Partial<OjAccount> & { lastSync?: string }
 
 function normalizeAccounts(value: StoredOjAccount[]): OjAccount[] {
@@ -858,7 +873,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
         fetchCodeforcesSubmissions(account.handle),
       ])
       const records = syncedSubmissions.map(toSubmissionRecord)
-      const latestRating = ratingChanges.at(-1)?.newRating ?? profile.rating
+      const ratingSnapshot = getCodeforcesRatingSnapshot(profile, ratingChanges)
       const acceptedProblems = new Set(
         records.filter((item) => item.status === 'Accepted').map(getProblemKey),
       )
@@ -869,8 +884,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
           ? {
               ...item,
               handle: profile.handle,
-              rating: latestRating,
-              maxRating: profile.maxRating,
+              rating: ratingSnapshot.rating,
+              maxRating: ratingSnapshot.maxRating,
               solved: acceptedProblems.size,
               lastSyncAt: formatDateTime(),
             }

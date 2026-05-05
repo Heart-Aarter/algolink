@@ -18,7 +18,11 @@ import {
 const store = useAlgoLinkStore()
 
 const syncedAccount = computed(() =>
-  store.accounts.find((account) => account.solved > 0 || account.lastSyncAt !== '等待同步'),
+  store.accounts.find(
+    (account) =>
+      account.platform === 'Codeforces' &&
+      (account.solved > 0 || account.rating > 0 || (account.maxRating ?? 0) > 0),
+  ),
 )
 const fallbackCodeforcesAccount = computed(() =>
   mockAccounts.find((account) => account.platform === 'Codeforces'),

@@ -10,7 +10,7 @@
   display: grid;
   grid-template-columns: 268px minmax(0, 1fr);
   min-height: 100vh;
-  transition: grid-template-columns 0.24s ease;
+  transition: grid-template-columns 0.34s cubic-bezier(0.2, 0.72, 0.18, 1);
 }
 
 .app-shell.sidebar-collapsed {
