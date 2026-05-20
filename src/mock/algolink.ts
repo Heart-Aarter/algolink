@@ -188,4 +188,10 @@ export const defaultSettings: UserSettings = {
   aiTone: 'balanced',
   showOnlyPublicData: true,
   defaultPlatform: 'Codeforces',
+  aiEnabled: false,
+  aiProvider: 'openai-compatible',
+  aiBaseUrl: 'https://api.openai.com/v1',
+  aiApiKey: '',
+  aiModel: 'gpt-4o-mini',
+  aiPromptPreference: '',
 }

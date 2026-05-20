@@ -1,24 +1,35 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { NButton, NSpin, NTag } from 'naive-ui'
-import { useMockAsync } from '@/composables/useMockAsync'
+import { NAlert, NButton, NSpin, NTag } from 'naive-ui'
 import { recommendedProblems } from '@/mock/recommendedProblems'
 import { weeklyTrainingPlan } from '@/mock/trainingPlan'
+import { generateAiAdvice } from '@/services/api'
 import { useAlgoLinkStore } from '@/stores/algolink'
-import type { UserSettings } from '@/types/algolink'
-import { getTagAnalysis, getTrainingSummary } from '@/utils/analysis'
+import type { AiAdviceResponse, UserSettings } from '@/types/algolink'
+import {
+  calculateSubmissionAnalysis,
+  getTagAnalysis,
+  getTrainingSummary,
+  parseSubmittedAt,
+} from '@/utils/analysis'
 
 const store = useAlgoLinkStore()
 const activeMode = ref<'rules' | 'weak-tags' | 'weekly-plan' | 'recommendations'>('rules')
-const { isGenerating, start } = useMockAsync(650)
-function generateAdvice() {
-  start()
-}
+const isGenerating = ref(false)
+const aiError = ref('')
+const aiAdvice = ref<AiAdviceResponse | null>(null)
 
 const summary = computed(() =>
   getTrainingSummary(store.analysisSubmissions, store.settings.aiTone),
 )
 const weakTagDetails = computed(() => getTagAnalysis(store.analysisSubmissions).slice(0, 5))
+const isAiConfigured = computed(
+  () =>
+    store.settings.aiEnabled &&
+    Boolean(store.settings.aiBaseUrl.trim()) &&
+    Boolean(store.settings.aiApiKey.trim()) &&
+    Boolean(store.settings.aiModel.trim()),
+)
 
 const toneCopy: Record<
   UserSettings['aiTone'],
@@ -49,6 +60,14 @@ const tonedSummary = computed(() => ({
   suggestions: summary.value.suggestions.map((item) => `${activeTone.value.prefix}${item}`),
 }))
 
+const heroSummary = computed(() => {
+  if (aiAdvice.value) {
+    return `${aiAdvice.value.headline} ${aiAdvice.value.summary}`
+  }
+
+  return `${tonedSummary.value.headline} ${tonedSummary.value.focus} ${tonedSummary.value.suggestion}`
+})
+
 const weeklyPlanSummary = computed(() => ({
   days: weeklyTrainingPlan.length,
   problems: weeklyTrainingPlan.reduce((sum, day) => sum + day.problemCount, 0),
@@ -68,14 +87,81 @@ const modeTitle = computed(() => {
   return '题目推荐'
 })
 
+const generationLabel = computed(() =>
+  isAiConfigured.value ? '生成真实 AI 建议' : '生成规则建议',
+)
+
+const severityType = {
+  high: 'error',
+  medium: 'warning',
+  low: 'info',
+} as const
+
+function getRecentSubmissionSample() {
+  return [...store.analysisSubmissions]
+    .sort((left, right) => {
+      const leftTime = parseSubmittedAt(left.submittedAt)?.getTime() ?? 0
+      const rightTime = parseSubmittedAt(right.submittedAt)?.getTime() ?? 0
+      return rightTime - leftTime
+    })
+    .slice(0, 16)
+    .map((item) => ({
+      platform: item.platform,
+      problem: item.problem,
+      difficulty: item.difficulty,
+      tags: item.tags,
+      status: item.status,
+      language: item.language,
+      submittedAt: item.submittedAt,
+    }))
+}
+
+async function generateAdvice() {
+  activeMode.value = 'rules'
+  aiError.value = ''
+
+  if (!isAiConfigured.value) {
+    aiAdvice.value = null
+    return
+  }
+
+  if (!store.currentUserId) {
+    aiError.value = '请先登录用户，再调用真实 AI 分析。'
+    aiAdvice.value = null
+    return
+  }
+
+  isGenerating.value = true
+
+  try {
+    aiAdvice.value = await generateAiAdvice(store.currentUserId, {
+      settings: {
+        aiProvider: store.settings.aiProvider,
+        aiBaseUrl: store.settings.aiBaseUrl,
+        aiApiKey: store.settings.aiApiKey,
+        aiModel: store.settings.aiModel,
+        aiTone: store.settings.aiTone,
+        aiPromptPreference: store.settings.aiPromptPreference,
+      },
+      analysis: calculateSubmissionAnalysis(store.analysisSubmissions),
+      weakTags: weakTagDetails.value,
+      recentSubmissions: getRecentSubmissionSample(),
+    })
+  } catch (error) {
+    aiAdvice.value = null
+    aiError.value = error instanceof Error ? error.message : 'AI 分析失败，已回退到本地规则建议。'
+  } finally {
+    isGenerating.value = false
+  }
+}
 </script>
 
 <template>
   <div class="page-stack">
     <section class="panel ai-brief">
-      <p class="eyebrow">AI Coach Mock</p>
+      <p class="eyebrow">{{ aiAdvice ? 'AI Coach Live' : 'AI Coach Fallback' }}</p>
       <h2>联动能力画像的训练建议</h2>
-      <p>{{ tonedSummary.headline }} {{ tonedSummary.focus }} {{ tonedSummary.suggestion }}</p>
+      <p>{{ heroSummary }}</p>
       <div class="coach-summary-grid">
         <div>
           <span>数据来源</span>
@@ -86,8 +172,8 @@ const modeTitle = computed(() => {
           <strong>{{ tonedSummary.acceptanceRate }}%</strong>
         </div>
         <div>
-          <span>薄弱标签</span>
-          <strong>{{ tonedSummary.weakTags.join(' / ') || '-' }}</strong>
+          <span>分析模式</span>
+          <strong>{{ aiAdvice ? '真实 AI' : isAiConfigured ? '待生成' : '本地规则' }}</strong>
         </div>
       </div>
     </section>
@@ -126,21 +212,83 @@ const modeTitle = computed(() => {
     <section class="panel">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">Mock Result</p>
+          <p class="eyebrow">{{ aiAdvice ? 'Live Result' : 'Fallback Result' }}</p>
           <h2>{{ modeTitle }}</h2>
         </div>
         <RouterLink v-if="activeMode === 'weekly-plan'" class="text-link" to="/training-plan">
           打开训练计划
         </RouterLink>
         <n-button v-else type="primary" secondary :loading="isGenerating" @click="generateAdvice">
-          生成建议
+          {{ generationLabel }}
         </n-button>
       </div>
+
+      <n-alert v-if="!isAiConfigured" type="info" :bordered="false" class="ai-status-alert">
+        未启用或未完整配置 AI 接口，当前使用本地规则分析。可前往设置页填写 API Base、API Key 和模型。
+      </n-alert>
+      <n-alert v-else-if="aiError" type="error" :bordered="false" class="ai-status-alert">
+        {{ aiError }} 当前已显示本地规则兜底建议。
+      </n-alert>
 
       <n-spin :show="isGenerating">
         <Transition name="tab-fade" mode="out-in">
           <div v-if="activeMode === 'rules'" :key="activeMode" class="analysis-list">
-            <article v-for="item in tonedSummary.suggestions" :key="item" class="analysis-card">
+            <template v-if="aiAdvice">
+              <article class="analysis-card">
+                <div class="metric-top">
+                  <h3>AI 总结</h3>
+                  <n-tag type="success" size="small" round>{{ store.settings.aiModel }}</n-tag>
+                </div>
+                <p>{{ aiAdvice.summary }}</p>
+                <strong>{{ aiAdvice.headline }}</strong>
+              </article>
+              <article
+                v-for="item in aiAdvice.findings"
+                :key="`${item.title}-${item.detail}`"
+                class="analysis-card"
+              >
+                <div class="metric-top">
+                  <h3>{{ item.title }}</h3>
+                  <n-tag :type="severityType[item.severity || 'medium']" size="small" round>
+                    {{ item.severity || 'medium' }}
+                  </n-tag>
+                </div>
+                <p>{{ item.detail }}</p>
+              </article>
+              <article
+                v-for="item in aiAdvice.actions"
+                :key="`${item.title}-${item.detail}`"
+                class="analysis-card"
+              >
+                <div class="metric-top">
+                  <h3>{{ item.title }}</h3>
+                  <n-tag type="info" size="small" round>
+                    {{ item.days ? `${item.days} 天` : 'Action' }}
+                  </n-tag>
+                </div>
+                <p>{{ item.detail }}</p>
+              </article>
+              <article class="analysis-card">
+                <div class="metric-top">
+                  <h3>本周重点</h3>
+                  <n-tag type="success" size="small" round>Focus</n-tag>
+                </div>
+                <div class="submission-tags">
+                  <n-tag v-for="item in aiAdvice.weeklyFocus" :key="item" size="small" round>
+                    {{ item }}
+                  </n-tag>
+                  <n-tag
+                    v-for="item in aiAdvice.recommendedTags"
+                    :key="`tag-${item}`"
+                    size="small"
+                    round
+                  >
+                    {{ item }}
+                  </n-tag>
+                </div>
+              </article>
+            </template>
+            <article v-for="item in tonedSummary.suggestions" v-else :key="item" class="analysis-card">
               <div class="metric-top">
                 <h3>建议规则</h3>
                 <n-tag :type="activeTone.tagType" size="small" round>
@@ -209,3 +357,9 @@ const modeTitle = computed(() => {
     </section>
   </div>
 </template>
+
+<style scoped>
+.ai-status-alert {
+  margin-bottom: 18px;
+}
+</style>

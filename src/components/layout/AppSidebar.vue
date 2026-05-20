@@ -27,6 +27,21 @@ defineEmits<{
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: StatsChart },
+  { path: '/profile', label: '个人资料', icon: Person },
+  { path: '/accounts', label: 'OJ 账号绑定', icon: Person },
+  { path: '/submissions', label: '提交记录', icon: List },
+  { path: '/ability-profile', label: '能力画像', icon: Analytics },
+  { path: '/ai-advice', label: 'AI 训练建议', icon: Bulb },
+  { path: '/training-report', label: '训练报告', icon: DocumentText },
+  { path: '/training-plan', label: '训练计划', icon: Calendar },
+  { path: '/daily', label: '每日一题', icon: Today },
+  { path: '/leaderboard', label: '排行榜', icon: Trophy },
+  { path: '/about', label: '关于项目', icon: Rocket },
+  { path: '/settings', label: '设置', icon: Settings },
+]
+
+const legacyNavItems = [
+  { path: '/', label: 'Dashboard', icon: StatsChart },
   { path: '/accounts', label: 'OJ 账号绑定', icon: Person },
   { path: '/submissions', label: '提交记录', icon: List },
   { path: '/profile', label: '能力画像', icon: Analytics },

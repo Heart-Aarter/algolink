@@ -6,7 +6,10 @@ const router = Router()
 
 router.put('/:userId/settings', requireUser, (req, res) => {
   const userId = req.params.userId
-  const settings = req.body?.settings
+  const settings =
+    req.body?.settings && typeof req.body.settings === 'object'
+      ? { ...req.body.settings, aiApiKey: '' }
+      : req.body?.settings
   const db = getDatabase()
 
   db.prepare(

@@ -82,6 +82,42 @@ export async function fetchCodeforcesUser(handle: string): Promise<OjProfile> {
   return normalizeCodeforcesUser(user)
 }
 
+export async function fetchCodeforcesUsers(handles: string[]): Promise<OjProfile[]> {
+  const normalizedHandles = [
+    ...new Set(handles.map(normalizeHandle).filter((handle) => handle.length > 0)),
+  ]
+
+  if (!normalizedHandles.length) {
+    return []
+  }
+
+  let result: CodeforcesUserInfo[]
+
+  try {
+    result = await requestCodeforces<CodeforcesUserInfo[]>(
+      'user.info',
+      {
+        handles: normalizedHandles.join(';'),
+      },
+      normalizedHandles.join(';'),
+    )
+  } catch (error) {
+    if (normalizedHandles.length === 1) {
+      throw error
+    }
+
+    const profiles = await Promise.allSettled(
+      normalizedHandles.map((handle) => fetchCodeforcesUser(handle)),
+    )
+
+    return profiles
+      .filter((profile): profile is PromiseFulfilledResult<OjProfile> => profile.status === 'fulfilled')
+      .map((profile) => profile.value)
+  }
+
+  return result.map(normalizeCodeforcesUser)
+}
+
 export async function fetchCodeforcesRating(handle: string): Promise<OjRatingChange[]> {
   const normalizedHandle = normalizeHandle(handle)
   const result = await requestCodeforces<CodeforcesRatingChange[]>(

@@ -15,6 +15,11 @@ export interface OjAccount {
   status: 'bound'
   rating: number
   maxRating?: number
+  rank?: string
+  maxRank?: string
+  avatar?: string
+  registeredAt?: string
+  lastOnlineAt?: string
   solved: number
   lastSyncAt: string
   color: string
@@ -54,6 +59,11 @@ export interface DailyChallengeState {
 export interface LeaderboardEntry {
   username: string
   score: number
+  rank?: number
+  isCurrentUser?: boolean
+  gapToPrevious?: number
+  avatar?: string
+  displayRankColor?: string
 }
 
 export interface AbilityMetric {
@@ -109,6 +119,33 @@ export interface UserSettings {
   aiTone: 'strict' | 'balanced' | 'encouraging'
   showOnlyPublicData: boolean
   defaultPlatform: OjPlatform
+  aiEnabled: boolean
+  aiProvider: 'openai-compatible'
+  aiBaseUrl: string
+  aiApiKey: string
+  aiModel: string
+  aiPromptPreference: string
+}
+
+export interface AiAdviceFinding {
+  title: string
+  detail: string
+  severity?: 'high' | 'medium' | 'low'
+}
+
+export interface AiAdviceAction {
+  title: string
+  detail: string
+  days?: number
+}
+
+export interface AiAdviceResponse {
+  headline: string
+  summary: string
+  findings: AiAdviceFinding[]
+  actions: AiAdviceAction[]
+  weeklyFocus: string[]
+  recommendedTags: string[]
 }
 
 export interface PlatformSyncState {

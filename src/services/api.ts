@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios'
+import type { AiAdviceResponse, UserSettings } from '@/types/algolink'
 
 const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:3001'
 
@@ -52,10 +53,47 @@ export interface UserDataResponse {
 export interface LeaderboardItem {
   username: string
   score: number
+  rank?: number
+  isCurrentUser?: boolean
+  gapToPrevious?: number
 }
+
+export type LeaderboardPeriod = 'all' | 'today' | 'week' | 'streak'
 
 export interface LeaderboardResponse {
   items: LeaderboardItem[]
+  currentUser: LeaderboardItem | null
+  total: number
+  period: LeaderboardPeriod
+}
+
+export interface LeaderboardScorePayload {
+  username: string
+  score: number
+  eventId?: string
+  source?: string
+  date?: string
+}
+
+export interface LeaderboardSubmitResponse extends LeaderboardItem {
+  addedScore: number
+  eventId: string
+  duplicated: boolean
+}
+
+export interface AiAdviceRequest {
+  settings: Pick<
+    UserSettings,
+    | 'aiProvider'
+    | 'aiBaseUrl'
+    | 'aiApiKey'
+    | 'aiModel'
+    | 'aiTone'
+    | 'aiPromptPreference'
+  >
+  analysis: unknown
+  weakTags: unknown[]
+  recentSubmissions: unknown[]
 }
 
 export async function loginUser(username: string, password: string) {
@@ -108,13 +146,26 @@ export async function saveDailyChallenge(userId: string, dailyChallenge: unknown
   return response.data
 }
 
-export async function getLeaderboard() {
-  const response = await apiClient.get<LeaderboardResponse>('/api/leaderboard')
+export async function getLeaderboard(params: {
+  period?: LeaderboardPeriod
+  username?: string
+  limit?: number
+  offset?: number
+} = {}) {
+  const response = await apiClient.get<LeaderboardResponse>('/api/leaderboard', { params })
   return response.data
 }
 
-export async function submitLeaderboard(username: string, score: number) {
-  const response = await apiClient.post<LeaderboardItem>('/api/leaderboard', { username, score })
+export async function submitLeaderboard(payload: LeaderboardScorePayload) {
+  const response = await apiClient.post<LeaderboardSubmitResponse>('/api/leaderboard', payload)
   return response.data
 }
 
+export async function generateAiAdvice(userId: string, payload: AiAdviceRequest) {
+  const response = await apiClient.post<AiAdviceResponse>(
+    `/api/user/${encodeURIComponent(userId)}/ai/advice`,
+    payload,
+    { timeout: 45000 },
+  )
+  return response.data
+}

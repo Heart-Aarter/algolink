@@ -32,6 +32,12 @@ const router = createRouter({
     {
       path: '/profile',
       name: 'profile',
+      component: () => import('@/views/ProfileView.vue'),
+      meta: { title: '个人资料' },
+    },
+    {
+      path: '/ability-profile',
+      name: 'ability-profile',
       component: () => import('@/views/AbilityProfileView.vue'),
       meta: { title: '能力画像' },
     },

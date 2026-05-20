@@ -42,6 +42,21 @@ export function initDatabase() {
       username TEXT PRIMARY KEY,
       score INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS leaderboard_events (
+      event_id TEXT PRIMARY KEY,
+      username TEXT NOT NULL,
+      score_delta INTEGER NOT NULL,
+      source TEXT NOT NULL,
+      event_date TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_leaderboard_events_username
+      ON leaderboard_events(username);
+
+    CREATE INDEX IF NOT EXISTS idx_leaderboard_events_date
+      ON leaderboard_events(event_date);
   `)
 
   for (const column of ['password_hash', 'password_salt']) {

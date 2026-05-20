@@ -16,10 +16,12 @@ const routeTitle = computed(() => {
   return 'Dashboard'
 })
 const loginRoute = computed(() => ({
-  path: '/login',
-  query: {
-    redirect: route.fullPath,
-  },
+  path: store.currentUserId ? '/profile' : '/login',
+  query: store.currentUserId
+    ? undefined
+    : {
+        redirect: route.fullPath,
+      },
 }))
 
 function setThemeTransitionOrigin(event: MouseEvent) {
@@ -70,7 +72,13 @@ onMounted(() => {
 
     <div class="header-actions">
       <RouterLink class="user-tag" :to="loginRoute">
-        <span class="user-tag-avatar">{{ store.currentUsername.slice(0, 1).toUpperCase() }}</span>
+        <img
+          v-if="store.currentUserAvatar"
+          class="user-tag-avatar"
+          :src="store.currentUserAvatar"
+          :alt="`${store.currentUsername} avatar`"
+        >
+        <span v-else class="user-tag-avatar">{{ store.currentUsername.slice(0, 1).toUpperCase() }}</span>
         <span class="user-tag-name">{{ store.currentUsername }}</span>
       </RouterLink>
       <button
@@ -183,6 +191,7 @@ h1 {
   color: var(--color-heading);
   font-size: 12px;
   font-weight: 800;
+  object-fit: cover;
 }
 
 .user-tag-name {

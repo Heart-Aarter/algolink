@@ -9,6 +9,7 @@ import {
   fetchCodeforcesRating,
   fetchCodeforcesSubmissions,
   fetchCodeforcesUser,
+  fetchCodeforcesUsers,
   hasRecentCodeforcesBindingCe,
 } from '@/services/codeforces'
 import {
@@ -27,6 +28,7 @@ import {
   saveTrainingPlan,
   submitLeaderboard,
 } from '@/services/api'
+import type { LeaderboardPeriod } from '@/services/api'
 import { fetchLuoguSubmissions, fetchLuoguUser } from '@/services/luogu'
 import { toSubmissionRecord } from '@/services/normalizers'
 import { weeklyTrainingPlan } from '@/mock/trainingPlan'
@@ -44,6 +46,7 @@ import type {
 } from '@/types/algolink'
 import { readStorage, writeStorage } from '@/utils/storage'
 import { getProblemKey } from '@/utils/analysis'
+import { getCodeforcesRankColor } from '@/utils/codeforcesRank'
 
 const storageKeys = {
   currentUserId: 'algolink:currentUserId',
@@ -58,6 +61,7 @@ const storageKeys = {
   luoguSubmissions: 'algolink.luoguSubmissions',
   dailyChallenge: 'algolink.dailyChallenge',
   leaderboard: 'algolink.leaderboard',
+  codeforcesAvatars: 'algolink.cfAvatars',
 }
 
 export const supportedPlatforms: OjPlatform[] = ['Codeforces', 'Luogu', 'AtCoder']
@@ -115,6 +119,20 @@ function getCodeforcesRatingSnapshot(
 }
 
 type StoredOjAccount = Partial<OjAccount> & { lastSync?: string }
+type CodeforcesAvatarCacheEntry = {
+  avatar: string
+  rating: number
+  rank?: string
+  fetchedAt: string
+}
+
+type CodeforcesAvatarCache = Record<string, CodeforcesAvatarCacheEntry>
+
+const avatarCacheTtlMs = 24 * 60 * 60 * 1000
+
+function normalizeHandleKey(handle: string) {
+  return handle.trim().toLowerCase()
+}
 
 function normalizeAccounts(value: StoredOjAccount[]): OjAccount[] {
   return value
@@ -132,6 +150,11 @@ function normalizeAccounts(value: StoredOjAccount[]): OjAccount[] {
       status: 'bound',
       rating: Number(account.rating ?? 0),
       maxRating: Number(account.maxRating ?? account.rating ?? 0),
+      rank: typeof account.rank === 'string' ? account.rank : undefined,
+      maxRank: typeof account.maxRank === 'string' ? account.maxRank : undefined,
+      avatar: typeof account.avatar === 'string' ? account.avatar : undefined,
+      registeredAt: typeof account.registeredAt === 'string' ? account.registeredAt : undefined,
+      lastOnlineAt: typeof account.lastOnlineAt === 'string' ? account.lastOnlineAt : undefined,
       solved: Number(account.solved ?? 0),
       lastSyncAt: account.lastSyncAt || account.lastSync || '暂无同步',
       color: account.color || platformColors[account.platform],
@@ -165,6 +188,20 @@ function normalizeSettings(value: unknown): UserSettings {
   return {
     ...defaultSettings,
     ...source,
+    aiProvider: 'openai-compatible',
+    aiEnabled: Boolean(source.aiEnabled),
+    aiBaseUrl: typeof source.aiBaseUrl === 'string' ? source.aiBaseUrl : defaultSettings.aiBaseUrl,
+    aiApiKey: typeof source.aiApiKey === 'string' ? source.aiApiKey : '',
+    aiModel: typeof source.aiModel === 'string' ? source.aiModel : defaultSettings.aiModel,
+    aiPromptPreference:
+      typeof source.aiPromptPreference === 'string' ? source.aiPromptPreference : '',
+  }
+}
+
+function getServerSafeSettings(value: UserSettings): UserSettings {
+  return {
+    ...value,
+    aiApiKey: '',
   }
 }
 
@@ -224,6 +261,15 @@ function normalizeLeaderboard(value: unknown): LeaderboardEntry[] {
         .map((entry) => ({
           username: entry.username,
           score: Math.max(0, Math.floor(entry.score)),
+          rank: typeof entry.rank === 'number' ? entry.rank : undefined,
+          isCurrentUser: entry.isCurrentUser === true,
+          gapToPrevious:
+            typeof entry.gapToPrevious === 'number' ? Math.max(0, Math.floor(entry.gapToPrevious)) : undefined,
+          avatar: typeof entry.avatar === 'string' ? entry.avatar : undefined,
+          displayRankColor:
+            typeof entry.displayRankColor === 'string'
+              ? entry.displayRankColor
+              : getCodeforcesRankColor(Math.max(0, Math.floor(entry.score))),
         }))
     : []
 }
@@ -303,6 +349,13 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   const leaderboardEntries = shallowRef<LeaderboardEntry[]>(
     readStorage<LeaderboardEntry[]>(storageKeys.leaderboard, defaultLeaderboard),
   )
+  const codeforcesAvatarCache = shallowRef<CodeforcesAvatarCache>(
+    readStorage<CodeforcesAvatarCache>(storageKeys.codeforcesAvatars, {}),
+  )
+  const leaderboardCurrentUser = ref<LeaderboardEntry | null>(null)
+  const leaderboardPeriod = ref<LeaderboardPeriod>('all')
+  const leaderboardTotal = ref(leaderboardEntries.value.length)
+  const isLeaderboardLoading = ref(false)
   const serverSyncMessage = ref('')
   const autoSyncState = ref({
     running: false,
@@ -385,7 +438,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       return
     }
 
-    saveSettings(currentUserId.value, settings.value)
+    saveSettings(currentUserId.value, getServerSafeSettings(settings.value))
       .then(() => {
         serverSyncMessage.value = ''
       })
@@ -444,25 +497,121 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     writeStorage(storageKeys.leaderboard, leaderboardEntries.value)
   }
 
-  async function syncLeaderboardFromServer() {
+  function persistCodeforcesAvatarCache() {
+    writeStorage(storageKeys.codeforcesAvatars, codeforcesAvatarCache.value)
+  }
+
+  function getCachedCodeforcesAvatar(handle: string) {
+    return codeforcesAvatarCache.value[normalizeHandleKey(handle)]
+  }
+
+  function withCodeforcesProfile(entry: LeaderboardEntry): LeaderboardEntry {
+    const cached = getCachedCodeforcesAvatar(entry.username)
+
+    return {
+      ...entry,
+      avatar: entry.avatar || cached?.avatar,
+      displayRankColor: getCodeforcesRankColor(entry.score),
+    }
+  }
+
+  async function hydrateLeaderboardAvatars(handles: string[]) {
+    const now = Date.now()
+    const missingHandles = [
+      ...new Set(
+        handles
+          .map((handle) => handle.trim())
+          .filter((handle) => {
+            const cached = getCachedCodeforcesAvatar(handle)
+            return (
+              handle.length > 0 &&
+              (!cached || now - new Date(cached.fetchedAt).getTime() > avatarCacheTtlMs)
+            )
+          }),
+      ),
+    ]
+
+    if (!missingHandles.length) {
+      leaderboardEntries.value = leaderboardEntries.value.map(withCodeforcesProfile)
+      leaderboardCurrentUser.value = leaderboardCurrentUser.value
+        ? withCodeforcesProfile(leaderboardCurrentUser.value)
+        : null
+      persistLeaderboard()
+      return
+    }
+
     try {
-      const response = await getLeaderboard()
+      const profiles = await fetchCodeforcesUsers(missingHandles)
+      const nextCache = { ...codeforcesAvatarCache.value }
+
+      for (const profile of profiles) {
+        nextCache[normalizeHandleKey(profile.handle)] = {
+          avatar: profile.avatar || '',
+          rating: profile.rating,
+          rank: profile.rank,
+          fetchedAt: new Date().toISOString(),
+        }
+      }
+
+      codeforcesAvatarCache.value = nextCache
+      persistCodeforcesAvatarCache()
+      leaderboardEntries.value = leaderboardEntries.value.map(withCodeforcesProfile)
+      leaderboardCurrentUser.value = leaderboardCurrentUser.value
+        ? withCodeforcesProfile(leaderboardCurrentUser.value)
+        : null
+      persistLeaderboard()
+    } catch {
+      leaderboardEntries.value = leaderboardEntries.value.map(withCodeforcesProfile)
+      leaderboardCurrentUser.value = leaderboardCurrentUser.value
+        ? withCodeforcesProfile(leaderboardCurrentUser.value)
+        : null
+    }
+  }
+
+  async function syncLeaderboardFromServer(period: LeaderboardPeriod = leaderboardPeriod.value) {
+    isLeaderboardLoading.value = true
+    try {
+      const response = await getLeaderboard({
+        period,
+        username: currentUsername.value,
+        limit: 100,
+      })
       const serverItems = normalizeLeaderboard(response.items)
+      const currentUser = normalizeLeaderboard(response.currentUser ? [response.currentUser] : [])[0] ?? null
 
       if (serverItems.length > 0) {
         leaderboardEntries.value = serverItems
         persistLeaderboard()
+      } else if (period !== 'all') {
+        leaderboardEntries.value = []
       }
+      leaderboardCurrentUser.value = currentUser
+      leaderboardPeriod.value = response.period
+      leaderboardTotal.value = response.total
+      void hydrateLeaderboardAvatars([
+        ...serverItems.map((entry) => entry.username),
+        currentUser?.username ?? '',
+      ])
       serverSyncMessage.value = ''
     } catch {
+      void hydrateLeaderboardAvatars(leaderboardEntries.value.map((entry) => entry.username))
       serverSyncMessage.value = 'Server unavailable. Showing local cache.'
+    } finally {
+      isLeaderboardLoading.value = false
     }
   }
 
-  function pushLeaderboardScore(username: string, score: number) {
-    submitLeaderboard(username, score)
+  function pushLeaderboardScore(username: string, score: number, eventId: string, date: string) {
+    submitLeaderboard({
+      username,
+      score,
+      eventId,
+      source: 'daily-challenge',
+      date,
+    })
       .then(() => {
         serverSyncMessage.value = ''
+        void syncLeaderboardFromServer(leaderboardPeriod.value)
       })
       .catch(() => {
         serverSyncMessage.value = 'Server sync failed. Local cache is kept.'
@@ -546,20 +695,76 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     () => trainingTasks.value.filter((item) => item.status !== 'done').length,
   )
   const leaderboard = computed(() => {
-    const board = new Map<string, number>()
+    const board = new Map<string, LeaderboardEntry>()
 
     for (const entry of leaderboardEntries.value) {
-      board.set(entry.username, Math.max(board.get(entry.username) ?? 0, entry.score))
+      const cached = getCachedCodeforcesAvatar(entry.username)
+      const existing = board.get(entry.username)
+      const score = Math.max(existing?.score ?? 0, entry.score)
+      board.set(entry.username, {
+        ...existing,
+        ...entry,
+        score,
+        avatar: entry.avatar || cached?.avatar || existing?.avatar,
+        displayRankColor: getCodeforcesRankColor(score),
+      })
     }
 
-    if (!board.has(currentUsername.value)) {
-      board.set(currentUsername.value, 0)
+    if (leaderboardCurrentUser.value) {
+      const cached = getCachedCodeforcesAvatar(leaderboardCurrentUser.value.username)
+      const existing = board.get(leaderboardCurrentUser.value.username)
+      const score = Math.max(existing?.score ?? 0, leaderboardCurrentUser.value.score)
+      board.set(leaderboardCurrentUser.value.username, {
+        ...existing,
+        ...leaderboardCurrentUser.value,
+        score,
+        avatar: leaderboardCurrentUser.value.avatar || cached?.avatar || existing?.avatar,
+        displayRankColor: getCodeforcesRankColor(score),
+      })
     }
 
-    return [...board.entries()]
-      .map(([username, score]) => ({ username, score }))
+    if (currentUsername.value && !board.has(currentUsername.value)) {
+      const cached = getCachedCodeforcesAvatar(currentUsername.value)
+      board.set(currentUsername.value, {
+        username: currentUsername.value,
+        score: 0,
+        avatar: cached?.avatar,
+        displayRankColor: getCodeforcesRankColor(0),
+      })
+    }
+
+    return [...board.values()]
       .sort((left, right) => right.score - left.score || left.username.localeCompare(right.username))
   })
+  const currentLeaderboardUser = computed(() => {
+    const current = leaderboard.value.find((entry) => entry.username === currentUsername.value)
+    if (!current) {
+      return null
+    }
+
+    const serverCurrent =
+      leaderboardCurrentUser.value?.username === currentUsername.value ? leaderboardCurrentUser.value : null
+    const localRank = leaderboard.value.findIndex((entry) => entry.username === current.username) + 1
+    const rank = serverCurrent?.rank ?? localRank
+    const previous = leaderboard.value[localRank - 2]
+
+    return {
+      ...current,
+      rank,
+      gapToPrevious:
+        serverCurrent?.gapToPrevious ?? (previous ? Math.max(previous.score - current.score, 0) : 0),
+    }
+  })
+  const codeforcesAccount = computed(() =>
+    accounts.value.find((account) => account.platform === 'Codeforces'),
+  )
+  const currentUserAvatar = computed(
+    () =>
+      codeforcesAccount.value?.avatar ||
+      getCachedCodeforcesAvatar(currentUsername.value)?.avatar ||
+      currentLeaderboardUser.value?.avatar ||
+      '',
+  )
   const platformSyncCards = computed(() =>
     supportedPlatforms.map((platform) => {
       const account = accounts.value.find((item) => item.platform === platform)
@@ -645,16 +850,20 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
     const userSettingsKey = getUserCacheKey(userId, 'settings')
     const hasUserSettingsCache = hasStorageValue(userSettingsKey)
+    const localSettings = normalizeSettings(
+      allowLegacyMigration && !hasUserSettingsCache
+        ? readStorage<UserSettings>(storageKeys.settings, defaultSettings)
+        : readStorage<unknown>(userSettingsKey, defaultSettings),
+    )
     settings.value = serverData.settings
-      ? normalizeSettings(serverData.settings)
-      : normalizeSettings(
-          allowLegacyMigration && !hasUserSettingsCache
-            ? readStorage<UserSettings>(storageKeys.settings, defaultSettings)
-            : readStorage<unknown>(userSettingsKey, defaultSettings),
-        )
+      ? {
+          ...normalizeSettings(serverData.settings),
+          aiApiKey: localSettings.aiApiKey,
+        }
+      : localSettings
     persistSettings()
     if (!serverData.settings && allowLegacyMigration && !hasUserSettingsCache) {
-      await saveSettings(userId, settings.value)
+      await saveSettings(userId, getServerSafeSettings(settings.value))
     }
 
     const userTrainingPlanKey = getUserCacheKey(userId, 'trainingPlan')
@@ -874,6 +1083,16 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       )
 
       codeforcesSubmissions.value = records
+      codeforcesAvatarCache.value = {
+        ...codeforcesAvatarCache.value,
+        [normalizeHandleKey(profile.handle)]: {
+          avatar: profile.avatar || '',
+          rating: ratingSnapshot.rating,
+          rank: profile.rank,
+          fetchedAt: new Date().toISOString(),
+        },
+      }
+      persistCodeforcesAvatarCache()
       accounts.value = accounts.value.map((item) =>
         item.id === id
           ? {
@@ -881,6 +1100,11 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
               handle: profile.handle,
               rating: ratingSnapshot.rating,
               maxRating: ratingSnapshot.maxRating,
+              rank: profile.rank,
+              maxRank: profile.maxRank,
+              avatar: profile.avatar,
+              registeredAt: profile.registeredAt,
+              lastOnlineAt: profile.lastOnlineAt,
               solved: acceptedProblems.size,
               lastSyncAt: formatDateTime(),
             }
@@ -1137,7 +1361,12 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     pushDailyChallengeToServer()
 
     if (delta > 0) {
-      addLeaderboardScore(currentUsername.value, delta)
+      addLeaderboardScore(
+        currentUsername.value,
+        delta,
+        `daily:${currentUsername.value}:${dailyChallenge.value.date}:${problemId}`,
+        dailyChallenge.value.date,
+      )
     }
 
     return { ok: true, message: `每日一题已完成，本日计分 ${nextAwardedScore}。` }
@@ -1188,7 +1417,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     return completeDailyProblem(problem.id)
   }
 
-  function addLeaderboardScore(username: string, score: number) {
+  function addLeaderboardScore(username: string, score: number, eventId: string, date: string) {
     const existing = leaderboardEntries.value.find((entry) => entry.username === username)
 
     if (existing) {
@@ -1200,7 +1429,11 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     }
 
     persistLeaderboard()
-    pushLeaderboardScore(username, score)
+    pushLeaderboardScore(username, score, eventId, date)
+  }
+
+  function loadLeaderboardPeriod(period: LeaderboardPeriod) {
+    return syncLeaderboardFromServer(period)
   }
 
   function updateSettings(nextSettings: UserSettings) {
@@ -1281,11 +1514,18 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     currentUsername,
     dailyChallenge,
     leaderboard,
+    currentLeaderboardUser,
+    codeforcesAccount,
+    currentUserAvatar,
+    leaderboardPeriod,
+    leaderboardTotal,
+    isLeaderboardLoading,
     serverSyncMessage,
     loginSimpleUser,
     bindAccount,
     removeAccount,
     syncOjAccount,
+    loadLeaderboardPeriod,
     loadDailyChallenge,
     verifyAndCompleteDailyProblem,
     updateSettings,
