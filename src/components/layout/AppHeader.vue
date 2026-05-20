@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useTheme } from '@/composables/useTheme'
 import { useAlgoLinkStore } from '@/stores/algolink'
@@ -7,7 +7,6 @@ import { useAlgoLinkStore } from '@/stores/algolink'
 const route = useRoute()
 const store = useAlgoLinkStore()
 const { theme, themeLabel, applyTheme, initTheme } = useTheme()
-const openLogin = inject<() => void>('openLogin', () => {})
 
 const routeTitle = computed(() => {
   if (typeof route.meta.title === 'string') {
@@ -16,6 +15,12 @@ const routeTitle = computed(() => {
 
   return 'Dashboard'
 })
+const loginRoute = computed(() => ({
+  path: '/login',
+  query: {
+    redirect: route.fullPath,
+  },
+}))
 
 function setThemeTransitionOrigin(event: MouseEvent) {
   const x = event.clientX
@@ -64,10 +69,10 @@ onMounted(() => {
     </div>
 
     <div class="header-actions">
-      <button class="user-tag" type="button" @click="openLogin">
+      <RouterLink class="user-tag" :to="loginRoute">
         <span class="user-tag-avatar">{{ store.currentUsername.slice(0, 1).toUpperCase() }}</span>
         <span class="user-tag-name">{{ store.currentUsername }}</span>
-      </button>
+      </RouterLink>
       <button
         class="theme-toggle"
         type="button"

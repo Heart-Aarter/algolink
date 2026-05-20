@@ -43,7 +43,7 @@ import type {
   WeeklyTrainingPlanDay,
 } from '@/types/algolink'
 import { readStorage, writeStorage } from '@/utils/storage'
-import { calculateSubmissionAnalysis, getProblemKey } from '@/utils/analysis'
+import { getProblemKey } from '@/utils/analysis'
 
 const storageKeys = {
   currentUserId: 'algolink:currentUserId',
@@ -542,18 +542,6 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     ]
   })
 
-  const boundPlatforms = computed(() => new Set(accounts.value.map((item) => item.platform)))
-  const boundSubmissions = computed(() =>
-    submissions.value.filter((item) => boundPlatforms.value.has(item.platform)),
-  )
-  const submissionAnalysis = computed(() => calculateSubmissionAnalysis(boundSubmissions.value))
-  const totalSolved = computed(() => submissionAnalysis.value.solvedProblems)
-  const acceptedCount = computed(
-    () => boundSubmissions.value.filter((item) => item.status === 'Accepted').length,
-  )
-  const acceptanceRate = computed(() =>
-    Math.round((acceptedCount.value / Math.max(boundSubmissions.value.length, 1)) * 100),
-  )
   const activePlanCount = computed(
     () => trainingTasks.value.filter((item) => item.status !== 'done').length,
   )
@@ -594,7 +582,6 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     const done = weeklyPlanDays.value.filter((day) => day.status === 'done').length
     return Math.round((done / Math.max(weeklyPlanDays.value.length, 1)) * 100)
   })
-  const todayPlan = computed(() => weeklyPlanDays.value[0])
 
   async function initServerSync(allowLegacyMigration = false) {
     if (!currentUserId.value) {
@@ -1220,14 +1207,6 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     settings.value = nextSettings
     persistSettings()
     pushSettingsToServer()
-  }
-
-  function updateTaskStatus(id: string, status: TrainingTask['status']) {
-    trainingTasks.value = trainingTasks.value.map((task) =>
-      task.id === id ? { ...task, status } : task,
-    )
-    persistTrainingPlan()
-    pushTrainingPlanToServer()
   }
 
   function updateWeeklyPlanStatus(id: string, status: TrainingPlanStatus) {

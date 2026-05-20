@@ -1,23 +1,17 @@
 <script setup lang="ts">
 import { darkTheme, type GlobalThemeOverrides } from 'naive-ui'
-import { computed, onMounted, provide, ref, useTemplateRef } from 'vue'
-import { RouterView } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
-import LoginModal from '@/components/common/LoginModal.vue'
 import { useTheme } from '@/composables/useTheme'
 
 const { theme } = useTheme()
+const route = useRoute()
 const sidebarCollapsed = ref(false)
 const showIntro = ref(true)
-const loginModalRef = useTemplateRef<InstanceType<typeof LoginModal>>('loginModal')
-
-function openLogin() {
-  loginModalRef.value?.open()
-}
-
-provide('openLogin', openLogin)
 const naiveTheme = computed(() => (theme.value === 'dark' ? darkTheme : null))
+const isFullPageRoute = computed(() => route.meta.fullPage === true)
 const shellClass = computed(() => ({
   'sidebar-collapsed': sidebarCollapsed.value,
   'intro-visible': showIntro.value,
@@ -91,9 +85,21 @@ onMounted(() => {
     <n-message-provider>
       <n-dialog-provider>
         <Transition name="intro-shell">
-          <section v-if="showIntro" class="intro-screen" aria-label="AlgoLink intro">
+          <section
+            v-if="showIntro && !isFullPageRoute"
+            class="intro-screen"
+            aria-label="AlgoLink intro"
+          >
             <div class="intro-starfield" aria-hidden="true">
               <span />
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+            <div class="intro-scanline" aria-hidden="true" />
+            <div class="intro-light-ribbons" aria-hidden="true">
               <span />
               <span />
               <span />
@@ -106,6 +112,9 @@ onMounted(() => {
               </div>
 
               <div class="intro-logo-stage">
+                <div class="intro-orbit-ring intro-orbit-ring-a" aria-hidden="true" />
+                <div class="intro-orbit-ring intro-orbit-ring-b" aria-hidden="true" />
+                <div class="intro-orbit-ring intro-orbit-ring-c" aria-hidden="true" />
                 <div class="intro-logo-frame" aria-label="AlgoLink">
                   <div class="intro-logo-glyph">
                     <span class="glyph-a">A</span>
@@ -121,9 +130,16 @@ onMounted(() => {
                 <strong class="intro-wordmark">Algo<span>Link</span></strong>
                 <div class="intro-launch-core" aria-hidden="true" />
                 <div class="intro-launch-flare" aria-hidden="true" />
+                <div class="intro-data-rail" aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </div>
               </div>
 
-              <div class="intro-gantry" aria-hidden="true">
+              <div class="intro-gantry intro-console-rails" aria-hidden="true">
                 <span />
                 <span />
                 <span />
@@ -146,7 +162,13 @@ onMounted(() => {
           </section>
         </Transition>
 
-        <div class="app-shell" :class="shellClass">
+        <RouterView v-if="isFullPageRoute" v-slot="{ Component, route }">
+          <Transition name="page-slide" mode="out-in">
+            <component :is="Component" :key="route.fullPath" />
+          </Transition>
+        </RouterView>
+
+        <div v-else class="app-shell" :class="shellClass">
           <AppSidebar :collapsed="sidebarCollapsed" @toggle="toggleSidebar" />
           <div class="app-main">
             <AppHeader />
@@ -159,8 +181,6 @@ onMounted(() => {
             </main>
           </div>
         </div>
-
-        <LoginModal v-if="!showIntro" ref="loginModal" />
       </n-dialog-provider>
     </n-message-provider>
   </n-config-provider>

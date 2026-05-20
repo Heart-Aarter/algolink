@@ -1,9 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import DashboardView from '@/views/DashboardView.vue'
+import { useAlgoLinkStore } from '@/stores/algolink'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('@/views/LoginView.vue'),
+      meta: { title: '登录', public: true, fullPage: true },
+    },
     {
       path: '/',
       name: 'dashboard',
@@ -77,6 +84,21 @@ const router = createRouter({
       meta: { title: '404 Not Found' },
     },
   ],
+})
+
+router.beforeEach((to) => {
+  const store = useAlgoLinkStore()
+
+  if (to.meta.public || store.currentUserId) {
+    return true
+  }
+
+  return {
+    path: '/login',
+    query: {
+      redirect: to.fullPath,
+    },
+  }
 })
 
 export default router
