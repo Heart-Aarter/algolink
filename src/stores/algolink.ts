@@ -80,10 +80,7 @@ const autoSyncIntervalMs = {
 const autoSyncCheckMs = 60 * 60 * 1000
 
 const defaultLeaderboard: LeaderboardEntry[] = [
-  { username: 'tourist', score: 6200 },
-  { username: 'StudyingFather', score: 4300 },
-  { username: 'bc_focus', score: 3100 },
-  { username: 'AlgoLinkUser', score: 0 },
+  { username: 'Aarter', score: 0 },
 ]
 
 function formatDateTime(date = new Date()) {

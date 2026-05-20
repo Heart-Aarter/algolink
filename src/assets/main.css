@@ -1620,6 +1620,7 @@
 }
 
 .heatmap-panel {
+  align-self: start;
   overflow: hidden;
 }
 
@@ -1628,22 +1629,29 @@
 }
 
 .heatmap-wrap {
+  --heatmap-cell-size: 11px;
+  --heatmap-cell-gap: 3px;
+  --heatmap-weekday-width: 28px;
   overflow-x: auto;
   padding-bottom: 2px;
 }
 
 .heatmap-months {
   display: grid;
-  grid-auto-columns: 14px;
-  grid-auto-flow: column;
+  grid-template-columns: repeat(var(--heatmap-week-count), var(--heatmap-cell-size));
+  column-gap: var(--heatmap-cell-gap);
   min-width: max-content;
-  margin-left: 40px;
+  width: max-content;
+  margin-left: calc(var(--heatmap-weekday-width) + 8px);
   color: var(--color-text-muted);
   font-size: 11px;
+  line-height: 14px;
 }
 
 .heatmap-months span {
   min-width: 0;
+  overflow: visible;
+  white-space: nowrap;
 }
 
 .heatmap-body {
@@ -1655,28 +1663,29 @@
 
 .heatmap-weekdays {
   display: grid;
-  grid-template-rows: repeat(7, 14px);
-  gap: 4px;
-  width: 32px;
+  grid-template-rows: repeat(7, var(--heatmap-cell-size));
+  gap: var(--heatmap-cell-gap);
+  width: var(--heatmap-weekday-width);
   color: var(--color-text-muted);
   font-size: 11px;
-  line-height: 14px;
+  line-height: var(--heatmap-cell-size);
 }
 
 .heatmap-grid {
   display: grid;
-  grid-auto-columns: 14px;
   grid-auto-flow: column;
-  grid-template-rows: repeat(7, 14px);
-  gap: 4px;
+  grid-template-columns: repeat(var(--heatmap-week-count), var(--heatmap-cell-size));
+  grid-template-rows: repeat(7, var(--heatmap-cell-size));
+  gap: var(--heatmap-cell-gap);
+  width: max-content;
 }
 
 .heatmap-cell {
   display: block;
-  width: 14px;
-  height: 14px;
+  width: var(--heatmap-cell-size);
+  height: var(--heatmap-cell-size);
   border: 1px solid rgba(154, 170, 190, 0.12);
-  border-radius: 3px;
+  border-radius: 2px;
   background: rgba(154, 170, 190, 0.08);
 }
 

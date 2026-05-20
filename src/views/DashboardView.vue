@@ -139,12 +139,17 @@ const heatmapMonthLabels = computed(() => {
     labels.push({
       name: monthNames[day.date.getMonth()] ?? '',
       column: Math.floor(index / 7) + 1,
-      span: 4,
+      span: 1,
     })
   })
 
-  return labels
+  return labels.map((label, index) => ({
+    ...label,
+    span: Math.max(1, (labels[index + 1]?.column ?? heatmapWeekCount.value + 1) - label.column),
+  }))
 })
+
+const heatmapWeekCount = computed(() => Math.ceil(heatmapDays.value.length / 7))
 
 const heatmapSummary = computed(() => {
   const activeDays = heatmapDays.value.filter((day) => day.count > 0).length
@@ -445,7 +450,11 @@ const visibleRecommendations = computed(() =>
           </span>
         </div>
         <div class="heatmap-wrap">
-          <div class="heatmap-months" aria-hidden="true">
+          <div
+            class="heatmap-months"
+            :style="{ '--heatmap-week-count': heatmapWeekCount }"
+            aria-hidden="true"
+          >
             <span
               v-for="month in heatmapMonthLabels"
               :key="`${month.name}-${month.column}`"
@@ -464,7 +473,11 @@ const visibleRecommendations = computed(() =>
                 {{ weekday.label }}
               </span>
             </div>
-            <div class="heatmap-grid" aria-label="Multi-OJ activity heatmap">
+            <div
+              class="heatmap-grid"
+              :style="{ '--heatmap-week-count': heatmapWeekCount }"
+              aria-label="Multi-OJ activity heatmap"
+            >
               <span
                 v-for="day in heatmapDays"
                 :key="day.key"

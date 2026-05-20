@@ -12,8 +12,9 @@ const analysis = computed(() => calculateSubmissionAnalysis(store.analysisSubmis
 const codeforcesAccount = computed(() => store.codeforcesAccount)
 const leaderboardUser = computed(() => store.currentLeaderboardUser)
 const profileScore = computed(() => leaderboardUser.value?.score ?? codeforcesAccount.value?.rating ?? 0)
-const usernameColor = computed(() => getCodeforcesRankColor(profileScore.value))
-const rankLabel = computed(() => getCodeforcesRankLabel(profileScore.value))
+const codeforcesRating = computed(() => codeforcesAccount.value?.rating ?? 0)
+const usernameColor = computed(() => getCodeforcesRankColor(codeforcesRating.value))
+const rankLabel = computed(() => getCodeforcesRankLabel(codeforcesRating.value))
 const profileAvatar = computed(() => store.currentUserAvatar)
 const recentSubmissions = computed(() => store.analysisSubmissions.slice(0, 8))
 const lastSyncAt = computed(() => {
