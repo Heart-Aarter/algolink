@@ -107,4 +107,9 @@ router.beforeEach((to) => {
   }
 })
 
+router.afterEach((to) => {
+  const pageTitle = typeof to.meta.title === 'string' ? to.meta.title : 'Dashboard'
+  document.title = `${pageTitle} - AlgoLink`
+})
+
 export default router
