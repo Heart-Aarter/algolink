@@ -82,7 +82,6 @@ router.post('/', (req, res) => {
   }
 
   const db = getDatabase()
-  const created = new Date().toISOString()
   const existingUser = db
     .prepare('SELECT id, password_hash, password_salt FROM users WHERE id = ?')
     .get(username) as UserRow | undefined
@@ -102,8 +101,8 @@ router.post('/', (req, res) => {
       )
     } else {
       db.prepare(
-        'INSERT INTO users (id, created, password_hash, password_salt) VALUES (?, ?, ?, ?)',
-      ).run(username, created, hash, salt)
+        'INSERT INTO users (id, password_hash, password_salt) VALUES (?, ?, ?)',
+      ).run(username, hash, salt)
     }
   }
 

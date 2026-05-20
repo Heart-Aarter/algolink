@@ -107,34 +107,6 @@ export async function fetchAtCoderSubmissions(handle: string): Promise<OjSubmiss
   }
 }
 
-export async function hasRecentAtCoderBindingCe(handle: string): Promise<boolean> {
-  const normalizedHandle = normalizeHandle(handle)
-  const windowSeconds = 15 * 60
-  const fromSecond = Math.floor(Date.now() / 1000) - windowSeconds
-
-  try {
-    const response = await atcoderClient.get<AtCoderProblemsSubmission[]>(
-      '/atcoder-api/v3/user/submissions',
-      {
-        params: {
-          user: normalizedHandle,
-          from_second: fromSecond,
-        },
-      },
-    )
-
-    return response.data.some(
-      (submission) =>
-        submission.epoch_second >= fromSecond &&
-        submission.result === 'CE',
-    )
-  } catch (error) {
-    throw new Error(
-      getAtCoderApiMessage(error, `AtCoder submissions for "${normalizedHandle}" not found`),
-    )
-  }
-}
-
 async function fetchAllAtCoderSubmissions(handle: string) {
   const submissions: AtCoderProblemsSubmission[] = []
   let fromSecond = 0

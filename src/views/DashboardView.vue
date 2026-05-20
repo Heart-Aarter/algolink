@@ -14,6 +14,7 @@ import {
   parseSubmittedAt,
   sortDifficultyDistribution,
 } from '@/utils/analysis'
+import { chartAxis, chartGrid, tooltipBase } from '@/utils/chartTheme'
 
 const store = useAlgoLinkStore()
 
@@ -28,11 +29,8 @@ const fallbackCodeforcesAccount = computed(() =>
   mockAccounts.find((account) => account.platform === 'Codeforces'),
 )
 const dashboardAccount = computed(() => syncedAccount.value ?? fallbackCodeforcesAccount.value)
-const dashboardSubmissions = computed(() =>
-  store.hasSyncedSubmissions ? store.syncedSubmissions : store.submissions,
-)
+const dashboardSubmissions = computed(() => store.analysisSubmissions)
 const analysis = computed(() => calculateSubmissionAnalysis(dashboardSubmissions.value))
-const dataSourceLabel = computed(() => store.submissionDataSourceLabel)
 
 const productHighlights = computed(() => [
   {
@@ -44,8 +42,6 @@ const productHighlights = computed(() => [
   { label: 'AI Coach', value: 'Rules', text: '规则化 mock 分析建议' },
 ])
 
-const chartAxis = '#8f877a'
-const chartGrid = 'rgba(142, 39, 36, 0.11)'
 const dayMs = 24 * 60 * 60 * 1000
 const monthNames = [
   'Jan',
@@ -182,9 +178,7 @@ const trendOption = computed<EChartsOption>(() => ({
   grid: { top: 36, right: 18, bottom: 34, left: 38 },
   tooltip: {
     trigger: 'axis',
-    backgroundColor: '#1c1d1b',
-    borderColor: 'rgba(194, 138, 46, 0.28)',
-    textStyle: { color: '#f5f0e7' },
+    ...tooltipBase,
   },
   xAxis: {
     type: 'category',
@@ -226,9 +220,7 @@ const tagOption = computed<EChartsOption>(() => {
     grid: { top: 36, right: 18, bottom: 34, left: 96 },
     tooltip: {
       trigger: 'axis',
-      backgroundColor: '#1c1d1b',
-      borderColor: 'rgba(194, 138, 46, 0.28)',
-      textStyle: { color: '#f5f0e7' },
+      ...tooltipBase,
     },
     xAxis: {
       type: 'value',
@@ -327,9 +319,7 @@ const difficultyOption = computed<EChartsOption>(() => ({
   ],
   tooltip: {
     trigger: 'item',
-    backgroundColor: '#1c1d1b',
-    borderColor: 'rgba(194, 138, 46, 0.28)',
-    textStyle: { color: '#f5f0e7' },
+    ...tooltipBase,
   },
   series: [
     {
@@ -405,7 +395,7 @@ const visibleRecommendations = computed(() =>
         <p class="eyebrow">AI Multi-OJ Analytics</p>
         <h2>AlgoLink 训练数据看板</h2>
         <p>
-          Dashboard 优先使用 {{ dataSourceLabel }} 生成摘要、趋势、标签压力和 AI Coach
+          Dashboard 优先使用 {{ store.submissionDataSourceLabel }} 生成摘要、趋势、标签压力和 AI Coach
           联动；本阶段不新增 OJ 密码登录、评测或真实 AI API。
         </p>
         <div class="hero-actions">
@@ -585,7 +575,7 @@ const visibleRecommendations = computed(() =>
         <div class="stat-list">
           <div>
             <span>主要来源</span>
-            <strong>{{ dataSourceLabel }}</strong>
+            <strong>{{ store.submissionDataSourceLabel }}</strong>
           </div>
           <div>
             <span>AI 模式</span>

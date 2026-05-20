@@ -178,4 +178,3 @@ async function fetchLuoguPractice(uid: number) {
   return response.data
 }
 
-export type { LuoguPracticeProblem }

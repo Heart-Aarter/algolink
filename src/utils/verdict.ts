@@ -21,7 +21,3 @@ export function matchesVerdictFilter(status: SubmissionStatus, filter: VerdictFi
   return filter === 'All' || statusToFilter[status] === filter
 }
 
-export function getStatusClass(status: SubmissionStatus) {
-  return status.toLowerCase().replaceAll(' ', '-')
-}
-

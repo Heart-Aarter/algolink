@@ -13,7 +13,7 @@ const luoguDifficultyTags = new Set([
 
 const problemTypeTags = new Set(['P', 'B', 'CF', 'AT', 'UVA', 'SP', 'T'])
 
-function parseDifficulty(difficulty: string) {
+export function parseDifficulty(difficulty: string) {
   const match = difficulty.match(/\d+/)
   return match ? Number(match[0]) : null
 }

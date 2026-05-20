@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /s /b D:\\\\Code\\\\algolink\\\\src\\\\*.vue)",
+      "Bash(npm run *)",
+      "Bash(cd /d D:\\\\Code\\\\algolink\\\\server)",
+      "Bash(npx tsc *)",
+      "Bash(npx *)"
+    ]
+  }
+}

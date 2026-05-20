@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import { NButton, NInput, NTag } from 'naive-ui'
 import { useAlgoLinkStore } from '@/stores/algolink'
 

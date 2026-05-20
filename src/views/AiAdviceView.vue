@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { NButton, NSpin, NTag } from 'naive-ui'
+import { useMockAsync } from '@/composables/useMockAsync'
 import { recommendedProblems } from '@/mock/recommendedProblems'
 import { weeklyTrainingPlan } from '@/mock/trainingPlan'
 import { useAlgoLinkStore } from '@/stores/algolink'
@@ -9,16 +10,15 @@ import { getTagAnalysis, getTrainingSummary } from '@/utils/analysis'
 
 const store = useAlgoLinkStore()
 const activeMode = ref<'rules' | 'weak-tags' | 'weekly-plan' | 'recommendations'>('rules')
-const isGenerating = ref(false)
+const { isGenerating, start } = useMockAsync(650)
+function generateAdvice() {
+  start()
+}
 
-const analysisSubmissions = computed(() =>
-  store.hasSyncedSubmissions ? store.syncedSubmissions : store.submissions,
-)
 const summary = computed(() =>
-  getTrainingSummary(analysisSubmissions.value, store.settings.aiTone),
+  getTrainingSummary(store.analysisSubmissions, store.settings.aiTone),
 )
-const weakTagDetails = computed(() => getTagAnalysis(analysisSubmissions.value).slice(0, 5))
-const dataSourceLabel = computed(() => store.submissionDataSourceLabel)
+const weakTagDetails = computed(() => getTagAnalysis(store.analysisSubmissions).slice(0, 5))
 
 const toneCopy: Record<
   UserSettings['aiTone'],
@@ -68,16 +68,6 @@ const modeTitle = computed(() => {
   return '题目推荐'
 })
 
-function generateAdvice() {
-  if (isGenerating.value) {
-    return
-  }
-
-  isGenerating.value = true
-  window.setTimeout(() => {
-    isGenerating.value = false
-  }, 650)
-}
 </script>
 
 <template>
@@ -89,7 +79,7 @@ function generateAdvice() {
       <div class="coach-summary-grid">
         <div>
           <span>数据来源</span>
-          <strong>{{ dataSourceLabel }}</strong>
+          <strong>{{ store.submissionDataSourceLabel }}</strong>
         </div>
         <div>
           <span>AC 率</span>

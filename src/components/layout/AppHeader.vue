@@ -6,7 +6,7 @@ import { useAlgoLinkStore } from '@/stores/algolink'
 
 const route = useRoute()
 const store = useAlgoLinkStore()
-const { theme, initTheme } = useTheme()
+const { theme, themeLabel, applyTheme, initTheme } = useTheme()
 const openLogin = inject<() => void>('openLogin', () => {})
 
 const routeTitle = computed(() => {
@@ -16,14 +16,6 @@ const routeTitle = computed(() => {
 
   return 'Dashboard'
 })
-
-const themeLabel = computed(() => (theme.value === 'dark' ? '夜间' : '日间'))
-
-function applyTheme(nextTheme: 'dark' | 'light') {
-  theme.value = nextTheme
-  document.documentElement.dataset.theme = nextTheme
-  localStorage.setItem('algolink.theme', nextTheme)
-}
 
 function setThemeTransitionOrigin(event: MouseEvent) {
   const x = event.clientX

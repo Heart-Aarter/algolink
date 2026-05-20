@@ -1,21 +1,13 @@
 import { Router } from 'express'
 import { getDatabase } from '../db'
+import { requireUser } from '../middleware'
 
 const router = Router()
 
-type UserRow = {
-  id: string
-}
-
-router.put('/:userId/accounts', (req, res) => {
+router.put('/:userId/accounts', requireUser, (req, res) => {
   const userId = req.params.userId
   const accounts = req.body?.accounts
   const db = getDatabase()
-  const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId) as UserRow | undefined
-
-  if (!user) {
-    return res.status(404).json({ error: 'user not found' })
-  }
 
   if (!Array.isArray(accounts)) {
     return res.status(400).json({ error: 'accounts must be an array' })

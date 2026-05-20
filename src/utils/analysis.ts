@@ -1,5 +1,5 @@
 import type { SubmissionRecord, SubmissionStatus } from '@/types/algolink'
-import { getAlgorithmTags } from '@/utils/tags'
+import { getAlgorithmTags, parseDifficulty } from '@/utils/tags'
 import { getVerdictCode } from '@/utils/verdict'
 
 export interface DistributionItem {
@@ -72,10 +72,7 @@ const statusSeed: Record<SubmissionStatus, number> = {
   Unknown: 0,
 }
 
-export function parseDifficulty(difficulty: string) {
-  const match = difficulty.match(/\d+/)
-  return match ? Number(match[0]) : null
-}
+export { parseDifficulty }
 
 export function getDifficultyBucket(difficulty: string): ActualDifficultyBucket {
   const value = parseDifficulty(difficulty)

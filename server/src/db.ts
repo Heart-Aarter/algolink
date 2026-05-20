@@ -15,7 +15,6 @@ export function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
-      created TEXT NOT NULL,
       password_hash TEXT,
       password_salt TEXT
     );
@@ -55,6 +54,8 @@ export function initDatabase() {
 
   return db
 }
+
+export type UserRow = { id: string }
 
 export function getDatabase() {
   if (!db) {

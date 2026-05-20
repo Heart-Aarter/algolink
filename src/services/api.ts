@@ -118,4 +118,3 @@ export async function submitLeaderboard(username: string, score: number) {
   return response.data
 }
 
-export { apiClient }

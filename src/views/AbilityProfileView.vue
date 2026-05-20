@@ -11,17 +11,11 @@ import {
   sortDifficultyDistribution,
   type DistributionItem,
 } from '@/utils/analysis'
+import { chartAxis, chartGrid, tooltipBase } from '@/utils/chartTheme'
 
 const store = useAlgoLinkStore()
 
-const analysisSubmissions = computed(() =>
-  store.hasSyncedSubmissions ? store.syncedSubmissions : store.submissions,
-)
-const analysis = computed(() => calculateSubmissionAnalysis(analysisSubmissions.value))
-const dataSourceLabel = computed(() => store.submissionDataSourceLabel)
-
-const chartAxis = '#8f877a'
-const chartGrid = 'rgba(142, 39, 36, 0.11)'
+const analysis = computed(() => calculateSubmissionAnalysis(store.analysisSubmissions))
 
 function barOption(
   items: DistributionItem[],
@@ -35,9 +29,7 @@ function barOption(
     grid: { top: 26, right: 18, bottom: 26, left: 104 },
     tooltip: {
       trigger: 'axis',
-      backgroundColor: '#1c1d1b',
-      borderColor: 'rgba(194, 138, 46, 0.28)',
-      textStyle: { color: '#f5f0e7' },
+      ...tooltipBase,
     },
     xAxis: {
       type: 'value',
@@ -70,9 +62,7 @@ function pieOption(items: DistributionItem[], colors: string[]): EChartsOption {
     color: colors,
     tooltip: {
       trigger: 'item',
-      backgroundColor: '#1c1d1b',
-      borderColor: 'rgba(194, 138, 46, 0.28)',
-      textStyle: { color: '#f5f0e7' },
+      ...tooltipBase,
     },
     series: [
       {
@@ -110,7 +100,7 @@ const languageOption = computed(() => barOption(analysis.value.languageDistribut
 <template>
   <div class="page-stack">
     <section class="stats-grid">
-      <StatCard label="总提交" :value="analysis.total" :helper="dataSourceLabel" />
+      <StatCard label="总提交" :value="analysis.total" :helper="store.submissionDataSourceLabel" />
       <StatCard label="AC 提交" :value="analysis.accepted" helper="Accepted 提交数量" />
       <StatCard label="非 AC" :value="analysis.nonAccepted" helper="WA / TLE / RE / CE / UNKNOWN" />
       <StatCard label="已解决" :value="analysis.solvedProblems" helper="至少一次 AC 的去重题目数" />
@@ -120,7 +110,7 @@ const languageOption = computed(() => barOption(analysis.value.languageDistribut
       <StatCard label="薄弱标签" :value="analysis.weakestTag" helper="失败压力最高的标签" />
     </section>
 
-    <section v-if="!analysisSubmissions.length" class="panel">
+    <section v-if="!store.analysisSubmissions.length" class="panel">
       <n-empty description="暂无可分析数据" class="empty-state naive-empty">
         <template #extra>
           <RouterLink class="text-link" to="/accounts">前往账号绑定</RouterLink>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAlgoLinkStore } from '@/stores/algolink'
 import {
@@ -8,11 +8,11 @@ import {
   type AnalysisResult,
 } from '@/utils/analysis'
 import type { UserSettings } from '@/types/algolink'
+import { useMockAsync } from '@/composables/useMockAsync'
 
 const store = useAlgoLinkStore()
-const isGenerating = ref(false)
 const reportVisible = ref(false)
-let generationTimer: ReturnType<typeof window.setTimeout> | undefined
+const { isGenerating, start } = useMockAsync(760)
 
 const reportAccounts = computed(() =>
   store.accounts.filter((account) =>
@@ -182,22 +182,12 @@ function getDirectionCards(result: AnalysisResult) {
 }
 
 function generateReport() {
-  if (!hasReportData.value || isGenerating.value) {
-    return
-  }
-
-  isGenerating.value = true
+  if (!hasReportData.value) return
   reportVisible.value = false
-  window.clearTimeout(generationTimer)
-  generationTimer = window.setTimeout(() => {
-    isGenerating.value = false
+  start(() => {
     reportVisible.value = true
-  }, 760)
+  })
 }
-
-onBeforeUnmount(() => {
-  window.clearTimeout(generationTimer)
-})
 </script>
 
 <template>

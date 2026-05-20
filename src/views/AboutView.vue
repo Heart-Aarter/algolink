@@ -234,14 +234,33 @@ const designPrinciples = [
   margin-top: 10px;
 }
 
-.feature-card {
-  padding: 22px 18px;
+.feature-card,
+.design-card {
   border: 1px solid var(--color-border);
   border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.feature-card h3,
+.design-card h3 {
+  margin-bottom: 8px;
+  color: var(--color-heading);
+  font-size: 15px;
+  font-weight: 780;
+}
+
+.feature-card p,
+.design-card p {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.feature-card {
+  padding: 22px 18px;
   background:
     linear-gradient(135deg, rgba(194, 138, 46, 0.06), transparent 42%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 48%), var(--color-surface);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .feature-icon {
@@ -255,19 +274,6 @@ const designPrinciples = [
   color: var(--color-accent);
   font-size: 13px;
   font-weight: 800;
-}
-
-.feature-card h3 {
-  margin-bottom: 8px;
-  color: var(--color-heading);
-  font-size: 15px;
-  font-weight: 780;
-}
-
-.feature-card p {
-  color: var(--color-text-muted);
-  font-size: 13px;
-  line-height: 1.65;
 }
 
 .tech-grid {
@@ -310,25 +316,9 @@ const designPrinciples = [
 
 .design-card {
   padding: 20px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
   background:
     linear-gradient(135deg, rgba(245, 211, 125, 0.045), transparent 42%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 48%), var(--color-surface);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-.design-card h3 {
-  margin-bottom: 8px;
-  color: var(--color-heading);
-  font-size: 15px;
-  font-weight: 780;
-}
-
-.design-card p {
-  color: var(--color-text-muted);
-  font-size: 13px;
-  line-height: 1.65;
 }
 
 .about-footer {
