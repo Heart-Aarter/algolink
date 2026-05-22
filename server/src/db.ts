@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3'
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { allowedUsername } from './singleUser'
 
 const dataDir = join(__dirname, '..', 'data')
 const databasePath = join(dataDir, 'app.db')
@@ -67,6 +68,8 @@ export function initDatabase() {
     }
   }
 
+  pruneToAllowedUser()
+
   return db
 }
 
@@ -78,4 +81,22 @@ export function getDatabase() {
   }
 
   return db
+}
+
+function pruneToAllowedUser() {
+  if (!db) {
+    return
+  }
+
+  const database = db
+  const prune = database.transaction(() => {
+    database.prepare('DELETE FROM user_accounts WHERE user_id <> ?').run(allowedUsername)
+    database.prepare('DELETE FROM user_submissions WHERE user_id <> ?').run(allowedUsername)
+    database.prepare('DELETE FROM user_state WHERE user_id <> ?').run(allowedUsername)
+    database.prepare('DELETE FROM leaderboard_events WHERE username <> ?').run(allowedUsername)
+    database.prepare('DELETE FROM leaderboard WHERE username <> ?').run(allowedUsername)
+    database.prepare('DELETE FROM users WHERE id <> ?').run(allowedUsername)
+  })
+
+  prune()
 }

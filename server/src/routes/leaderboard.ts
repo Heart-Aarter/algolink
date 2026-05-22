@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { getDatabase } from '../db'
+import { allowedUsername, isAllowedUsername } from '../singleUser'
 
 const router = Router()
 
@@ -83,7 +84,7 @@ function rankRows(rows: LeaderboardRow[], currentUsername: string): LeaderboardI
     return {
       ...row,
       rank: currentRank,
-      isCurrentUser: row.username === currentUsername,
+      isCurrentUser: row.username === currentUsername && isAllowedUsername(currentUsername),
     }
   })
 }
@@ -97,13 +98,13 @@ function getRankedRows(period: LeaderboardPeriod) {
         `
           SELECT username, SUM(score_delta) AS score
           FROM leaderboard_events
-          WHERE event_date = ?
+          WHERE event_date = ? AND username = ?
           GROUP BY username
           HAVING score > 0
           ORDER BY score DESC, username ASC
         `,
       )
-      .all(formatDateKey()) as LeaderboardRow[]
+      .all(formatDateKey(), allowedUsername) as LeaderboardRow[]
   }
 
   if (period === 'week') {
@@ -112,13 +113,13 @@ function getRankedRows(period: LeaderboardPeriod) {
         `
           SELECT username, SUM(score_delta) AS score
           FROM leaderboard_events
-          WHERE event_date >= ?
+          WHERE event_date >= ? AND username = ?
           GROUP BY username
           HAVING score > 0
           ORDER BY score DESC, username ASC
         `,
       )
-      .all(formatWeekStartKey()) as LeaderboardRow[]
+      .all(formatWeekStartKey(), allowedUsername) as LeaderboardRow[]
   }
 
   if (period === 'streak') {
@@ -127,12 +128,12 @@ function getRankedRows(period: LeaderboardPeriod) {
         `
           SELECT username, event_date
           FROM leaderboard_events
-          WHERE score_delta > 0
+          WHERE score_delta > 0 AND username = ?
           GROUP BY username, event_date
           ORDER BY username ASC, event_date DESC
         `,
       )
-      .all() as { username: string; event_date: string }[]
+      .all(allowedUsername) as { username: string; event_date: string }[]
 
     const datesByUser = new Map<string, Set<string>>()
     for (const row of eventRows) {
@@ -162,15 +163,16 @@ function getRankedRows(period: LeaderboardPeriod) {
   }
 
   return db
-    .prepare('SELECT username, score FROM leaderboard ORDER BY score DESC, username ASC')
-    .all() as LeaderboardRow[]
+    .prepare('SELECT username, score FROM leaderboard WHERE username = ? ORDER BY score DESC, username ASC')
+    .all(allowedUsername) as LeaderboardRow[]
 }
 
 router.get('/', (req, res) => {
   const period = normalizePeriod(req.query.period)
   const limit = normalizePositiveInteger(req.query.limit, 100, 500)
   const offset = normalizeOffset(req.query.offset)
-  const currentUsername = typeof req.query.username === 'string' ? req.query.username.trim() : ''
+  const requestedUsername = typeof req.query.username === 'string' ? req.query.username.trim() : ''
+  const currentUsername = isAllowedUsername(requestedUsername) ? requestedUsername : ''
   const rankedRows = rankRows(getRankedRows(period), currentUsername)
   const items = rankedRows.slice(offset, offset + limit)
   const currentUser = currentUsername
@@ -207,6 +209,10 @@ router.get('/events', (req, res) => {
     return res.status(400).json({ error: 'username is required' })
   }
 
+  if (!isAllowedUsername(username)) {
+    return res.status(400).json({ error: `only ${allowedUsername} leaderboard events are available` })
+  }
+
   const items = db
     .prepare(
       `
@@ -235,6 +241,10 @@ router.post('/', (req, res) => {
 
   if (!username) {
     return res.status(400).json({ error: 'username is required' })
+  }
+
+  if (!isAllowedUsername(username)) {
+    return res.status(400).json({ error: `only ${allowedUsername} leaderboard scores are accepted` })
   }
 
   if (!isNonNegativeInteger(score)) {

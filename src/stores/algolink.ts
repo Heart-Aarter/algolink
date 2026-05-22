@@ -83,6 +83,7 @@ const autoSyncCheckMs = 60 * 60 * 1000
 const defaultLeaderboard: LeaderboardEntry[] = [
   { username: 'Aarter', score: 0 },
 ]
+const allowedLeaderboardUsername = 'Aarter'
 
 function formatDateTime(date = new Date()) {
   const pad = (value: number) => String(value).padStart(2, '0')
@@ -249,6 +250,7 @@ function normalizeLeaderboard(value: unknown): LeaderboardEntry[] {
             !!entry &&
             typeof entry === 'object' &&
             typeof entry.username === 'string' &&
+            entry.username === allowedLeaderboardUsername &&
             Number.isFinite(entry.score),
         )
         .map((entry) => ({
@@ -566,7 +568,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     try {
       const response = await getLeaderboard({
         period,
-        username: currentUsername.value,
+        username: allowedLeaderboardUsername,
         limit: 100,
       })
       const serverItems = normalizeLeaderboard(response.items)
@@ -595,6 +597,10 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   }
 
   function pushLeaderboardScore(username: string, score: number, eventId: string, date: string) {
+    if (username !== allowedLeaderboardUsername) {
+      return
+    }
+
     submitLeaderboard({
       username,
       score,
@@ -691,6 +697,10 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     const board = new Map<string, LeaderboardEntry>()
 
     for (const entry of leaderboardEntries.value) {
+      if (entry.username !== allowedLeaderboardUsername) {
+        continue
+      }
+
       const cached = getCachedCodeforcesAvatar(entry.username)
       const existing = board.get(entry.username)
       const score = Math.max(existing?.score ?? 0, entry.score)
@@ -703,7 +713,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       })
     }
 
-    if (leaderboardCurrentUser.value) {
+    if (leaderboardCurrentUser.value?.username === allowedLeaderboardUsername) {
       const cached = getCachedCodeforcesAvatar(leaderboardCurrentUser.value.username)
       const existing = board.get(leaderboardCurrentUser.value.username)
       const score = Math.max(existing?.score ?? 0, leaderboardCurrentUser.value.score)
@@ -716,10 +726,10 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       })
     }
 
-    if (currentUsername.value && !board.has(currentUsername.value)) {
-      const cached = getCachedCodeforcesAvatar(currentUsername.value)
-      board.set(currentUsername.value, {
-        username: currentUsername.value,
+    if (!board.has(allowedLeaderboardUsername)) {
+      const cached = getCachedCodeforcesAvatar(allowedLeaderboardUsername)
+      board.set(allowedLeaderboardUsername, {
+        username: allowedLeaderboardUsername,
         score: 0,
         avatar: cached?.avatar,
         displayRankColor: getCodeforcesRankColor(0),
@@ -730,13 +740,13 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       .sort((left, right) => right.score - left.score || left.username.localeCompare(right.username))
   })
   const currentLeaderboardUser = computed(() => {
-    const current = leaderboard.value.find((entry) => entry.username === currentUsername.value)
+    const current = leaderboard.value.find((entry) => entry.username === allowedLeaderboardUsername)
     if (!current) {
       return null
     }
 
     const serverCurrent =
-      leaderboardCurrentUser.value?.username === currentUsername.value ? leaderboardCurrentUser.value : null
+      leaderboardCurrentUser.value?.username === allowedLeaderboardUsername ? leaderboardCurrentUser.value : null
     const localRank = leaderboard.value.findIndex((entry) => entry.username === current.username) + 1
     const rank = serverCurrent?.rank ?? localRank
     const previous = leaderboard.value[localRank - 2]
@@ -1411,6 +1421,10 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   }
 
   function addLeaderboardScore(username: string, score: number, eventId: string, date: string) {
+    if (username !== allowedLeaderboardUsername) {
+      return
+    }
+
     const existing = leaderboardEntries.value.find((entry) => entry.username === username)
 
     if (existing) {

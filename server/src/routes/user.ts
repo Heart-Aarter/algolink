@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { pbkdf2Sync, randomBytes, timingSafeEqual } from 'node:crypto'
 import { getDatabase } from '../db'
+import { isAllowedUsername } from '../singleUser'
 
 const router = Router()
 const usernamePattern = /^[A-Za-z0-9_-]{1,32}$/
@@ -81,6 +82,13 @@ router.post('/', (req, res) => {
     return res.status(400).json({ error: 'password must be 6-64 characters' })
   }
 
+  if (!isAllowedUsername(username)) {
+    return res.json({
+      userId: username,
+      username,
+    })
+  }
+
   const db = getDatabase()
   const existingUser = db
     .prepare('SELECT id, password_hash, password_salt FROM users WHERE id = ?')
@@ -114,6 +122,11 @@ router.post('/', (req, res) => {
 
 router.get('/:userId', (req, res) => {
   const userId = req.params.userId
+
+  if (!isAllowedUsername(userId)) {
+    return res.status(404).json({ error: 'user not found' })
+  }
+
   const db = getDatabase()
   const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId) as UserRow | undefined
 
