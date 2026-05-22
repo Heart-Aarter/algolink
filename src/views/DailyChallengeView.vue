@@ -89,9 +89,9 @@ function isCompleted(problem?: DailyProblem) {
               </div>
             </dl>
             <div class="daily-actions">
-              <a class="secondary-link" :href="problem.url" target="_blank" rel="noreferrer">
+              <span class="secondary-link" aria-disabled="true" title="比赛提交版已锁定外部跳转">
                 打开题目
-              </a>
+              </span>
               <n-button
                 type="primary"
                 strong

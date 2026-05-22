@@ -54,6 +54,13 @@ const pageEnd = computed(() =>
 const paginatedSubmissions = computed(() =>
   filteredSubmissions.value.slice(pageStart.value, pageEnd.value),
 )
+const activeFilterCount = computed(
+  () =>
+    Number(Boolean(filters.keyword.trim())) +
+    [filters.platform, filters.verdict, filters.tag, filters.difficulty].filter(
+      (item) => item !== 'All',
+    ).length,
+)
 
 const platformSelectOptions = computed(() =>
   platformOptions.value.map((item) => ({
@@ -218,6 +225,7 @@ function getStatusTagType(status: SubmissionStatus) {
       <div class="panel-heading submissions-heading">
         <div>
           <p class="eyebrow">Submission Stream</p>
+          <span class="mobile-filter-count">{{ activeFilterCount }} 个筛选</span>
           <h2>提交记录</h2>
         </div>
       </div>
@@ -257,6 +265,42 @@ function getStatusTagType(status: SubmissionStatus) {
         size="small"
         class="submission-data-table"
       />
+
+      <div v-if="filteredSubmissions.length" class="mobile-submission-list mobile-submission-stream">
+        <article
+          v-for="submission in paginatedSubmissions"
+          :key="submission.id"
+          class="mobile-submission-card"
+        >
+          <div class="mobile-submission-main">
+            <span>{{ submission.platform }}</span>
+            <strong>{{ submission.problem }}</strong>
+            <small>{{ submission.problemId || submission.submittedAt }}</small>
+          </div>
+          <div class="mobile-submission-meta">
+            <n-tag size="small" round :type="getStatusTagType(submission.status)">
+              {{ getVerdictCode(submission.status) }}
+            </n-tag>
+            <span>{{ submission.difficulty }}</span>
+          </div>
+          <div class="mobile-submission-tags">
+            <n-tag
+              v-for="tag in getDisplayTags(submission).slice(0, 4)"
+              :key="tag"
+              size="small"
+              round
+              :bordered="false"
+            >
+              {{ tag }}
+            </n-tag>
+          </div>
+          <footer>
+            <span>{{ submission.language }}</span>
+            <span>{{ submission.runtime || '-' }}</span>
+            <span>{{ submission.submittedAt }}</span>
+          </footer>
+        </article>
+      </div>
 
       <n-empty v-else description="没有符合条件的提交记录" class="empty-state naive-empty">
         <template #extra>

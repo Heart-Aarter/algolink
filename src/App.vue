@@ -4,6 +4,8 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
+import MobileMorePanel from '@/components/layout/MobileMorePanel.vue'
+import MobileTabBar from '@/components/layout/MobileTabBar.vue'
 import { useTheme } from '@/composables/useTheme'
 
 const { theme } = useTheme()
@@ -12,6 +14,7 @@ const sidebarCollapsed = ref(false)
 const showIntro = ref(true)
 const naiveTheme = computed(() => (theme.value === 'dark' ? darkTheme : null))
 const isFullPageRoute = computed(() => route.meta.fullPage === true)
+const showMobileMorePanel = computed(() => route.name === 'profile')
 const shellClass = computed(() => ({
   'sidebar-collapsed': sidebarCollapsed.value,
   'intro-visible': showIntro.value,
@@ -73,10 +76,12 @@ function toggleSidebar() {
 
 function closeIntro() {
   showIntro.value = false
+  localStorage.setItem('algolink.introClosed', '1')
 }
 
 onMounted(() => {
   sidebarCollapsed.value = localStorage.getItem('algolink.sidebarCollapsed') === '1'
+  showIntro.value = localStorage.getItem('algolink.introClosed') !== '1'
 })
 </script>
 
@@ -178,8 +183,10 @@ onMounted(() => {
                   <component :is="Component" :key="route.fullPath" />
                 </Transition>
               </RouterView>
+              <MobileMorePanel v-if="showMobileMorePanel" />
             </main>
           </div>
+          <MobileTabBar />
         </div>
       </n-dialog-provider>
     </n-message-provider>

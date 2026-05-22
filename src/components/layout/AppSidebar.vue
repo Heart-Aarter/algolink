@@ -535,4 +535,10 @@ const legacyNavItems = [
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 760px) {
+  .app-sidebar {
+    display: none;
+  }
+}
 </style>
