@@ -3,6 +3,7 @@ import { RouterLink } from 'vue-router'
 import { NIcon } from 'naive-ui'
 import {
   Analytics,
+  AtCircle,
   Bulb,
   Calendar,
   ChevronBack,
@@ -28,7 +29,7 @@ defineEmits<{
 const navItems = [
   { path: '/', label: 'Dashboard', icon: StatsChart },
   { path: '/profile', label: '个人资料', icon: Person },
-  { path: '/accounts', label: 'OJ 账号绑定', icon: Person },
+  { path: '/accounts', label: 'OJ 账号绑定', icon: AtCircle },
   { path: '/submissions', label: '提交记录', icon: List },
   { path: '/ability-profile', label: '能力画像', icon: Analytics },
   { path: '/ai-advice', label: 'AI 训练建议', icon: Bulb },

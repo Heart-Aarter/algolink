@@ -33,6 +33,13 @@ const periodText: Record<LeaderboardPeriod, string> = {
 }
 
 const unitText = computed(() => (store.leaderboardPeriod === 'streak' ? '天' : '分'))
+const profileNameColor = computed(() =>
+  getCodeforcesRankColor(store.codeforcesAccount?.rating ?? 0),
+)
+
+function getLeaderboardNameColor(entry: { username: string; displayRankColor: string }) {
+  return entry.username === 'Aarter' ? profileNameColor.value : entry.displayRankColor
+}
 
 const rankedEntries = computed<RankedEntry[]>(() => {
   let currentRank = 0
@@ -50,7 +57,7 @@ const rankedEntries = computed<RankedEntry[]>(() => {
       score: entry.score,
       avatar: entry.avatar,
       displayRankColor: entry.displayRankColor || getCodeforcesRankColor(entry.score),
-      isCurrentUser: entry.username === store.currentUsername,
+      isCurrentUser: entry.username === 'Aarter',
     }
   })
 })
@@ -134,7 +141,7 @@ watch(
     <section v-if="myEntry" class="panel my-rank-panel">
       <div>
         <p class="eyebrow">My Rank</p>
-        <h3 :style="{ color: myEntry.displayRankColor }">{{ store.currentUsername }}</h3>
+        <h3 :style="{ color: profileNameColor }">{{ myEntry.username }}</h3>
       </div>
       <div class="my-rank-metrics">
         <span>#{{ myEntry.rank }}</span>
@@ -170,7 +177,7 @@ watch(
             <RouterLink
               class="podium-name"
               to="/profile"
-              :style="{ color: entry.displayRankColor }"
+              :style="{ color: getLeaderboardNameColor(entry) }"
             >
               {{ entry.username }}
             </RouterLink>
@@ -200,7 +207,7 @@ watch(
                 <RouterLink
                   class="leaderboard-username"
                   to="/profile"
-                  :style="{ color: entry.displayRankColor }"
+                  :style="{ color: getLeaderboardNameColor(entry) }"
                 >
                   {{ entry.username }}
                 </RouterLink>
