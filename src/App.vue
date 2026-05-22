@@ -51,9 +51,7 @@ const naiveThemeOverrides = computed<GlobalThemeOverrides>(() => {
       placeholderColor: isLight ? '#8a98aa' : '#65748a',
       borderRadius: '8px',
       borderRadiusSmall: '6px',
-      boxShadow1: isLight
-        ? '0 14px 34px rgba(38, 59, 86, 0.1)'
-        : '0 18px 48px rgba(0, 0, 0, 0.24)',
+      boxShadow1: isLight ? '0 14px 34px rgba(38, 59, 86, 0.1)' : '0 18px 48px rgba(0, 0, 0, 0.24)',
       boxShadow2: isLight
         ? '0 18px 46px rgba(38, 59, 86, 0.12)'
         : '0 22px 60px rgba(0, 0, 0, 0.28)',
@@ -62,8 +60,7 @@ const naiveThemeOverrides = computed<GlobalThemeOverrides>(() => {
         : '0 28px 80px rgba(0, 0, 0, 0.34)',
       fontFamily:
         'Inter, "Microsoft YaHei", "PingFang SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      fontFamilyMono:
-        '"JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace',
+      fontFamilyMono: '"JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace',
       fontWeightStrong: '800',
     },
   }
@@ -186,7 +183,11 @@ onMounted(() => {
               <MobileMorePanel v-if="showMobileMorePanel" />
             </main>
           </div>
+          <<<<<<<<< Temporary merge branch 1
           <MobileTabBar />
+          =========
+          <MobileCommandMenu />
+          >>>>>>>>> Temporary merge branch 2
         </div>
       </n-dialog-provider>
     </n-message-provider>

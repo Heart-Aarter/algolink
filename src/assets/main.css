@@ -3462,7 +3462,15 @@ select:focus {
 
   .app-content {
     max-width: none;
+<<<<<<< HEAD
     padding: 16px 14px calc(104px + env(safe-area-inset-bottom));
+=======
+<<<<<<< HEAD
+    padding: 16px 14px calc(82px + env(safe-area-inset-bottom));
+=======
+    padding: 16px 14px calc(104px + env(safe-area-inset-bottom));
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
+>>>>>>> 78872fcd950cb28f84f288949fcfb6ed34025ec6
   }
 
   .page-stack {
@@ -3564,11 +3572,20 @@ select:focus {
     overflow: hidden;
   }
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 78872fcd950cb28f84f288949fcfb6ed34025ec6
   .dashboard-page .dashboard-desktop-hero,
   .dashboard-page .dashboard-desktop-summary {
     display: none;
   }
 
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
+>>>>>>> 78872fcd950cb28f84f288949fcfb6ed34025ec6
   .product-brand-row {
     align-items: flex-start;
     flex-direction: column;
@@ -3599,8 +3616,17 @@ select:focus {
 
   .product-slogan,
   .hero-panel p,
+<<<<<<< HEAD
   .ai-brief p,
   .summary-text {
+=======
+<<<<<<< HEAD
+  .ai-brief p {
+=======
+  .ai-brief p,
+  .summary-text {
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
+>>>>>>> 78872fcd950cb28f84f288949fcfb6ed34025ec6
     font-size: 13px;
     line-height: 1.65;
   }
@@ -3660,8 +3686,17 @@ select:focus {
     line-height: 1.65;
   }
 
+<<<<<<< HEAD
   .mobile-dashboard-insight a,
   .mobile-sync-fab {
+=======
+<<<<<<< HEAD
+  .mobile-dashboard-insight a {
+=======
+  .mobile-dashboard-insight a,
+  .mobile-sync-fab {
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
+>>>>>>> 78872fcd950cb28f84f288949fcfb6ed34025ec6
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -3677,6 +3712,11 @@ select:focus {
     box-shadow: 0 14px 30px rgba(194, 138, 46, 0.18);
   }
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> 78872fcd950cb28f84f288949fcfb6ed34025ec6
   .mobile-sync-fab {
     position: fixed;
     right: 18px;
@@ -3688,6 +3728,10 @@ select:focus {
     font-size: 12px;
   }
 
+<<<<<<< HEAD
+=======
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
+>>>>>>> 78872fcd950cb28f84f288949fcfb6ed34025ec6
   .activity-grid,
   .content-grid,
   .profile-layout,
@@ -3695,8 +3739,16 @@ select:focus {
   .settings-grid,
   .custom-plan-grid,
   .analysis-list,
+<<<<<<< HEAD
   .plan-board,
   .topic-grid,
+=======
+<<<<<<< HEAD
+=======
+  .plan-board,
+  .topic-grid,
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
+>>>>>>> 78872fcd950cb28f84f288949fcfb6ed34025ec6
   .account-cards,
   .features-grid,
   .design-grid,
@@ -3726,8 +3778,17 @@ select:focus {
     gap: 8px;
   }
 
+<<<<<<< HEAD
   .heatmap-wrap,
   .table-wrap {
+=======
+<<<<<<< HEAD
+  .heatmap-wrap {
+=======
+  .heatmap-wrap,
+  .table-wrap {
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
+>>>>>>> 78872fcd950cb28f84f288949fcfb6ed34025ec6
     margin-right: -8px;
     margin-left: -8px;
     padding: 0 8px 4px;
@@ -3894,8 +3955,17 @@ select:focus {
   .report-hero,
   .report-document-head,
   .plan-overview,
+<<<<<<< HEAD
   .recommend-card,
   .timeline-item {
+=======
+<<<<<<< HEAD
+  .recommend-card {
+=======
+  .recommend-card,
+  .timeline-item {
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
+>>>>>>> 78872fcd950cb28f84f288949fcfb6ed34025ec6
     grid-template-columns: 1fr;
   }
 
@@ -3952,8 +4022,17 @@ select:focus {
   .mobile-dashboard-insight,
   .mobile-recent-submissions,
   .mobile-submission-list,
+<<<<<<< HEAD
   .mobile-filter-count,
   .mobile-sync-fab {
+=======
+<<<<<<< HEAD
+  .mobile-filter-count {
+=======
+  .mobile-filter-count,
+  .mobile-sync-fab {
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
+>>>>>>> 78872fcd950cb28f84f288949fcfb6ed34025ec6
     display: none;
   }
 }
