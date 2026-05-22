@@ -3462,7 +3462,11 @@ select:focus {
 
   .app-content {
     max-width: none;
+<<<<<<< HEAD
     padding: 16px 14px calc(82px + env(safe-area-inset-bottom));
+=======
+    padding: 16px 14px calc(104px + env(safe-area-inset-bottom));
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
   }
 
   .page-stack {
@@ -3564,11 +3568,14 @@ select:focus {
     overflow: hidden;
   }
 
+<<<<<<< HEAD
   .dashboard-page .dashboard-desktop-hero,
   .dashboard-page .dashboard-desktop-summary {
     display: none;
   }
 
+=======
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
   .product-brand-row {
     align-items: flex-start;
     flex-direction: column;
@@ -3599,7 +3606,12 @@ select:focus {
 
   .product-slogan,
   .hero-panel p,
+<<<<<<< HEAD
   .ai-brief p {
+=======
+  .ai-brief p,
+  .summary-text {
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
     font-size: 13px;
     line-height: 1.65;
   }
@@ -3659,7 +3671,12 @@ select:focus {
     line-height: 1.65;
   }
 
+<<<<<<< HEAD
   .mobile-dashboard-insight a {
+=======
+  .mobile-dashboard-insight a,
+  .mobile-sync-fab {
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -3675,6 +3692,20 @@ select:focus {
     box-shadow: 0 14px 30px rgba(194, 138, 46, 0.18);
   }
 
+<<<<<<< HEAD
+=======
+  .mobile-sync-fab {
+    position: fixed;
+    right: 18px;
+    bottom: calc(88px + env(safe-area-inset-bottom));
+    z-index: 55;
+    width: 52px;
+    min-height: 52px;
+    border-radius: 999px;
+    font-size: 12px;
+  }
+
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
   .activity-grid,
   .content-grid,
   .profile-layout,
@@ -3682,6 +3713,11 @@ select:focus {
   .settings-grid,
   .custom-plan-grid,
   .analysis-list,
+<<<<<<< HEAD
+=======
+  .plan-board,
+  .topic-grid,
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
   .account-cards,
   .features-grid,
   .design-grid,
@@ -3711,7 +3747,12 @@ select:focus {
     gap: 8px;
   }
 
+<<<<<<< HEAD
   .heatmap-wrap {
+=======
+  .heatmap-wrap,
+  .table-wrap {
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
     margin-right: -8px;
     margin-left: -8px;
     padding: 0 8px 4px;
@@ -3878,7 +3919,12 @@ select:focus {
   .report-hero,
   .report-document-head,
   .plan-overview,
+<<<<<<< HEAD
   .recommend-card {
+=======
+  .recommend-card,
+  .timeline-item {
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
     grid-template-columns: 1fr;
   }
 
@@ -3935,7 +3981,12 @@ select:focus {
   .mobile-dashboard-insight,
   .mobile-recent-submissions,
   .mobile-submission-list,
+<<<<<<< HEAD
   .mobile-filter-count {
+=======
+  .mobile-filter-count,
+  .mobile-sync-fab {
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
     display: none;
   }
 }

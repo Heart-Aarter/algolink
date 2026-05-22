@@ -4,7 +4,12 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
+<<<<<<< HEAD
 import MobileCommandMenu from '@/components/layout/MobileCommandMenu.vue'
+=======
+import MobileMorePanel from '@/components/layout/MobileMorePanel.vue'
+import MobileTabBar from '@/components/layout/MobileTabBar.vue'
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
 import { useTheme } from '@/composables/useTheme'
 
 const { theme } = useTheme()
@@ -13,6 +18,7 @@ const sidebarCollapsed = ref(false)
 const showIntro = ref(true)
 const naiveTheme = computed(() => (theme.value === 'dark' ? darkTheme : null))
 const isFullPageRoute = computed(() => route.meta.fullPage === true)
+const showMobileMorePanel = computed(() => route.name === 'profile')
 const shellClass = computed(() => ({
   'sidebar-collapsed': sidebarCollapsed.value,
   'intro-visible': showIntro.value,
@@ -181,9 +187,14 @@ onMounted(() => {
                   <component :is="Component" :key="route.fullPath" />
                 </Transition>
               </RouterView>
+              <MobileMorePanel v-if="showMobileMorePanel" />
             </main>
           </div>
+<<<<<<< HEAD
           <MobileCommandMenu />
+=======
+          <MobileTabBar />
+>>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
         </div>
       </n-dialog-provider>
     </n-message-provider>
