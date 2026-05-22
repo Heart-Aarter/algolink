@@ -183,11 +183,7 @@ onMounted(() => {
               <MobileMorePanel v-if="showMobileMorePanel" />
             </main>
           </div>
-          <<<<<<<<< Temporary merge branch 1
           <MobileTabBar />
-          =========
-          <MobileCommandMenu />
-          >>>>>>>>> Temporary merge branch 2
         </div>
       </n-dialog-provider>
     </n-message-provider>

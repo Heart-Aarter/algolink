@@ -15,14 +15,7 @@ import {
   sortDifficultyDistribution,
 } from '@/utils/analysis'
 import { chartAxis, chartGrid, tooltipBase } from '@/utils/chartTheme'
-<<<<<<< HEAD
 import { formatDateKey } from '@/utils/date'
-=======
-<<<<<<< HEAD
-import { formatDateKey } from '@/utils/date'
-=======
->>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
->>>>>>> 78872fcd950cb28f84f288949fcfb6ed34025ec6
 import { getDisplayTags } from '@/utils/tags'
 import { getVerdictCode } from '@/utils/verdict'
 
@@ -412,15 +405,7 @@ const mobileRecentSubmissions = computed(() => dashboardSubmissions.value.slice(
       <RouterLink to="/ai-advice">打开 Coach</RouterLink>
     </section>
 
-<<<<<<< HEAD
     <section class="hero-panel hero-dashboard dashboard-desktop-summary">
-=======
-<<<<<<< HEAD
-    <section class="hero-panel hero-dashboard dashboard-desktop-summary">
-=======
-    <section class="hero-panel hero-dashboard">
->>>>>>> f8469aed5d08756d758d184e3de598248c7b5484
->>>>>>> 78872fcd950cb28f84f288949fcfb6ed34025ec6
       <div>
         <p class="eyebrow">AI Multi-OJ Analytics</p>
         <h2>AlgoLink 训练数据看板</h2>
