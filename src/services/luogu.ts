@@ -34,10 +34,6 @@ interface LuoguProblemListResponse {
 const problemBatchSize = 12
 let tagCache: Promise<Map<number, string>> | null = null
 
-function normalizeHandle(handle: string) {
-  return handle.trim()
-}
-
 function getLuoguApiMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
     if (!import.meta.env.DEV) {
@@ -68,7 +64,7 @@ async function findLuoguUser(handle: string): Promise<LuoguUserInfo> {
 }
 
 export async function fetchLuoguUser(handle: string): Promise<OjProfile> {
-  const normalizedHandle = normalizeHandle(handle)
+  const normalizedHandle = handle.trim()
 
   try {
     const user = await findLuoguUser(normalizedHandle)
@@ -84,7 +80,7 @@ export async function fetchLuoguUser(handle: string): Promise<OjProfile> {
 }
 
 export async function fetchLuoguSubmissions(handle: string): Promise<OjSubmission[]> {
-  const normalizedHandle = normalizeHandle(handle)
+  const normalizedHandle = handle.trim()
 
   try {
     const user = await findLuoguUser(normalizedHandle)

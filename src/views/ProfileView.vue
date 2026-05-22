@@ -24,11 +24,6 @@ const lastSyncAt = computed(() => {
 const boundOjText = computed(() =>
   store.accounts.length ? store.accounts.map((account) => account.platform).join(' / ') : '未绑定',
 )
-const cfProfileUrl = computed(() =>
-  codeforcesAccount.value
-    ? `https://codeforces.com/profile/${codeforcesAccount.value.handle}`
-    : `https://codeforces.com/profile/${store.currentUsername}`,
-)
 </script>
 
 <template>
@@ -50,9 +45,9 @@ const cfProfileUrl = computed(() =>
         <h2 :style="{ color: usernameColor }">{{ store.currentUsername }}</h2>
         <p>{{ rankLabel }}</p>
 
-        <a class="cf-link" :href="cfProfileUrl" target="_blank" rel="noreferrer">
+        <span class="cf-link" aria-disabled="true" title="比赛提交版已锁定外部跳转">
           Codeforces profile
-        </a>
+        </span>
 
         <dl class="profile-facts">
           <div>
@@ -262,6 +257,7 @@ const cfProfileUrl = computed(() =>
   color: var(--color-blue);
   font-size: 13px;
   font-weight: 780;
+  cursor: default;
 }
 
 .profile-facts,

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { NIcon } from 'naive-ui'
+import { Moon, Sunny } from '@vicons/ionicons5'
 import { useTheme } from '@/composables/useTheme'
 import { useAlgoLinkStore } from '@/stores/algolink'
 
@@ -15,6 +17,7 @@ const routeTitle = computed(() => {
 
   return 'Dashboard'
 })
+const mobileThemeIcon = computed(() => (theme.value === 'dark' ? Sunny : Moon))
 const loginRoute = computed(() => ({
   path: store.currentUserId ? '/profile' : '/login',
   query: store.currentUserId
@@ -65,7 +68,8 @@ onMounted(() => {
 
 <template>
   <header class="app-header">
-    <div>
+    <div class="header-title">
+      <span class="mobile-brand-mark" aria-hidden="true">AL</span>
       <p class="eyebrow">AlgoLink 控制台</p>
       <h1>{{ routeTitle }}</h1>
     </div>
@@ -87,6 +91,7 @@ onMounted(() => {
         :aria-label="`切换${themeLabel}模式`"
         @click="toggleTheme"
       >
+        <n-icon class="mobile-theme-icon" :component="mobileThemeIcon" />
         <span>{{ themeLabel }}</span>
         <i :class="{ light: theme === 'light' }" />
       </button>
@@ -138,6 +143,15 @@ onMounted(() => {
   background: linear-gradient(90deg, transparent, var(--stripe-red), var(--stripe-gold), var(--stripe-teal));
   content: '';
   opacity: 0.72;
+}
+
+.header-title {
+  min-width: 0;
+}
+
+.mobile-brand-mark,
+.mobile-theme-icon {
+  display: none;
 }
 
 .eyebrow {
@@ -304,31 +318,100 @@ h1 {
 
 @media (max-width: 760px) {
   .app-header {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: center;
+    flex-direction: row;
     min-height: auto;
-    padding: 20px;
+    gap: 12px;
+    padding: calc(12px + env(safe-area-inset-top)) 14px 12px;
+    border-bottom-color: rgba(194, 138, 46, 0.26);
+    background:
+      linear-gradient(90deg, rgba(142, 39, 36, 0.16), transparent 5px),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.035)),
+      rgba(13, 15, 16, 0.9);
+    box-shadow:
+      0 10px 30px rgba(0, 0, 0, 0.28),
+      inset 0 -1px 0 rgba(194, 138, 46, 0.16);
+  }
+
+  .app-header::after {
+    right: 14px;
+    left: 14px;
+    width: auto;
+    background: linear-gradient(90deg, var(--stripe-red), var(--stripe-gold), var(--stripe-teal));
+    opacity: 0.84;
+  }
+
+  .header-title {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 10px;
+    flex: 1 1 auto;
+  }
+
+  .mobile-brand-mark {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    grid-row: 1 / span 2;
+    place-items: center;
+    border: 1px solid rgba(194, 138, 46, 0.48);
+    border-radius: 12px;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 42%),
+      rgba(194, 138, 46, 0.12);
+    color: var(--color-heading);
+    font-size: 12px;
+    font-weight: 900;
+    box-shadow: 0 0 24px rgba(194, 138, 46, 0.12);
+  }
+
+  .eyebrow {
+    margin-bottom: 1px;
+    font-size: 10px;
+  }
+
+  h1 {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 18px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .header-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    width: 100%;
+    display: flex;
+    gap: 8px;
+    flex: 0 0 auto;
+  }
+
+  .user-tag {
+    min-height: 38px;
+    width: 38px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .user-tag-name,
+  .theme-toggle span,
+  .theme-toggle i,
+  .sync-card,
+  .primary-action {
+    display: none;
   }
 
   .theme-toggle {
-    justify-content: space-between;
-    grid-column: 1 / -1;
-  }
-
-  .primary-action {
+    width: 38px;
+    min-height: 38px;
     justify-content: center;
-    grid-column: 1 / -1;
+    padding: 0;
+    border-radius: 12px;
   }
 
-  .server-warning {
-    grid-column: 1 / -1;
-    max-width: none;
+  .mobile-theme-icon {
+    display: inline-flex;
+    color: var(--color-gold);
+    font-size: 19px;
   }
 }
 </style>

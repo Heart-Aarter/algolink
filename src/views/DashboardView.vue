@@ -15,6 +15,9 @@ import {
   sortDifficultyDistribution,
 } from '@/utils/analysis'
 import { chartAxis, chartGrid, tooltipBase } from '@/utils/chartTheme'
+import { formatDateKey } from '@/utils/date'
+import { getDisplayTags } from '@/utils/tags'
+import { getVerdictCode } from '@/utils/verdict'
 
 const store = useAlgoLinkStore()
 
@@ -65,12 +68,6 @@ const heatmapWeekdayLabels = [
 
 function startOfLocalDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
-}
-
-function formatDateKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
-    date.getDate(),
-  ).padStart(2, '0')}`
 }
 
 function getHeatmapLevel(count: number) {
@@ -352,11 +349,12 @@ const visibleRecommendations = computed(() =>
       store.accounts.some((account) => account.platform === item.platform),
   ),
 )
+const mobileRecentSubmissions = computed(() => dashboardSubmissions.value.slice(0, 5))
 </script>
 
 <template>
   <div class="page-stack dashboard-page">
-    <section class="product-hero">
+    <section class="product-hero dashboard-desktop-hero">
       <div class="product-hero-copy">
         <div class="product-brand-row">
           <p class="eyebrow">AI Multi-OJ Training Intelligence</p>
@@ -395,7 +393,19 @@ const visibleRecommendations = computed(() =>
       </div>
     </section>
 
-    <section class="hero-panel hero-dashboard">
+    <section class="panel mobile-dashboard-insight">
+      <div>
+        <p class="eyebrow">Mobile Command</p>
+        <h2>{{ analysis.weakestTag }} 需要优先复盘</h2>
+        <p>
+          最近 30 天 {{ analysis.recent30Total }} 次提交，AC {{ analysis.recent30Accepted }} 次。建议先复盘非 AC
+          记录，再推进下一组训练计划。
+        </p>
+      </div>
+      <RouterLink to="/ai-advice">打开 Coach</RouterLink>
+    </section>
+
+    <section class="hero-panel hero-dashboard dashboard-desktop-summary">
       <div>
         <p class="eyebrow">AI Multi-OJ Analytics</p>
         <h2>AlgoLink 训练数据看板</h2>
@@ -508,6 +518,41 @@ const visibleRecommendations = computed(() =>
           </div>
         </div>
       </ChartPanel>
+    </section>
+
+    <section class="panel mobile-recent-submissions">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Recent Stream</p>
+          <h2>最近提交</h2>
+        </div>
+        <RouterLink class="text-link" to="/submissions">全部</RouterLink>
+      </div>
+      <div class="mobile-submission-list">
+        <article
+          v-for="submission in mobileRecentSubmissions"
+          :key="submission.id"
+          class="mobile-submission-card"
+        >
+          <div class="mobile-submission-main">
+            <span>{{ submission.platform }}</span>
+            <strong>{{ submission.problem }}</strong>
+            <small>{{ submission.problemId || submission.submittedAt }}</small>
+          </div>
+          <div class="mobile-submission-meta">
+            <span
+              class="mobile-verdict-chip"
+              :class="{ accepted: submission.status === 'Accepted' }"
+            >
+              {{ getVerdictCode(submission.status) }}
+            </span>
+            <span>{{ submission.difficulty }}</span>
+          </div>
+          <div class="mobile-submission-tags">
+            <span v-for="tag in getDisplayTags(submission).slice(0, 3)" :key="tag">{{ tag }}</span>
+          </div>
+        </article>
+      </div>
     </section>
 
     <section class="panel today-advice">

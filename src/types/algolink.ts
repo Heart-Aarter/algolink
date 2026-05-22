@@ -105,15 +105,6 @@ export interface WeeklyTrainingPlanDay {
   reviewAdvice: string
 }
 
-export interface RecommendedProblem {
-  id: string
-  platform: OjPlatform
-  title: string
-  difficulty: string
-  tags: string[]
-  reason: string
-}
-
 export interface UserSettings {
   syncInterval: 'manual' | 'daily' | 'weekly'
   aiTone: 'strict' | 'balanced' | 'encouraging'

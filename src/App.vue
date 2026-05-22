@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
+import MobileCommandMenu from '@/components/layout/MobileCommandMenu.vue'
 import { useTheme } from '@/composables/useTheme'
 
 const { theme } = useTheme()
@@ -73,10 +74,12 @@ function toggleSidebar() {
 
 function closeIntro() {
   showIntro.value = false
+  localStorage.setItem('algolink.introClosed', '1')
 }
 
 onMounted(() => {
   sidebarCollapsed.value = localStorage.getItem('algolink.sidebarCollapsed') === '1'
+  showIntro.value = localStorage.getItem('algolink.introClosed') !== '1'
 })
 </script>
 
@@ -180,6 +183,7 @@ onMounted(() => {
               </RouterView>
             </main>
           </div>
+          <MobileCommandMenu />
         </div>
       </n-dialog-provider>
     </n-message-provider>

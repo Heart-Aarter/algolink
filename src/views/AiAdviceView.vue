@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { NAlert, NButton, NSpin, NTag } from 'naive-ui'
-import { recommendedProblems } from '@/mock/recommendedProblems'
+import { problemRecommendations as recommendedProblems } from '@/mock/algolink'
 import { weeklyTrainingPlan } from '@/mock/trainingPlan'
 import { generateAiAdvice } from '@/services/api'
 import { useAlgoLinkStore } from '@/stores/algolink'

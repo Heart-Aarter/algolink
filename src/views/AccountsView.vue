@@ -60,27 +60,6 @@ function getSyncButtonText(platformName: OjPlatform) {
 function shouldShowRating(platformName: OjPlatform) {
   return platformName === 'Codeforces'
 }
-
-const platformProfileUrls: Record<OjPlatform, (handle: string) => string> = {
-  Codeforces: (handle) => `https://codeforces.com/profile/${handle}`,
-  Luogu: (handle) => `https://www.luogu.com.cn/user/${handle}`,
-  AtCoder: (handle) => `https://atcoder.jp/users/${handle}`,
-}
-
-function getPlatformProfileUrl(platform: OjPlatform, handle: string) {
-  return platformProfileUrls[platform]?.(handle) ?? '#'
-}
-
-const bindingHintLinks: Partial<Record<OjPlatform, { label: string; url: string }>> = {
-  Codeforces: {
-    label: 'CF 1A（提交 CE 验证）',
-    url: 'https://codeforces.com/problemset/problem/1/A',
-  },
-  AtCoder: {
-    label: '个人主页',
-    url: 'https://atcoder.jp',
-  },
-}
 </script>
 
 <template>
@@ -118,14 +97,9 @@ const bindingHintLinks: Partial<Record<OjPlatform, { label: string; url: string 
             <span>请先打开 CF 1A，在 10 分钟内提交一次 CE，再回到这里绑定 handle。</span>
           </div>
           <span>{{ platform }} 验证：</span>
-          <a
-            :href="bindingHintLinks.Codeforces!.url"
-            target="_blank"
-            rel="noreferrer"
-            class="cf-verify-button"
-          >
+          <span class="cf-verify-button" aria-disabled="true" title="比赛提交版已锁定外部跳转">
             打开 CF 1A 验证题
-          </a>
+          </span>
         </div>
       </Transition>
 
@@ -148,12 +122,9 @@ const bindingHintLinks: Partial<Record<OjPlatform, { label: string; url: string 
           <span class="account-dot" :style="{ background: account.color }" />
           <h3>{{ account.platform }}</h3>
           <p>
-            <a
-              :href="getPlatformProfileUrl(account.platform, account.handle)"
-              target="_blank"
-              rel="noreferrer"
-              class="oj-link"
-            >@{{ account.handle }}</a>
+            <span class="oj-link" aria-disabled="true" title="比赛提交版已锁定外部跳转">
+              @{{ account.handle }}
+            </span>
           </p>
           <dl>
             <div v-if="shouldShowRating(account.platform)">
@@ -247,6 +218,10 @@ const bindingHintLinks: Partial<Record<OjPlatform, { label: string; url: string 
   line-height: 1.5;
 }
 
+.oj-link {
+  cursor: default;
+}
+
 .cf-verify-button {
   display: inline-flex;
   flex: 0 0 auto;
@@ -260,6 +235,7 @@ const bindingHintLinks: Partial<Record<OjPlatform, { label: string; url: string 
   color: #17130d;
   font-size: 14px;
   font-weight: 820;
+  cursor: default;
   text-decoration: none;
   box-shadow: 0 10px 24px rgba(194, 138, 46, 0.18);
   transition:
@@ -270,9 +246,6 @@ const bindingHintLinks: Partial<Record<OjPlatform, { label: string; url: string 
 
 .cf-verify-button:hover {
   color: #17130d;
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-  box-shadow: 0 14px 30px rgba(194, 138, 46, 0.28);
 }
 
 @media (max-width: 720px) {

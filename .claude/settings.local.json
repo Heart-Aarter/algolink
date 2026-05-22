@@ -5,7 +5,10 @@
       "Bash(npm run *)",
       "Bash(cd /d D:\\\\Code\\\\algolink\\\\server)",
       "Bash(npx tsc *)",
-      "Bash(npx *)"
+      "Bash(npx *)",
+      "Bash(xargs grep -l \"console.log\\\\|console\\\\.error\\\\|console\\\\.warn\")",
+      "Bash(grep *)",
+      "Bash(awk *)"
     ]
   }
 }

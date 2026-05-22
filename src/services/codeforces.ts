@@ -23,10 +23,6 @@ interface CodeforcesApiResponse<T> {
   result: T
 }
 
-function normalizeHandle(handle: string) {
-  return handle.trim()
-}
-
 async function waitForThrottle(key: string) {
   const now = Date.now()
   const lastTime = lastRequestAt.get(key) ?? 0
@@ -65,7 +61,7 @@ async function requestCodeforces<T>(
 }
 
 export async function fetchCodeforcesUser(handle: string): Promise<OjProfile> {
-  const normalizedHandle = normalizeHandle(handle)
+  const normalizedHandle = handle.trim()
   const result = await requestCodeforces<CodeforcesUserInfo[]>(
     'user.info',
     {
@@ -84,7 +80,7 @@ export async function fetchCodeforcesUser(handle: string): Promise<OjProfile> {
 
 export async function fetchCodeforcesUsers(handles: string[]): Promise<OjProfile[]> {
   const normalizedHandles = [
-    ...new Set(handles.map(normalizeHandle).filter((handle) => handle.length > 0)),
+    ...new Set(handles.map((h) => h.trim()).filter((handle) => handle.length > 0)),
   ]
 
   if (!normalizedHandles.length) {
@@ -119,7 +115,7 @@ export async function fetchCodeforcesUsers(handles: string[]): Promise<OjProfile
 }
 
 export async function fetchCodeforcesRating(handle: string): Promise<OjRatingChange[]> {
-  const normalizedHandle = normalizeHandle(handle)
+  const normalizedHandle = handle.trim()
   const result = await requestCodeforces<CodeforcesRatingChange[]>(
     'user.rating',
     {
@@ -135,7 +131,7 @@ export async function fetchCodeforcesSubmissions(
   handle: string,
   count?: number,
 ): Promise<OjSubmission[]> {
-  const normalizedHandle = normalizeHandle(handle)
+  const normalizedHandle = handle.trim()
   const params: Record<string, string | number> = {
     handle: normalizedHandle,
     from: 1,
@@ -155,7 +151,7 @@ export async function fetchCodeforcesSubmissions(
 }
 
 export async function hasRecentCodeforcesBindingCe(handle: string): Promise<boolean> {
-  const normalizedHandle = normalizeHandle(handle)
+  const normalizedHandle = handle.trim()
   const tenMinutesAgoSeconds = Math.floor(Date.now() / 1000) - 10 * 60
   const result = await requestCodeforces<CodeforcesSubmission[]>(
     'user.status',

@@ -5,6 +5,7 @@ import {
   mockSubmissions,
   trainingTasks as mockTrainingTasks,
 } from '@/mock/algolink'
+import { formatDateKey } from '@/utils/date'
 import {
   fetchCodeforcesRating,
   fetchCodeforcesSubmissions,
@@ -88,11 +89,6 @@ function formatDateTime(date = new Date()) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(
     date.getHours(),
   )}:${pad(date.getMinutes())}`
-}
-
-function formatDateKey(date = new Date()) {
-  const pad = (value: number) => String(value).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
 function parseSyncTime(value: string) {

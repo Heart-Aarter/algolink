@@ -25,10 +25,6 @@ interface AtCoderProblemModel {
 const submissionsPageSize = 500
 let problemMetaCache: Promise<Map<string, AtCoderProblemMeta>> | null = null
 
-function normalizeHandle(handle: string) {
-  return handle.trim()
-}
-
 function getAtCoderApiMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) {
     if (error.response?.status === 404) {
@@ -68,7 +64,7 @@ async function fetchAtCoderProblemMeta() {
 }
 
 export async function fetchAtCoderUser(handle: string): Promise<OjProfile> {
-  const normalizedHandle = normalizeHandle(handle)
+  const normalizedHandle = handle.trim()
 
   try {
     const response = await atcoderClient.get<AtCoderProblemsUserInfo>(
@@ -87,7 +83,7 @@ export async function fetchAtCoderUser(handle: string): Promise<OjProfile> {
 }
 
 export async function fetchAtCoderSubmissions(handle: string): Promise<OjSubmission[]> {
-  const normalizedHandle = normalizeHandle(handle)
+  const normalizedHandle = handle.trim()
 
   try {
     const [problemMeta, submissions] = await Promise.all([
