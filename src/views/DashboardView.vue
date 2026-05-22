@@ -646,5 +646,6 @@ const mobileRecentSubmissions = computed(() => dashboardSubmissions.value.slice(
         </div>
       </article>
     </section>
+    <RouterLink class="mobile-sync-fab" to="/accounts">同步</RouterLink>
   </div>
 </template>

@@ -3462,7 +3462,7 @@ select:focus {
 
   .app-content {
     max-width: none;
-    padding: 16px 14px calc(82px + env(safe-area-inset-bottom));
+    padding: 16px 14px calc(104px + env(safe-area-inset-bottom));
   }
 
   .page-stack {
@@ -3599,7 +3599,8 @@ select:focus {
 
   .product-slogan,
   .hero-panel p,
-  .ai-brief p {
+  .ai-brief p,
+  .summary-text {
     font-size: 13px;
     line-height: 1.65;
   }
@@ -3659,7 +3660,8 @@ select:focus {
     line-height: 1.65;
   }
 
-  .mobile-dashboard-insight a {
+  .mobile-dashboard-insight a,
+  .mobile-sync-fab {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -3675,6 +3677,17 @@ select:focus {
     box-shadow: 0 14px 30px rgba(194, 138, 46, 0.18);
   }
 
+  .mobile-sync-fab {
+    position: fixed;
+    right: 18px;
+    bottom: calc(88px + env(safe-area-inset-bottom));
+    z-index: 55;
+    width: 52px;
+    min-height: 52px;
+    border-radius: 999px;
+    font-size: 12px;
+  }
+
   .activity-grid,
   .content-grid,
   .profile-layout,
@@ -3682,6 +3695,8 @@ select:focus {
   .settings-grid,
   .custom-plan-grid,
   .analysis-list,
+  .plan-board,
+  .topic-grid,
   .account-cards,
   .features-grid,
   .design-grid,
@@ -3711,7 +3726,8 @@ select:focus {
     gap: 8px;
   }
 
-  .heatmap-wrap {
+  .heatmap-wrap,
+  .table-wrap {
     margin-right: -8px;
     margin-left: -8px;
     padding: 0 8px 4px;
@@ -3878,7 +3894,8 @@ select:focus {
   .report-hero,
   .report-document-head,
   .plan-overview,
-  .recommend-card {
+  .recommend-card,
+  .timeline-item {
     grid-template-columns: 1fr;
   }
 
@@ -3935,7 +3952,8 @@ select:focus {
   .mobile-dashboard-insight,
   .mobile-recent-submissions,
   .mobile-submission-list,
-  .mobile-filter-count {
+  .mobile-filter-count,
+  .mobile-sync-fab {
     display: none;
   }
 }
