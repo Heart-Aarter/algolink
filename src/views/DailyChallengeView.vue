@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { NButton, NEmpty, NSpin, NTag, useMessage } from 'naive-ui'
 import { useAlgoLinkStore } from '@/stores/algolink'
-import type { DailyProblem } from '@/types/algolink'
+import type { DailyDifficulty, DailyProblem } from '@/types/algolink'
 
 const store = useAlgoLinkStore()
 const message = useMessage()
@@ -14,9 +14,25 @@ const completedIds = computed(() => new Set(challenge.value?.completedProblemIds
 const easyProblem = computed(() =>
   challenge.value?.problems.find((problem) => problem.level === 'easy'),
 )
+const mediumProblem = computed(() =>
+  challenge.value?.problems.find((problem) => problem.level === 'medium'),
+)
 const hardProblem = computed(() =>
   challenge.value?.problems.find((problem) => problem.level === 'hard'),
 )
+const dailyProblems = computed(() => [easyProblem.value, mediumProblem.value, hardProblem.value])
+
+const dailyDifficultyLabels: Record<DailyDifficulty, string> = {
+  easy: 'Easy',
+  medium: 'Medium',
+  hard: 'Hard',
+}
+
+const dailyDifficultyTagTypes: Record<DailyDifficulty, 'success' | 'info' | 'warning'> = {
+  easy: 'success',
+  medium: 'info',
+  hard: 'warning',
+}
 
 onMounted(() => {
   void loadChallenge()
@@ -56,7 +72,7 @@ function isCompleted(problem?: DailyProblem) {
         <p class="eyebrow">Daily Challenge</p>
         <h2>每日一题</h2>
         <p>
-          每天推荐 Easy 与 Hard 两档题目。完成按钮会先同步对应 OJ 的公开提交记录，只有检测到该题 AC
+          每天推荐 Easy、Medium 与 Hard 三档题目。完成按钮会先同步对应 OJ 的公开提交记录，只有检测到该题 AC
           后才会写入本地完成状态和排行榜积分。
         </p>
       </div>
@@ -69,11 +85,11 @@ function isCompleted(problem?: DailyProblem) {
 
     <n-spin :show="isLoading">
       <section v-if="challenge" class="daily-grid">
-        <article v-for="problem in [easyProblem, hardProblem]" :key="problem?.id" class="daily-card">
+        <article v-for="problem in dailyProblems" :key="problem?.id" class="daily-card">
           <template v-if="problem">
             <div class="daily-card-head">
-              <n-tag :type="problem.level === 'easy' ? 'success' : 'warning'" round>
-                {{ problem.level === 'easy' ? 'Easy' : 'Hard' }}
+              <n-tag :type="dailyDifficultyTagTypes[problem.level]" round>
+                {{ dailyDifficultyLabels[problem.level] }}
               </n-tag>
               <span>{{ problem.platform }}</span>
             </div>

@@ -1308,7 +1308,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
   async function loadDailyChallenge(): Promise<{ ok: boolean; message: string }> {
     const today = formatDateKey()
 
-    if (dailyChallenge.value?.date === today && dailyChallenge.value.problems.length === 2) {
+    if (dailyChallenge.value?.date === today && dailyChallenge.value.problems.length === 3) {
       return { ok: true, message: '今日题目已加载。' }
     }
 

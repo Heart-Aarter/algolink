@@ -38,7 +38,7 @@ export interface SubmissionRecord {
   runtime: string
 }
 
-export type DailyDifficulty = 'easy' | 'hard'
+export type DailyDifficulty = 'easy' | 'medium' | 'hard'
 
 export interface DailyProblem {
   id: string

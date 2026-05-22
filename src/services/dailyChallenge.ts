@@ -36,16 +36,24 @@ function pickRandom<T>(items: T[], seed: string) {
 }
 
 function toProblemLevel(difficulty: number): DailyDifficulty {
-  return difficulty <= 1800 ? 'easy' : 'hard'
+  if (difficulty < 1400) {
+    return 'easy'
+  }
+
+  return difficulty <= 1800 ? 'medium' : 'hard'
 }
 
 export async function fetchDailyProblems(date: string): Promise<DailyProblem[]> {
   const codeforces = await fetchCodeforcesProblems()
-  const easyPool = codeforces.filter((problem) => problem.difficulty <= 1800)
+  const easyPool = codeforces.filter((problem) => problem.difficulty < 1400)
+  const mediumPool = codeforces.filter(
+    (problem) => problem.difficulty >= 1400 && problem.difficulty <= 1800,
+  )
   const hardPool = codeforces.filter((problem) => problem.difficulty > 1800)
 
   return [
     pickRandom(easyPool, `${date}:easy`),
+    pickRandom(mediumPool, `${date}:medium`),
     pickRandom(hardPool, `${date}:hard`),
   ]
 }
