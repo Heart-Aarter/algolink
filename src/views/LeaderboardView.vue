@@ -38,7 +38,11 @@ const profileNameColor = computed(() =>
 )
 
 function getLeaderboardNameColor(entry: { username: string; displayRankColor: string }) {
+<<<<<<< HEAD
   return entry.username === store.currentUsername ? profileNameColor.value : entry.displayRankColor
+=======
+  return entry.username === 'Aarter' ? profileNameColor.value : entry.displayRankColor
+>>>>>>> 6f6c36a8e939b547b48be39001494d14473e790a
 }
 
 const rankedEntries = computed<RankedEntry[]>(() => {
@@ -57,7 +61,7 @@ const rankedEntries = computed<RankedEntry[]>(() => {
       score: entry.score,
       avatar: entry.avatar,
       displayRankColor: entry.displayRankColor || getCodeforcesRankColor(entry.score),
-      isCurrentUser: entry.username === store.currentUsername,
+      isCurrentUser: entry.username === 'Aarter',
     }
   })
 })
