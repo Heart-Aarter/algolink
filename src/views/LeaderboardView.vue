@@ -57,7 +57,7 @@ const rankedEntries = computed<RankedEntry[]>(() => {
       score: entry.score,
       avatar: entry.avatar,
       displayRankColor: entry.displayRankColor || getCodeforcesRankColor(entry.score),
-      isCurrentUser: entry.username === store.currentUsername,
+      isCurrentUser: entry.username === 'Aarter',
     }
   })
 })
@@ -130,7 +130,11 @@ watch(
 
     <section class="stats-grid">
       <StatCard label="参与人数" :value="participantCount" helper="当前榜单统计人数" />
-      <StatCard :label="periodText[store.leaderboardPeriod]" :value="highestScore" helper="当前榜首成绩" />
+      <StatCard
+        :label="periodText[store.leaderboardPeriod]"
+        :value="highestScore"
+        helper="当前榜首成绩"
+      />
       <StatCard
         label="我的排名"
         :value="myEntry ? `#${myEntry.rank}` : '-'"
@@ -166,11 +170,7 @@ watch(
             :class="[`podium-${podiumMedals[index]}`, entry.isCurrentUser && 'podium-current']"
           >
             <div class="podium-avatar" :class="`size-${podiumSizes[index]}`">
-              <img
-                v-if="entry.avatar"
-                :src="entry.avatar"
-                :alt="`${entry.username} avatar`"
-              >
+              <img v-if="entry.avatar" :src="entry.avatar" :alt="`${entry.username} avatar`" />
               <span v-else>{{ entry.username.slice(0, 2).toUpperCase() }}</span>
             </div>
             <div class="podium-badge">{{ podiumLabels[index] }}</div>
@@ -197,11 +197,7 @@ watch(
               <div class="leaderboard-main">
                 <span class="leaderboard-rank">#{{ entry.rank }}</span>
                 <span class="leaderboard-avatar-slot">
-                  <img
-                    v-if="entry.avatar"
-                    :src="entry.avatar"
-                    :alt="`${entry.username} avatar`"
-                  >
+                  <img v-if="entry.avatar" :src="entry.avatar" :alt="`${entry.username} avatar`" />
                   <span v-else>{{ entry.username.slice(0, 1).toUpperCase() }}</span>
                 </span>
                 <RouterLink
@@ -315,7 +311,9 @@ watch(
 }
 
 .podium-current {
-  box-shadow: 0 0 0 1px rgba(194, 138, 46, 0.28), 0 12px 30px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 0 0 1px rgba(194, 138, 46, 0.28),
+    0 12px 30px rgba(0, 0, 0, 0.12);
 }
 
 .podium-avatar {
@@ -395,8 +393,8 @@ watch(
 
 .leaderboard-row.is-current-user {
   border-color: rgba(194, 138, 46, 0.28);
-  background: linear-gradient(135deg, rgba(142, 39, 36, 0.07), transparent 44%),
-    var(--color-surface);
+  background:
+    linear-gradient(135deg, rgba(142, 39, 36, 0.07), transparent 44%), var(--color-surface);
 }
 
 .leaderboard-main {
