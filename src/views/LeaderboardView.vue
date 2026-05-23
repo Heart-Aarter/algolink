@@ -57,7 +57,7 @@ const rankedEntries = computed<RankedEntry[]>(() => {
       score: entry.score,
       avatar: entry.avatar,
       displayRankColor: entry.displayRankColor || getCodeforcesRankColor(entry.score),
-      isCurrentUser: entry.username === 'Aarter',
+      isCurrentUser: entry.username === store.currentUsername,
     }
   })
 })
