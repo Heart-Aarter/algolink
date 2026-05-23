@@ -153,8 +153,8 @@ onMounted(() => {
 
               <div class="intro-mission">
                 <span>BREAKTHROUGH / 多 OJ 数据聚合</span>
-                <h2>算法训练进入深空轨道</h2>
-                <p>公开 handle 聚合、提交轨迹回放、能力画像与 AI 训练策略，在一个控制台内完成。</p>
+                <h2>Ready?</h2>
+                <p>能力画像、每日一题、训练计划，在一个控制台完成</p>
                 <div class="intro-meter" aria-hidden="true">
                   <i />
                 </div>

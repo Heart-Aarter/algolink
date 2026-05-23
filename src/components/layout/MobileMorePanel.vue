@@ -30,11 +30,11 @@
     border-radius: 14px;
     background:
       linear-gradient(90deg, rgba(142, 39, 36, 0.13), transparent 4px),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
-      rgba(18, 20, 20, 0.9);
+      linear-gradient(180deg, var(--glass-highlight), transparent 58%),
+      var(--color-panel);
     box-shadow:
-      0 14px 34px rgba(0, 0, 0, 0.24),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      var(--shadow-panel),
+      inset 0 1px 0 var(--glass-highlight);
   }
 
   .mobile-more-head h2 {

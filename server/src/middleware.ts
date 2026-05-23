@@ -1,11 +1,11 @@
 import type { RequestHandler } from 'express'
 import { getDatabase, type UserRow } from './db'
-import { isAllowedUsername } from './singleUser'
+import { isValidUsername } from './singleUser'
 
 export const requireUser: RequestHandler = (req, res, next) => {
   const userId = typeof req.params.userId === 'string' ? req.params.userId : ''
 
-  if (!isAllowedUsername(userId)) {
+  if (!isValidUsername(userId)) {
     return res.status(404).json({ error: 'user not found' })
   }
 

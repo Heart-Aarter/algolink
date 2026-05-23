@@ -137,6 +137,13 @@ h2 {
   min-width: 0;
 }
 
+@media (min-width: 681px) and (max-width: 760px) {
+  .chart-body.has-side-content {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 280px);
+    gap: 10px;
+  }
+}
+
 @media (max-width: 680px) {
   .chart-body.has-side-content {
     grid-template-columns: 1fr;

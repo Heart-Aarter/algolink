@@ -326,10 +326,10 @@ h1 {
     border-bottom-color: rgba(194, 138, 46, 0.26);
     background:
       linear-gradient(90deg, rgba(142, 39, 36, 0.16), transparent 5px),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.035)),
-      rgba(13, 15, 16, 0.9);
+      linear-gradient(180deg, var(--glass-highlight), transparent 62%),
+      var(--color-header);
     box-shadow:
-      0 10px 30px rgba(0, 0, 0, 0.28),
+      var(--shadow-panel),
       inset 0 -1px 0 rgba(194, 138, 46, 0.16);
   }
 

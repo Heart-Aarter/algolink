@@ -185,11 +185,11 @@ onBeforeUnmount(() => {
     border-radius: 18px;
     background:
       linear-gradient(90deg, rgba(142, 39, 36, 0.14), transparent 5px),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.04)),
-      rgba(13, 15, 16, 0.94);
+      linear-gradient(180deg, var(--glass-highlight), transparent 62%),
+      var(--color-panel);
     box-shadow:
-      0 22px 58px rgba(0, 0, 0, 0.42),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      var(--shadow-elevated),
+      inset 0 1px 0 var(--glass-highlight);
     backdrop-filter: blur(20px) saturate(145%);
   }
 
