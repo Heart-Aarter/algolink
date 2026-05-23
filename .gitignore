@@ -41,3 +41,7 @@ __screenshots__/
 # Server data
 server/data/*.db
 server/data/*.db-*
+
+# Competition submission package
+/启航赛道-三分图/
+/启航赛道-三分图.zip
