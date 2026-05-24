@@ -24,11 +24,17 @@ const summary = computed(() =>
 )
 const weakTagDetails = computed(() => getTagAnalysis(store.analysisSubmissions).slice(0, 5))
 const isAiConfigured = computed(
-  () =>
-    store.settings.aiEnabled &&
-    Boolean(store.settings.aiBaseUrl.trim()) &&
-    Boolean(store.settings.aiApiKey.trim()) &&
-    Boolean(store.settings.aiModel.trim()),
+  () => {
+    if (!store.settings.aiEnabled || !store.settings.aiApiKey.trim()) {
+      return false
+    }
+
+    if (store.settings.aiProvider === 'deepseek') {
+      return true
+    }
+
+    return Boolean(store.settings.aiBaseUrl.trim()) && Boolean(store.settings.aiModel.trim())
+  },
 )
 
 const toneCopy: Record<
@@ -97,6 +103,11 @@ const severityType = {
   low: 'info',
 } as const
 
+const deepSeekDefaults = {
+  baseUrl: 'https://api.deepseek.com',
+  model: 'deepseek-v4-flash',
+}
+
 function getRecentSubmissionSample() {
   return [...store.analysisSubmissions]
     .sort((left, right) => {
@@ -134,14 +145,24 @@ async function generateAdvice() {
   isGenerating.value = true
 
   try {
+    const aiRequestSettings =
+      store.settings.aiProvider === 'deepseek'
+        ? {
+            ...store.settings,
+            aiProvider: 'openai-compatible' as const,
+            aiBaseUrl: store.settings.aiBaseUrl.trim() || deepSeekDefaults.baseUrl,
+            aiModel: store.settings.aiModel.trim() || deepSeekDefaults.model,
+          }
+        : store.settings
+
     aiAdvice.value = await generateAiAdvice(store.currentUserId, {
       settings: {
-        aiProvider: store.settings.aiProvider,
-        aiBaseUrl: store.settings.aiBaseUrl,
-        aiApiKey: store.settings.aiApiKey,
-        aiModel: store.settings.aiModel,
-        aiTone: store.settings.aiTone,
-        aiPromptPreference: store.settings.aiPromptPreference,
+        aiProvider: aiRequestSettings.aiProvider,
+        aiBaseUrl: aiRequestSettings.aiBaseUrl,
+        aiApiKey: aiRequestSettings.aiApiKey,
+        aiModel: aiRequestSettings.aiModel,
+        aiTone: aiRequestSettings.aiTone,
+        aiPromptPreference: aiRequestSettings.aiPromptPreference,
       },
       analysis: calculateSubmissionAnalysis(store.analysisSubmissions),
       weakTags: weakTagDetails.value,

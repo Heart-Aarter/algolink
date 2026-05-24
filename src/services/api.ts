@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios'
 import type { AiAdviceResponse, UserSettings } from '@/types/algolink'
 
-const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:3001'
+const apiBase = import.meta.env.VITE_API_BASE || '/'
 
 const apiClient = axios.create({
   baseURL: apiBase,

@@ -14,6 +14,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
       '/luogu-api': {
         target: 'https://www.luogu.com.cn',
         changeOrigin: true,
