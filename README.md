@@ -1,30 +1,32 @@
 # AlgoLink
 
-AlgoLink 是一个面向算法竞赛学习者的 **AI 多 OJ 刷题数据分析平台**。项目聚合 Codeforces、洛谷、AtCoder 等平台的公开刷题数据，用于展示刷题趋势、提交记录、能力画像、训练建议、训练计划、每日一题和排行榜。
+AlgoLink 是一个面向算法竞赛学习者的 **AI 多 OJ 刷题数据分析平台**。项目聚合 Codeforces、洛谷和AtCoder 平台的公开刷题数据，用于展示刷题趋势、提交记录、个人资料、能力画像、训练建议、训练报告、训练计划、每日一题和排行榜。
 
-本项目是网页设计比赛作品，定位是"数据分析平台"和"算法训练工具"，不是 Online Judge：
+本项目是网页设计比赛作品，定位是“数据分析平台”和“算法训练工具”，不是 Online Judge：
 
 - 不实现代码评测系统。
-- 不要求用户输入其他 OJ 的密码。
+- 不要求用户输入其他 OJ 的密码、cookie 或私有 token。
 - 只允许绑定公开 username / handle。
-- 可使用 mock 数据兜底展示，但后端 SQLite 已作为主要持久化数据源。
+- 后端 SQLite 作为持久化数据源。
 
 ## 页面功能
 
 | 页面 | 路由 | 说明 |
-|------|------|------|
-| Dashboard | `/` | 训练热力图、提交趋势、标签/难度分布、推荐训练入口 |
-| OJ 账号绑定 | `/accounts` | 绑定 Codeforces / Luogu / AtCoder 公开 handle，同步公开数据 |
-| 提交记录 | `/submissions` | 多维度筛选、分页、统计卡片 |
-| 能力画像 | `/profile` | 标签/难度/结果/语言分布图表、标签通过率 |
-| AI 训练建议 | `/ai-advice` | 规则引擎建议，严格/均衡/鼓励三档语气可切换 |
-| 训练报告 | `/training-report` | 基于真实提交的诊断书，阶段识别与方向建议 |
-| 训练计划 | `/training-plan` | 7 天路线图，每日状态可切换，进度持久化 |
-| 每日一题 | `/daily` | 从 CF 题库抽取 Easy + Hard 两题，验证 OJ AC 后计分 |
-| 排行榜 | `/leaderboard` | 前三领奖台、排名进度条、当前用户高亮 |
-| 关于 | `/about` | 项目介绍、6 大功能卡片、技术栈展示、设计原则 |
-| 设置 | `/settings` | 同步频率、AI 语气、默认平台、重置本地数据 |
-| 404 | `/*` | 未匹配路由提示页面 |
+|---|---|---|
+| 登录 | `/login` | 输入用户名和 6-64 位本地密码进入系统；不是正式认证系统。 |
+| Dashboard | `/` | 训练热力图、提交趋势、标签/难度分布、推荐训练入口。 |
+| OJ 账号绑定 | `/accounts` | 绑定 Codeforces / Luogu / AtCoder 公开 handle，同步公开数据。 |
+| 提交记录 | `/submissions` | 按平台、结果、语言、标签、难度等维度筛选，支持分页和统计卡片。 |
+| 个人资料 | `/profile` | 展示当前用户、绑定账号、训练概览和公开资料信息。 |
+| 能力画像 | `/ability-profile` | 标签、难度、结果、语言分布图表和标签通过率分析。 |
+| AI 训练建议 | `/ai-advice` | 默认使用本地规则兜底；配置 OpenAI Compatible 接口后可生成真实 AI 分析。 |
+| 训练报告 | `/training-report` | 基于提交数据生成阶段诊断、短板分析和方向建议。 |
+| 训练计划 | `/training-plan` | 7 天训练路线图，每日状态可切换并持久化。 |
+| 每日一题 | `/daily` | 提供 Easy / Medium / Hard 三档题目，验证 OJ AC 后写入完成状态和排行榜积分。 |
+| 排行榜 | `/leaderboard` | 支持总榜、今日榜、本周榜、连续打卡榜，展示前三名、当前用户和分差。 |
+| 设置 | `/settings` | 同步频率、AI 语气、默认平台、公开数据开关、AI 接入配置和本地数据重置。 |
+| 关于 | `/about` | 项目介绍、功能卡片、技术栈展示和设计原则。 |
+| 404 | `/*` | 未匹配路由提示页面。 |
 
 ## 技术栈
 
@@ -71,11 +73,11 @@ npm run dev:server
 npm run build
 ```
 
-`npm run build` 会同时检查前端和后端：
+`npm run build` 会同时执行：
 
 - `vue-tsc --build`
-- `vite build`
 - `npm --workspace server run build`
+- `vite build`
 
 默认地址：
 
@@ -99,34 +101,36 @@ VITE_API_BASE=http://localhost:3001
 VITE_API_BASE=/api
 ```
 
+AI 分析接口不通过环境变量固定配置。用户可在设置页填写 OpenAI Compatible 的 API Base URL、API Key 和模型名；API Key 只保存在浏览器本地缓存中，不写入后端 SQLite。真实 AI 请求时，前端会临时发送给本地后端代理转发。
+
 ## 项目结构
 
 ```text
 src/
-  assets/         全局样式（base.css, main.css）、品牌资源
+  assets/         全局样式（base.css, main.css）
   components/
     charts/       图表面板组件（ChartPanel）
     common/       通用组件（StatCard）
-    icons/        图标组件
-    layout/       布局组件（AppHeader, AppSidebar）
-  composables/    组合式函数（useTheme）
-  mock/           mock 数据、推荐题目、训练计划数据
-  router/         Vue Router 路由配置（12 条路由 + 404 通配）
-  services/       API Client（axios 封装）、OJ 数据同步服务
-  stores/         Pinia Store（algolink），含 localStorage 缓存与服务器持久化
+    layout/       桌面端和移动端布局组件
+  composables/    组合式函数（useTheme, useMockAsync）
+  mock/           mock 数据、推荐题目和训练计划数据
+  router/         Vue Router 路由配置、登录守卫和标题同步
+  services/       API Client、Codeforces / Luogu / AtCoder 数据同步服务
+  stores/         Pinia Store，含 localStorage 缓存与服务器持久化
   types/          TypeScript 类型定义
-  utils/          数据分析、提交过滤、存储工具函数
-  views/          12 个页面视图
+  utils/          数据分析、标签、日期、提交过滤、判题结果和存储工具函数
+  views/          页面视图
 
 server/
   src/
-    db.ts         SQLite 初始化与建表
-    index.ts      Express 入口（请求日志、CORS、路由挂载、错误处理）
-    routes/       7 个 API 路由（user, accounts, submissions, settings, trainingPlan, daily, leaderboard）
+    db.ts         SQLite 初始化、建表和兼容迁移
+    index.ts      Express 入口、请求日志、CORS、路由挂载和错误处理
+    middleware.ts 用户存在性校验中间件
+    routes/       user, accounts, ai, submissions, settings, trainingPlan, daily, leaderboard
   data/
-    .gitkeep      保留数据目录，数据库运行时自动生成
-    app.db        SQLite 数据库，不提交到 Git
-  dist/           生产构建输出，不提交到 Git
+    .gitkeep      保留数据目录
+    app.db        SQLite 数据库，运行时自动生成，不提交到 Git
+  dist/           后端生产构建输出，不提交到 Git
 ```
 
 ## 数据存储策略
@@ -139,17 +143,19 @@ server/data/app.db
 
 数据库包含：
 
-- `users`
-- `user_accounts`
-- `user_submissions`
-- `user_state`
-- `leaderboard`
+- `users`：用户 id、密码 hash 和 salt。
+- `user_accounts`：按用户保存 OJ 账号绑定数据。
+- `user_submissions`：按用户和平台保存提交记录。
+- `user_state`：按用户保存设置、训练计划和每日一题状态。
+- `leaderboard`：全局累计积分。
+- `leaderboard_events`：排行榜积分事件，用于今日榜、本周榜、连续打卡榜和去重。
 
 `localStorage` 是前端缓存：
 
 - 后端关闭时保留可用界面。
 - 页面刷新时先显示本地缓存。
 - 服务器成功返回后再覆盖 Store。
+- AI API Key 只保存在浏览器本地缓存，不写入 SQLite。
 
 用户相关缓存必须包含 `userId`：
 
@@ -168,9 +174,10 @@ algolink:currentUserId
 algolink:currentUsername
 algolink.theme
 algolink.leaderboard
+algolink.cfAvatars
 ```
 
-不要提交数据库文件。`.gitignore` 已忽略：
+不提交数据库文件。`.gitignore` 已忽略：
 
 ```text
 server/data/*.db
@@ -179,14 +186,15 @@ server/data/*.db-*
 
 ## 用户方案
 
-当前是简易用户名制，不是正式认证系统：
+当前是简易用户名 + 本地密码方案，不是正式认证系统：
 
-1. 前端输入 `username`。
+1. 前端输入 `username` 和 6-64 位 `password`。
 2. 前端调用 `POST /api/user`。
 3. 后端使用 `username` 作为 `userId`。
-4. 账号、提交、设置、训练计划、每日一题通过 `userId` 隔离。
+4. 首次使用某个用户名时，后端保存 PBKDF2 密码 hash 和 salt；之后使用同一用户名需要密码校验。
+5. 账号、提交、设置、训练计划、每日一题通过 `userId` 隔离。
 
-不要把当前实现描述成已经支持 JWT、密码登录、权限系统或安全会话。
+不要把当前实现描述成已经支持 JWT、权限系统或安全会话。
 
 ## API 列表
 
@@ -208,7 +216,7 @@ GET /api/health
 POST /api/user
 Content-Type: application/json
 
-{ "username": "Aarter" }
+{ "username": "Aarter", "password": "password123" }
 ```
 
 响应：
@@ -238,7 +246,7 @@ GET /api/user/:userId
 }
 ```
 
-### OJ 账号
+### OJ 账号和提交数据
 
 ```http
 PUT /api/user/:userId/accounts
@@ -246,8 +254,6 @@ Content-Type: application/json
 
 { "accounts": [] }
 ```
-
-### 提交记录
 
 ```http
 PUT /api/user/:userId/submissions
@@ -285,21 +291,48 @@ Content-Type: application/json
 { "dailyChallenge": {} }
 ```
 
-### 排行榜
-
-排行榜是全局数据，不按 `userId` 隔离。
+### AI 分析
 
 ```http
-GET /api/leaderboard
+POST /api/user/:userId/ai/advice
+Content-Type: application/json
 ```
+
+请求体包含用户设置、训练统计、弱项标签和近期提交样本。当前仅支持 OpenAI Compatible 接口，后端会请求 `${API Base URL}/chat/completions`，并要求返回可解析 JSON。
+
+未启用或未完整配置 AI 接口时，前端使用本地规则建议作为兜底。
+
+### 排行榜
+
+排行榜是全局数据，不按 `userId` 隔离。读取时可通过 `username` 标记当前用户，通过 `period` 切换榜单。
+
+```http
+GET /api/leaderboard?period=all&username=Aarter&limit=100&offset=0
+```
+
+`period` 可选：
+
+- `all`：累计积分。
+- `today`：今日积分。
+- `week`：本周积分。
+- `streak`：连续打卡天数。
 
 响应：
 
 ```json
 {
   "items": [
-    { "username": "Aarter", "score": 100 }
-  ]
+    { "username": "Aarter", "score": 100, "rank": 1, "isCurrentUser": true }
+  ],
+  "currentUser": {
+    "username": "Aarter",
+    "score": 100,
+    "rank": 1,
+    "isCurrentUser": true,
+    "gapToPrevious": 0
+  },
+  "total": 1,
+  "period": "all"
 }
 ```
 
@@ -307,7 +340,17 @@ GET /api/leaderboard
 POST /api/leaderboard
 Content-Type: application/json
 
-{ "username": "Aarter", "score": 100 }
+{
+  "username": "Aarter",
+  "score": 30,
+  "eventId": "daily:Aarter:2026-05-24:cf-1000A",
+  "source": "daily-challenge",
+  "date": "2026-05-24"
+}
+```
+
+```http
+GET /api/leaderboard/events?username=Aarter&limit=20
 ```
 
 ## 错误响应
@@ -320,35 +363,6 @@ Content-Type: application/json
 
 前端 API Client 会把后端错误、超时、无法连接服务器等情况转换成用户可读提示，并保留本地缓存。
 
-## 临时把电脑当服务器
-
-比赛展示或局域网演示时，可以临时把自己的电脑当服务器。
-
-启动：
-
-```sh
-npm run dev -- --host 0.0.0.0
-```
-
-查看本机局域网 IP：
-
-```powershell
-ipconfig
-```
-
-假设 IPv4 地址是 `192.168.1.23`，同一 Wi-Fi / 局域网中的其他设备访问：
-
-```text
-http://192.168.1.23:5173
-```
-
-同时需要让前端请求这台电脑上的后端。创建 `.env.local`：
-
-```env
-VITE_API_BASE=http://192.168.1.23:3001
-```
-
-然后重启开发服务。Windows 防火墙需要允许 Node.js，或放行 `5173` 和 `3001` 端口。
 
 ## Linux 服务器部署
 
@@ -439,38 +453,13 @@ sudo systemctl reload nginx
 curl http://localhost:3001/api/health
 ```
 
-## GitHub Pages 部署说明
-
-GitHub Pages 只能托管静态前端，不能运行 Express 后端和 SQLite 数据库。
-
-因此：
-
-- 完整项目不适合只部署到 GitHub Pages。
-- 如果只想展示 UI，可以把 GitHub Pages 当作“前端展示版”。
-- 如果要完整运行，需要 GitHub Pages 前端 + 独立后端服务，或直接使用 Linux 服务器部署完整项目。
-
-如果仓库名不是根域名，需要在 `vite.config.ts` 中配置 `base`：
-
-```ts
-export default defineConfig({
-  base: '/your-repo-name/',
-  plugins: [vue(), vueDevTools()],
-})
-```
-
-如果前端托管在 GitHub Pages，后端单独部署，需要配置：
-
-```env
-VITE_API_BASE=https://your-api-domain.com
-```
 
 ## 后续可升级方向
 
-- 接入真实 AI API 生成训练建议（目前使用规则引擎 mock）。
 - JWT 登录与正式权限系统。
+- 更细粒度的 AI 模型配置和提示词模板。
 - PostgreSQL / MySQL 替代 SQLite。
 - 云服务器部署和 HTTPS。
 - 数据备份和迁移脚本。
 - 单元测试和 E2E 测试。
 - CI/CD 自动化部署。
-- 响应式移动端适配。
