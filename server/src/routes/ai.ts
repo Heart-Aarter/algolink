@@ -43,45 +43,6 @@ function getConfiguredProvider(value: string | undefined) {
 }
 
 function getProviderConfig(settings: AiProviderSettings) {
-  const provider = getConfiguredProvider(settings.aiProvider)
-  const baseUrl =
-    settings.aiBaseUrl?.trim() || (provider === 'deepseek' ? deepSeekDefaults.baseUrl : '')
-  const model = settings.aiModel?.trim() || (provider === 'deepseek' ? deepSeekDefaults.model : '')
-  const apiKey = settings.aiApiKey?.trim()
-
-  if (!apiKey) {
-    throw new Error(`请先填写 ${getProviderLabel(provider)} API Key`)
-  }
-
-  if (!baseUrl || !model) {
-    throw new Error(`请先填写 ${getProviderLabel(provider)} 的 API Base URL 和模型名`)
-  }
-
-  return {
-    provider,
-    baseUrl,
-    apiKey,
-    model,
-  }
-}
-
-function getProviderLabel(provider: string) {
-  return provider === 'deepseek' ? 'DeepSeek' : 'OpenAI Compatible'
-}
-
-function getConfiguredProvider(value: string | undefined) {
-  if (!value) {
-    return 'openai-compatible'
-  }
-
-  if (supportedAiProviders.includes(value as (typeof supportedAiProviders)[number])) {
-    return value
-  }
-
-  throw new Error('当前支持 OpenAI Compatible 和 DeepSeek 两种 AI 接口类型')
-}
-
-function getProviderConfig(settings: AiProviderSettings) {
   let provider = getConfiguredProvider(settings.aiProvider)
   const baseUrl =
     settings.aiBaseUrl?.trim() || (provider === 'deepseek' ? deepSeekDefaults.baseUrl : '')
