@@ -12,6 +12,8 @@ interface AiProviderSettings {
   aiPromptPreference?: string
 }
 
+const supportedAiProviders = ['openai-compatible', 'deepseek']
+
 interface ChatCompletionResponse {
   choices?: Array<{
     message?: {
@@ -105,8 +107,8 @@ router.post('/:userId/ai/advice', requireUser, async (req, res) => {
   const apiKey = settings.aiApiKey?.trim()
   const model = settings.aiModel?.trim()
 
-  if (settings.aiProvider && settings.aiProvider !== 'openai-compatible') {
-    return res.status(400).json({ error: '当前仅支持 OpenAI Compatible 接口' })
+  if (settings.aiProvider && !supportedAiProviders.includes(settings.aiProvider)) {
+    return res.status(400).json({ error: '当前仅支持 OpenAI Compatible 和 DeepSeek 接口' })
   }
 
   if (!baseUrl || !apiKey || !model) {

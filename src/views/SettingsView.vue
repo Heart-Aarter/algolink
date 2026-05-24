@@ -2,7 +2,7 @@
 import { computed, nextTick, reactive, watch } from 'vue'
 import { NCheckbox, NInput, NSelect, NSwitch } from 'naive-ui'
 import { useAlgoLinkStore } from '@/stores/algolink'
-import type { UserSettings, OjPlatform } from '@/types/algolink'
+import type { AiProvider, UserSettings, OjPlatform } from '@/types/algolink'
 
 const store = useAlgoLinkStore()
 const form = reactive<UserSettings>({ ...store.settings })
@@ -20,7 +20,29 @@ const aiToneOptions = [
   { label: '鼓励', value: 'encouraging' as const },
 ]
 
-const aiProviderOptions = [{ label: 'OpenAI Compatible', value: 'openai-compatible' as const }]
+const aiProviderDefaults: Record<AiProvider, { baseUrl: string; model: string }> = {
+  'openai-compatible': {
+    baseUrl: 'https://api.openai.com/v1',
+    model: 'gpt-4o-mini',
+  },
+  deepseek: {
+    baseUrl: 'https://api.deepseek.com',
+    model: 'deepseek-v4-flash',
+  },
+}
+
+const aiProviderOptions = [
+  { label: 'OpenAI Compatible', value: 'openai-compatible' as const },
+  { label: 'DeepSeek', value: 'deepseek' as const },
+]
+
+function isKnownDefaultBaseUrl(value: string) {
+  return Object.values(aiProviderDefaults).some((item) => item.baseUrl === value.trim())
+}
+
+function isKnownDefaultModel(value: string) {
+  return Object.values(aiProviderDefaults).some((item) => item.model === value.trim())
+}
 
 const platformOptions = computed(() =>
   store.supportedPlatforms.map((item: OjPlatform) => ({
@@ -50,6 +72,25 @@ watch(
     store.updateSettings({ ...form })
   },
   { deep: true },
+)
+
+watch(
+  () => form.aiProvider,
+  (provider) => {
+    if (syncingFromStore) {
+      return
+    }
+
+    const defaults = aiProviderDefaults[provider]
+
+    if (!form.aiBaseUrl.trim() || isKnownDefaultBaseUrl(form.aiBaseUrl)) {
+      form.aiBaseUrl = defaults.baseUrl
+    }
+
+    if (!form.aiModel.trim() || isKnownDefaultModel(form.aiModel)) {
+      form.aiModel = defaults.model
+    }
+  },
 )
 </script>
 

@@ -1,5 +1,7 @@
 export type OjPlatform = 'Codeforces' | 'Luogu' | 'AtCoder'
 
+export type AiProvider = 'openai-compatible' | 'deepseek'
+
 export type SubmissionStatus =
   | 'Accepted'
   | 'Wrong Answer'
@@ -111,7 +113,7 @@ export interface UserSettings {
   showOnlyPublicData: boolean
   defaultPlatform: OjPlatform
   aiEnabled: boolean
-  aiProvider: 'openai-compatible'
+  aiProvider: AiProvider
   aiBaseUrl: string
   aiApiKey: string
   aiModel: string

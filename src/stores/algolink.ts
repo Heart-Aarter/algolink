@@ -36,6 +36,7 @@ import { weeklyTrainingPlan } from '@/mock/trainingPlan'
 import type {
   OjAccount,
   OjPlatform,
+  AiProvider,
   DailyChallengeState,
   DailyProblem,
   LeaderboardEntry,
@@ -81,6 +82,7 @@ const autoSyncIntervalMs = {
 const autoSyncCheckMs = 60 * 60 * 1000
 
 const defaultLeaderboard: LeaderboardEntry[] = []
+const supportedAiProviders: AiProvider[] = ['openai-compatible', 'deepseek']
 
 function formatDateTime(date = new Date()) {
   const pad = (value: number) => String(value).padStart(2, '0')
@@ -164,6 +166,12 @@ function hasSubmissionCache(value: Record<OjPlatform, SubmissionRecord[]>) {
   return Object.values(value).some((items) => items.length > 0)
 }
 
+function normalizeAiProvider(value: unknown): AiProvider {
+  return supportedAiProviders.includes(value as AiProvider)
+    ? (value as AiProvider)
+    : defaultSettings.aiProvider
+}
+
 interface TrainingPlanCache {
   trainingTasks: TrainingTask[]
   weeklyPlanItems: WeeklyTrainingPlanDay[]
@@ -179,7 +187,7 @@ function normalizeSettings(value: unknown): UserSettings {
   return {
     ...defaultSettings,
     ...source,
-    aiProvider: 'openai-compatible',
+    aiProvider: normalizeAiProvider(source.aiProvider),
     aiEnabled: Boolean(source.aiEnabled),
     aiBaseUrl: typeof source.aiBaseUrl === 'string' ? source.aiBaseUrl : defaultSettings.aiBaseUrl,
     aiApiKey: typeof source.aiApiKey === 'string' ? source.aiApiKey : '',
