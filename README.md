@@ -87,18 +87,18 @@ npm run build
 
 ## 环境变量
 
-前端 API 地址通过 `VITE_API_BASE` 配置。
+前端 API 地址可以通过 `VITE_API_BASE` 覆盖。
 
-本地开发默认值：
+本地开发默认走 Vite `/api` 代理。如果要绕过代理直连后端，可以创建 `.env.local`：
 
 ```env
 VITE_API_BASE=http://localhost:3001
 ```
 
-如果前端和后端同域部署，生产环境可以使用：
+生产环境默认走同源 `/api`，通常不需要配置 `VITE_API_BASE`。如果前端和后端分开部署，可以显式设置完整后端地址：
 
 ```env
-VITE_API_BASE=/api
+VITE_API_BASE=https://your-api-domain.example
 ```
 
 AI 分析接口不通过环境变量固定配置。用户可在设置页选择 OpenAI Compatible 或 DeepSeek，并填写 API Base URL、API Key 和模型名；DeepSeek 默认使用 `https://api.deepseek.com` 和 `deepseek-v4-flash`。API Key 只保存在浏览器本地缓存中，不写入后端 SQLite。真实 AI 请求时，前端会临时发送给本地后端代理转发。
@@ -380,17 +380,13 @@ npm install
 npm run build
 ```
 
-如果前后端同域部署，建议创建 `.env.production`：
-
-```env
-VITE_API_BASE=/api
-```
-
-然后重新构建：
+`npm run build` 只负责构建前端 `dist/` 和后端 `server/dist/`，不会启动生产服务。构建完成后需要启动后端：
 
 ```sh
-npm run build
+npm --workspace server run start
 ```
+
+生产环境前端默认请求当前域名下的 `/api/...`，因此同域部署时通常不需要 `.env.production`。如果前端和 API 不在同一个域名，再通过 `VITE_API_BASE` 指向完整 API 地址并重新构建。
 
 ### systemd 后端服务示例
 

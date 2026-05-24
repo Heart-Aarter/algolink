@@ -24,11 +24,17 @@ const summary = computed(() =>
 )
 const weakTagDetails = computed(() => getTagAnalysis(store.analysisSubmissions).slice(0, 5))
 const isAiConfigured = computed(
-  () =>
-    store.settings.aiEnabled &&
-    Boolean(store.settings.aiBaseUrl.trim()) &&
-    Boolean(store.settings.aiApiKey.trim()) &&
-    Boolean(store.settings.aiModel.trim()),
+  () => {
+    if (!store.settings.aiEnabled || !store.settings.aiApiKey.trim()) {
+      return false
+    }
+
+    if (store.settings.aiProvider === 'deepseek') {
+      return true
+    }
+
+    return Boolean(store.settings.aiBaseUrl.trim()) && Boolean(store.settings.aiModel.trim())
+  },
 )
 
 const toneCopy: Record<
