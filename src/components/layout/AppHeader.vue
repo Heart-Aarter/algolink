@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { computed, h, onMounted } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { NIcon } from 'naive-ui'
 import { Moon, Sunny } from '@vicons/ionicons5'
 import { useTheme } from '@/composables/useTheme'
 import { useAlgoLinkStore } from '@/stores/algolink'
 
 const route = useRoute()
+const router = useRouter()
 const store = useAlgoLinkStore()
 const { theme, themeLabel, applyTheme, initTheme } = useTheme()
 
@@ -18,14 +19,6 @@ const routeTitle = computed(() => {
   return 'Dashboard'
 })
 const mobileThemeIcon = computed(() => (theme.value === 'dark' ? Sunny : Moon))
-const loginRoute = computed(() => ({
-  path: store.currentUserId ? '/profile' : '/login',
-  query: store.currentUserId
-    ? undefined
-    : {
-        redirect: route.fullPath,
-      },
-}))
 
 function setThemeTransitionOrigin(event: MouseEvent) {
   const x = event.clientX
@@ -35,6 +28,27 @@ function setThemeTransitionOrigin(event: MouseEvent) {
   document.documentElement.style.setProperty('--theme-transition-x', `${x}px`)
   document.documentElement.style.setProperty('--theme-transition-y', `${y}px`)
   document.documentElement.style.setProperty('--theme-transition-radius', `${endRadius}px`)
+}
+
+const userMenuOptions = [
+  {
+    label: '个人资料',
+    key: 'profile',
+    icon: () => h('span', { style: 'font-size:14px' }, '👤'),
+  },
+  {
+    label: '退出登录',
+    key: 'logout',
+    icon: () => h('span', { style: 'font-size:14px' }, '🚪'),
+  },
+]
+
+function handleUserMenuSelect(key: string) {
+  if (key === 'logout') {
+    store.logout()
+  } else if (key === 'profile') {
+    router.push('/profile')
+  }
 }
 
 function toggleTheme(event: MouseEvent) {
@@ -75,16 +89,22 @@ onMounted(() => {
     </div>
 
     <div class="header-actions">
-      <RouterLink class="user-tag" :to="loginRoute">
-        <img
-          v-if="store.currentUserAvatar"
-          class="user-tag-avatar"
-          :src="store.currentUserAvatar"
-          :alt="`${store.currentUsername} avatar`"
-        >
-        <span v-else class="user-tag-avatar">{{ store.currentUsername.slice(0, 1).toUpperCase() }}</span>
-        <span class="user-tag-name">{{ store.currentUsername }}</span>
-      </RouterLink>
+      <n-dropdown
+        trigger="click"
+        :options="userMenuOptions"
+        @select="handleUserMenuSelect"
+      >
+        <div class="user-tag">
+          <img
+            v-if="store.currentUserAvatar"
+            class="user-tag-avatar"
+            :src="store.currentUserAvatar"
+            :alt="`${store.currentUsername} avatar`"
+          >
+          <span v-else class="user-tag-avatar">{{ store.currentUsername.slice(0, 1).toUpperCase() }}</span>
+          <span class="user-tag-name">{{ store.currentUsername }}</span>
+        </div>
+      </n-dropdown>
       <button
         class="theme-toggle"
         type="button"

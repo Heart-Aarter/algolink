@@ -11,6 +11,7 @@ import leaderboardRouter from './routes/leaderboard'
 import luoguRouter from './routes/luogu'
 import settingsRouter from './routes/settings'
 import submissionsRouter from './routes/submissions'
+import sessionRouter from './routes/session'
 import trainingPlanRouter from './routes/trainingPlan'
 import userRouter from './routes/user'
 
@@ -39,6 +40,7 @@ app.get('/api/health', (_req, res) => {
 })
 
 app.use('/api/user', userRouter)
+app.use('/api/user', sessionRouter)
 app.use('/api/user', accountsRouter)
 app.use('/api/user', aiRouter)
 app.use('/api/user', aiAdviceRouter)

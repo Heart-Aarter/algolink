@@ -8,8 +8,10 @@ const route = useRoute()
 const router = useRouter()
 const store = useAlgoLinkStore()
 
+const mode = ref<'login' | 'register'>('login')
 const username = ref('')
 const password = ref('')
+const confirmPassword = ref('')
 const submitting = ref(false)
 const errorMessage = ref('')
 const inputRef = ref<InstanceType<typeof NInput> | null>(null)
@@ -24,27 +26,37 @@ const redirectPath = computed(() => {
   return redirect
 })
 
-async function submit() {
+const submitButtonLabel = computed(() => {
+  if (submitting.value) return '请稍候...'
+  return mode.value === 'login' ? '登录 AlgoLink' : '注册 AlgoLink'
+})
+
+function switchMode(newMode: 'login' | 'register') {
+  mode.value = newMode
+  errorMessage.value = ''
+  confirmPassword.value = ''
+}
+
+function validateInputs(): string {
   const trimmed = username.value.trim()
-  const rawPassword = password.value
 
-  if (!trimmed) {
-    errorMessage.value = '请输入用户名'
-    return
+  if (!trimmed) return '请输入用户名'
+  if (trimmed.length > 32) return '用户名最多 32 个字符'
+  if (!/^[A-Za-z0-9_-]+$/.test(trimmed)) return '用户名只允许字母、数字、下划线和连字符'
+
+  if (password.value.length < 6 || password.value.length > 64) return '密码长度必须为 6-64 位'
+
+  if (mode.value === 'register' && password.value !== confirmPassword.value) {
+    return '两次密码输入不一致'
   }
 
-  if (trimmed.length > 32) {
-    errorMessage.value = '用户名最多 32 个字符'
-    return
-  }
+  return ''
+}
 
-  if (!/^[A-Za-z0-9_-]+$/.test(trimmed)) {
-    errorMessage.value = '用户名只允许字母、数字、下划线和连字符'
-    return
-  }
-
-  if (rawPassword.length < 6 || rawPassword.length > 64) {
-    errorMessage.value = '密码长度必须为 6-64 位'
+async function submit() {
+  const validationError = validateInputs()
+  if (validationError) {
+    errorMessage.value = validationError
     return
   }
 
@@ -52,10 +64,12 @@ async function submit() {
   errorMessage.value = ''
 
   try {
-    const result = await store.loginSimpleUser(trimmed, rawPassword)
+    const result = await store.loginSimpleUser(username.value.trim(), password.value)
 
     if (!result.ok) {
-      errorMessage.value = result.message
+      errorMessage.value = mode.value === 'register'
+        ? '注册失败：' + result.message
+        : result.message
       return
     }
 
@@ -100,11 +114,11 @@ onMounted(() => {
           </div>
         </div>
 
-        <p class="eyebrow">IDENTITY / 用户名</p>
+        <p class="eyebrow">AUTH / 身份验证</p>
         <h1>进入 AlgoLink 控制台</h1>
         <p>
-          输入公开用户名即可开始。新用户名会自动注册，已注册用户会加载服务端保存的账号、
-          提交记录、训练计划和每日一题数据。
+          已注册用户输入用户名和密码登录。
+          新用户请切换到「注册」，创建账号后自动登录。
         </p>
 
         <div class="login-metrics" aria-hidden="true">
@@ -114,39 +128,75 @@ onMounted(() => {
         </div>
       </div>
 
-      <form class="auth-form" @submit.prevent="submit">
-        <div class="auth-input-wrap">
-          <n-input
-            ref="inputRef"
-            v-model:value="username"
-            size="large"
-            placeholder="username"
-            :disabled="submitting"
-            :status="errorMessage ? 'error' : undefined"
-            @keydown.enter="submit"
+      <div class="auth-form">
+        <div class="auth-mode-tabs">
+          <button
+            type="button"
+            class="auth-mode-tab"
+            :class="{ active: mode === 'login' }"
+            @click="switchMode('login')"
           >
-            <template #prefix>@</template>
-          </n-input>
+            登录
+          </button>
+          <button
+            type="button"
+            class="auth-mode-tab"
+            :class="{ active: mode === 'register' }"
+            @click="switchMode('register')"
+          >
+            注册
+          </button>
         </div>
 
-        <div class="auth-input-wrap">
-          <n-input
-            v-model:value="password"
-            type="password"
-            show-password-on="click"
-            size="large"
-            placeholder="password"
-            :disabled="submitting"
-            :status="errorMessage ? 'error' : undefined"
-            @keydown.enter="submit"
-          >
-            <template #prefix>#</template>
-          </n-input>
-        </div>
+        <form @submit.prevent="submit">
+          <div class="auth-input-wrap">
+            <n-input
+              ref="inputRef"
+              v-model:value="username"
+              size="large"
+              placeholder="username"
+              :disabled="submitting"
+              :status="errorMessage ? 'error' : undefined"
+              @keydown.enter="submit"
+            >
+              <template #prefix>@</template>
+            </n-input>
+          </div>
 
-        <n-button type="primary" size="large" attr-type="submit" :loading="submitting" block strong>
-          {{ submitting ? '正在连接...' : '进入 AlgoLink' }}
-        </n-button>
+          <div class="auth-input-wrap">
+            <n-input
+              v-model:value="password"
+              type="password"
+              show-password-on="click"
+              size="large"
+              :placeholder="mode === 'register' ? '设置密码 (6-64 位)' : 'password'"
+              :disabled="submitting"
+              :status="errorMessage ? 'error' : undefined"
+              @keydown.enter="submit"
+            >
+              <template #prefix>#</template>
+            </n-input>
+          </div>
+
+          <div v-if="mode === 'register'" class="auth-input-wrap">
+            <n-input
+              v-model:value="confirmPassword"
+              type="password"
+              show-password-on="click"
+              size="large"
+              placeholder="确认密码"
+              :disabled="submitting"
+              :status="errorMessage ? 'error' : undefined"
+              @keydown.enter="submit"
+            >
+              <template #prefix>#</template>
+            </n-input>
+          </div>
+
+          <n-button type="primary" size="large" attr-type="submit" :loading="submitting" block strong>
+            {{ submitButtonLabel }}
+          </n-button>
+        </form>
 
         <Transition name="auth-error">
           <p v-if="errorMessage" class="auth-error">{{ errorMessage }}</p>
@@ -156,7 +206,7 @@ onMounted(() => {
           <span>SYNCING FROM PUBLIC OJ DATA</span>
           <n-tag type="info" size="tiny" round>仅公开 handle</n-tag>
         </div>
-      </form>
+      </div>
     </section>
   </main>
 </template>
@@ -354,6 +404,40 @@ onMounted(() => {
   align-content: center;
   gap: 14px;
   padding: 58px 44px 42px;
+}
+
+.auth-mode-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 4px;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.auth-mode-tab {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 720;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.auth-mode-tab.active {
+  background:
+    linear-gradient(135deg, rgba(194, 138, 46, 0.15), transparent 48%),
+    rgba(255, 255, 255, 0.04);
+  color: var(--color-heading);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.auth-mode-tab:not(.active):hover {
+  color: var(--color-text-soft);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .auth-input-wrap {

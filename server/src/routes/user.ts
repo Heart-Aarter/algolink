@@ -134,8 +134,8 @@ router.post('/', (req, res) => {
       )
     } else {
       db.prepare(
-        'INSERT INTO users (id, password_hash, password_salt) VALUES (?, ?, ?)',
-      ).run(username, hash, salt)
+        'INSERT INTO users (id, password_hash, password_salt, created) VALUES (?, ?, ?, ?)',
+      ).run(username, hash, salt, new Date().toISOString())
     }
   }
 

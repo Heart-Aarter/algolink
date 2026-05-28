@@ -135,6 +135,11 @@ export async function loginUser(username: string, password: string) {
   return response.data
 }
 
+export async function logoutUser() {
+  const response = await apiClient.delete<{ ok: boolean }>('/api/user/session')
+  return response.data
+}
+
 export async function getUserData(userId: string) {
   const response = await apiClient.get<UserDataResponse>(`/api/user/${encodeURIComponent(userId)}`)
   return response.data

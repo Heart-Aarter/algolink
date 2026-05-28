@@ -23,6 +23,7 @@ import {
   getLeaderboard,
   getUserData,
   loginUser,
+  logoutUser,
   saveAccounts,
   saveAiAdvice as saveSavedAiAdvice,
   saveAiApiKey as saveSavedAiApiKey,
@@ -684,6 +685,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
   function clearLoginSession(redirectToLogin = false) {
     currentUserId.value = ''
+    currentUsername.value = ''
     sessionToken.value = ''
     sessionExpiresAt.value = ''
     hasAiApiKey.value = false
@@ -693,6 +695,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     }
     setApiSession('')
     localStorage.removeItem(storageKeys.currentUserId)
+    localStorage.removeItem(storageKeys.currentUsername)
     localStorage.removeItem(storageKeys.sessionToken)
     localStorage.removeItem(storageKeys.sessionExpiresAt)
     serverSyncMessage.value = 'Session expired. Please log in again.'
@@ -701,6 +704,15 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`
       window.location.assign(`/login?redirect=${encodeURIComponent(redirect)}`)
     }
+  }
+
+  async function logout() {
+    try {
+      await logoutUser()
+    } catch {
+      // Even if the server call fails, clear local session
+    }
+    clearLoginSession(true)
   }
 
   setApiUnauthorizedHandler(() => {
@@ -1763,6 +1775,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     saveAiAdviceToServer,
     updateWeeklyPlanStatus,
     addWeeklyPlanDay,
+    logout,
     resetLocalData,
   }
 })

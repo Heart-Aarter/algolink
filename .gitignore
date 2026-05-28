@@ -44,6 +44,10 @@ __screenshots__/
 # Server data
 server/data/*.db
 server/data/*.db-*
+server/data/*.bak
+
+# Claude local overrides
+.claude/settings.local.json
 
 # Competition submission package
 /启航赛道-三分图/

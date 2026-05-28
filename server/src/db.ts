@@ -15,6 +15,7 @@ export function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
+      created TEXT NOT NULL DEFAULT (datetime('now')),
       password_hash TEXT,
       password_salt TEXT
     );
@@ -88,7 +89,7 @@ export function initDatabase() {
     }
   }
 
-  for (const column of ['password_hash', 'password_salt']) {
+  for (const column of ['password_hash', 'password_salt', 'created']) {
     try {
       db.prepare(`ALTER TABLE users ADD COLUMN ${column} TEXT`).run()
     } catch {
