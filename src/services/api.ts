@@ -166,6 +166,14 @@ export async function saveSettings(userId: string, settings: unknown) {
   return response.data
 }
 
+export async function saveAiApiKey(userId: string, aiApiKey: string) {
+  const response = await apiClient.put<{ userId: string; hasAiApiKey: boolean }>(
+    `/api/user/${encodeURIComponent(userId)}/settings/ai-key`,
+    { aiApiKey },
+  )
+  return response.data
+}
+
 export async function clearAiApiKey(userId: string) {
   const response = await apiClient.delete<{ userId: string; hasAiApiKey: boolean }>(
     `/api/user/${encodeURIComponent(userId)}/settings/ai-key`,

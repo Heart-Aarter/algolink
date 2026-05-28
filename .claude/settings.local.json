@@ -8,7 +8,9 @@
       "Bash(npx *)",
       "Bash(xargs grep -l \"console.log\\\\|console\\\\.error\\\\|console\\\\.warn\")",
       "Bash(grep *)",
-      "Bash(awk *)"
+      "Bash(awk *)",
+      "Bash(git log *)",
+      "Bash(git show *)"
     ]
   }
 }

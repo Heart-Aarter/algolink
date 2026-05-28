@@ -24,6 +24,7 @@ import {
   getUserData,
   loginUser,
   saveAccounts,
+  saveAiApiKey as saveSavedAiApiKey,
   saveDailyChallenge,
   saveSettings,
   saveSubmissions,
@@ -202,8 +203,9 @@ function normalizeSettings(value: unknown): UserSettings {
   }
 }
 
-function getServerSafeSettings(value: UserSettings): UserSettings {
-  return value
+function getServerSafeSettings(value: UserSettings) {
+  const { aiApiKey: _aiApiKey, ...settings } = value
+  return settings
 }
 
 function isSessionActive(expiresAt: string) {
@@ -462,13 +464,6 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     saveSettings(currentUserId.value, getServerSafeSettings(settings.value))
       .then((response) => {
         hasAiApiKey.value = response.hasAiApiKey
-        if (settings.value.aiApiKey.trim() && response.hasAiApiKey) {
-          settings.value = {
-            ...settings.value,
-            aiApiKey: '',
-          }
-          persistSettings()
-        }
         serverSyncMessage.value = ''
       })
       .catch(() => {
@@ -652,6 +647,10 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     sessionToken.value = ''
     sessionExpiresAt.value = ''
     hasAiApiKey.value = false
+    settings.value = {
+      ...settings.value,
+      aiApiKey: '',
+    }
     setApiSession('')
     localStorage.removeItem(storageKeys.currentUserId)
     localStorage.removeItem(storageKeys.sessionToken)
@@ -917,14 +916,15 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       aiApiKey: serverData.hasAiApiKey ? '' : localSettings.aiApiKey,
     }
     if (!serverData.settings && allowLegacyMigration && !hasUserSettingsCache) {
-      await saveSettings(userId, { ...getServerSafeSettings(settings.value), aiApiKey: '' })
-    }
-    if (!serverData.hasAiApiKey && legacyAiApiKey) {
       try {
-        const response = await saveSettings(userId, {
-          ...getServerSafeSettings(settings.value),
-          aiApiKey: legacyAiApiKey,
-        })
+        await saveSettings(userId, getServerSafeSettings(settings.value))
+      } catch {
+        serverSyncMessage.value = 'Server sync failed. Local cache is kept.'
+      }
+    }
+    if (legacyAiApiKey) {
+      try {
+        const response = await saveSavedAiApiKey(userId, legacyAiApiKey)
         hasAiApiKey.value = response.hasAiApiKey
 
         if (response.hasAiApiKey) {
@@ -1548,14 +1548,12 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
         aiApiKey: trimmedApiKey,
       }
       persistSettings()
+      hasAiApiKey.value = true
       return { ok: true, message: 'API Key 已保存到本地缓存' }
     }
 
     try {
-      const response = await saveSettings(currentUserId.value, {
-        ...getServerSafeSettings(settings.value),
-        aiApiKey: trimmedApiKey,
-      })
+      const response = await saveSavedAiApiKey(currentUserId.value, trimmedApiKey)
       hasAiApiKey.value = response.hasAiApiKey
       settings.value = {
         ...settings.value,
@@ -1569,6 +1567,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
         aiApiKey: trimmedApiKey,
       }
       persistSettings()
+      hasAiApiKey.value = false
       const message = error instanceof Error ? error.message : 'API Key 保存失败'
       return { ok: false, message }
     }

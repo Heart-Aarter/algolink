@@ -244,15 +244,55 @@ function getProviderErrorMessage(provider: string, status: number, detail: strin
 
 function getRequestErrorMessage(provider: string, error: Error) {
   if (error.name === 'AbortError') {
-    return `${getProviderLabel(provider)} 接口请求超时`
+    return `${getProviderLabel(provider)} 接口请求超时（60 秒），请检查网络连接或稍后重试`
   }
 
   if (error.message === 'fetch failed') {
     const cause = error.cause instanceof Error ? `：${error.cause.message}` : ''
-    return `${getProviderLabel(provider)} 网络请求失败，请检查服务器网络、DNS、HTTPS 证书或反向代理配置${cause}`
+    const deepseekHint =
+      provider === 'deepseek'
+        ? '。提示：国内部分网络环境可能无法直接访问 DeepSeek API，可尝试配置反向代理或更换为 OpenAI Compatible 接口'
+        : '，请检查服务器网络、DNS、HTTPS 证书或反向代理配置'
+    return `${getProviderLabel(provider)} 网络请求失败${deepseekHint}${cause}`
   }
 
   return error.message
+}
+
+async function fetchWithRetry(
+  endpoint: string,
+  options: Omit<RequestInit, 'signal'>,
+  timeoutMs = 60000,
+  maxRetries = 1,
+): Promise<Response> {
+  let lastError: Error | undefined
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+    try {
+      const response = await fetch(endpoint, { ...options, signal: controller.signal })
+      return response
+    } catch (error) {
+      clearTimeout(timeout)
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          throw error
+        }
+        lastError = error
+      } else {
+        throw error
+      }
+
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+      }
+    }
+  }
+
+  throw lastError!
 }
 
 router.post('/:userId/ai/advice', requireUser, async (req, res) => {
@@ -272,49 +312,50 @@ router.post('/:userId/ai/advice', requireUser, async (req, res) => {
     return res.status(400).json({ error: message })
   }
 
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 40000)
-
   try {
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        'Content-Type': 'application/json',
+    const response = await fetchWithRetry(
+      endpoint,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${config.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: config.model,
+          temperature: 0.35,
+          stream: false,
+          response_format: { type: 'json_object' },
+          messages: [
+            {
+              role: 'system',
+              content:
+                '你是算法竞赛训练教练。只返回 JSON，不要 Markdown。JSON 字段必须包含 headline、summary、findings、actions、weeklyFocus、recommendedTags。findings 是对象数组，字段 title/detail/severity；actions 是对象数组，字段 title/detail/days。必须输出一个完整 JSON object。',
+            },
+            {
+              role: 'user',
+              content: JSON.stringify({
+                tone: req.body?.settings?.aiTone || 'balanced',
+                userPromptPreference: req.body?.settings?.aiPromptPreference || '',
+                analysis: req.body?.analysis,
+                weakTags: req.body?.weakTags,
+                recentSubmissions: req.body?.recentSubmissions,
+                expectedJsonExample: {
+                  headline: '一句训练判断',
+                  summary: '一段简短总结',
+                  findings: [{ title: '问题标题', detail: '问题细节', severity: 'medium' }],
+                  actions: [{ title: '行动标题', detail: '行动细节', days: 3 }],
+                  weeklyFocus: ['图论'],
+                  recommendedTags: ['dp'],
+                },
+              }),
+            },
+          ],
+        }),
       },
-      body: JSON.stringify({
-        model: config.model,
-        temperature: 0.35,
-        stream: false,
-        response_format: { type: 'json_object' },
-        messages: [
-          {
-            role: 'system',
-            content:
-              '你是算法竞赛训练教练。只返回 JSON，不要 Markdown。JSON 字段必须包含 headline、summary、findings、actions、weeklyFocus、recommendedTags。findings 是对象数组，字段 title/detail/severity；actions 是对象数组，字段 title/detail/days。必须输出一个完整 JSON object。',
-          },
-          {
-            role: 'user',
-            content: JSON.stringify({
-              tone: req.body?.settings?.aiTone || 'balanced',
-              userPromptPreference: req.body?.settings?.aiPromptPreference || '',
-              analysis: req.body?.analysis,
-              weakTags: req.body?.weakTags,
-              recentSubmissions: req.body?.recentSubmissions,
-              expectedJsonExample: {
-                headline: '一句训练判断',
-                summary: '一段简短总结',
-                findings: [{ title: '问题标题', detail: '问题细节', severity: 'medium' }],
-                actions: [{ title: '行动标题', detail: '行动细节', days: 3 }],
-                weeklyFocus: ['图论'],
-                recommendedTags: ['dp'],
-              },
-            }),
-          },
-        ],
-      }),
-      signal: controller.signal,
-    })
+      60000,
+      1,
+    )
 
     if (!response.ok) {
       const detail = await readErrorDetail(response)
@@ -337,8 +378,6 @@ router.post('/:userId/ai/advice', requireUser, async (req, res) => {
     const message =
       error instanceof Error ? getRequestErrorMessage(config.provider, error) : 'AI 分析请求失败'
     return res.status(502).json({ error: message })
-  } finally {
-    clearTimeout(timeout)
   }
 })
 
