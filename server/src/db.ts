@@ -80,6 +80,14 @@ export function initDatabase() {
       ON user_sessions(expires_at);
   `)
 
+  for (const column of ['ai_advice', 'ai_advice_generated_at']) {
+    try {
+      db.prepare(`ALTER TABLE user_state ADD COLUMN ${column} TEXT`).run()
+    } catch {
+      // Existing databases already have this column.
+    }
+  }
+
   for (const column of ['password_hash', 'password_salt']) {
     try {
       db.prepare(`ALTER TABLE users ADD COLUMN ${column} TEXT`).run()

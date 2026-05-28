@@ -35,6 +35,8 @@ type StateRow = {
   settings: string | null
   training_plan: string | null
   daily_challenge: string | null
+  ai_advice: string | null
+  ai_advice_generated_at: string | null
 }
 
 type SecretRow = {
@@ -168,7 +170,7 @@ router.get('/:userId', requireUser, (req, res) => {
     .prepare('SELECT platform, data FROM user_submissions WHERE user_id = ?')
     .all(userId) as SubmissionRow[]
   const stateRow = db
-    .prepare('SELECT settings, training_plan, daily_challenge FROM user_state WHERE user_id = ?')
+    .prepare('SELECT settings, training_plan, daily_challenge, ai_advice, ai_advice_generated_at FROM user_state WHERE user_id = ?')
     .get(userId) as StateRow | undefined
   const secretRow = db
     .prepare('SELECT ai_api_key_ciphertext FROM user_secrets WHERE user_id = ?')
@@ -189,6 +191,8 @@ router.get('/:userId', requireUser, (req, res) => {
     hasAiApiKey: Boolean(secretRow?.ai_api_key_ciphertext),
     trainingPlan: parseJson<unknown | null>(stateRow?.training_plan, null),
     dailyChallenge: parseJson<unknown | null>(stateRow?.daily_challenge, null),
+    aiAdvice: parseJson<unknown | null>(stateRow?.ai_advice, null),
+    aiAdviceGeneratedAt: stateRow?.ai_advice_generated_at ?? null,
   })
 })
 

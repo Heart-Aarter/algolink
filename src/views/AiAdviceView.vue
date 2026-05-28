@@ -5,7 +5,7 @@ import { problemRecommendations as recommendedProblems } from '@/mock/algolink'
 import { weeklyTrainingPlan } from '@/mock/trainingPlan'
 import { generateAiAdvice } from '@/services/api'
 import { useAlgoLinkStore } from '@/stores/algolink'
-import type { AiAdviceResponse, UserSettings } from '@/types/algolink'
+import type { UserSettings } from '@/types/algolink'
 import {
   calculateSubmissionAnalysis,
   getTagAnalysis,
@@ -20,7 +20,13 @@ const isGenerating = ref(false)
 const aiError = ref('')
 const aiStatusMessage = ref('')
 const aiStatusType = ref<'success' | 'info'>('info')
-const aiAdvice = ref<AiAdviceResponse | null>(null)
+
+function formatDateTime(iso: string) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 
 const summary = computed(() =>
   getTrainingSummary(store.analysisSubmissions, store.settings.aiTone),
@@ -70,8 +76,8 @@ const tonedSummary = computed(() => ({
 }))
 
 const heroSummary = computed(() => {
-  if (aiAdvice.value) {
-    return `${aiAdvice.value.headline} ${aiAdvice.value.summary}`
+  if (store.aiAdvice) {
+    return `${store.aiAdvice.headline} ${store.aiAdvice.summary}`
   }
 
   return `${tonedSummary.value.headline} ${tonedSummary.value.focus} ${tonedSummary.value.suggestion}`
@@ -136,7 +142,8 @@ async function generateAdvice() {
   aiStatusMessage.value = ''
 
   if (!isAiConfigured.value) {
-    aiAdvice.value = null
+    store.aiAdvice = null
+    store.aiAdviceGeneratedAt = ''
     aiStatusType.value = 'info'
     aiStatusMessage.value = '已切换为本地规则建议，未调用真实 AI。'
     message.info(aiStatusMessage.value)
@@ -145,7 +152,8 @@ async function generateAdvice() {
 
   if (!store.currentUserId) {
     aiError.value = '请先登录用户，再调用真实 AI 分析。'
-    aiAdvice.value = null
+    store.aiAdvice = null
+    store.aiAdviceGeneratedAt = ''
     message.error(aiError.value)
     return
   }
@@ -165,7 +173,7 @@ async function generateAdvice() {
           }
         : store.settings
 
-    aiAdvice.value = await generateAiAdvice(store.currentUserId, {
+    store.aiAdvice = await generateAiAdvice(store.currentUserId, {
       settings: {
         aiProvider: aiRequestSettings.aiProvider,
         aiBaseUrl: aiRequestSettings.aiBaseUrl,
@@ -177,12 +185,15 @@ async function generateAdvice() {
       weakTags: weakTagDetails.value,
       recentSubmissions: getRecentSubmissionSample(),
     })
+    store.aiAdviceGeneratedAt = new Date().toISOString()
+    store.saveAiAdviceToServer()
     const elapsedSeconds = Math.max(0.1, (performance.now() - startedAt) / 1000).toFixed(1)
     aiStatusType.value = 'success'
     aiStatusMessage.value = `AI 建议已生成：${aiRequestSettings.aiModel}，耗时 ${elapsedSeconds}s。`
     message.success(aiStatusMessage.value)
   } catch (error) {
-    aiAdvice.value = null
+    store.aiAdvice = null
+    store.aiAdviceGeneratedAt = ''
     aiError.value = error instanceof Error ? error.message : 'AI 分析失败，已回退到本地规则建议。'
     message.error(aiError.value)
   } finally {
@@ -194,7 +205,7 @@ async function generateAdvice() {
 <template>
   <div class="page-stack">
     <section class="panel ai-brief">
-      <p class="eyebrow">{{ aiAdvice ? 'AI Coach Live' : 'AI Coach Fallback' }}</p>
+      <p class="eyebrow">{{ store.aiAdvice ? 'AI Coach Live' : 'AI Coach Fallback' }}</p>
       <h2>联动能力画像的训练建议</h2>
       <p>{{ heroSummary }}</p>
       <div class="coach-summary-grid">
@@ -208,7 +219,11 @@ async function generateAdvice() {
         </div>
         <div>
           <span>分析模式</span>
-          <strong>{{ aiAdvice ? '真实 AI' : isAiConfigured ? '待生成' : '本地规则' }}</strong>
+          <strong>{{ store.aiAdvice ? '真实 AI' : isAiConfigured ? '待生成' : '本地规则' }}</strong>
+        </div>
+        <div v-if="store.aiAdviceGeneratedAt">
+          <span>上次生成</span>
+          <strong>{{ formatDateTime(store.aiAdviceGeneratedAt) }}</strong>
         </div>
       </div>
     </section>
@@ -247,7 +262,7 @@ async function generateAdvice() {
     <section class="panel">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">{{ aiAdvice ? 'Live Result' : 'Fallback Result' }}</p>
+          <p class="eyebrow">{{ store.aiAdvice ? 'Live Result' : 'Fallback Result' }}</p>
           <h2>{{ modeTitle }}</h2>
         </div>
         <RouterLink v-if="activeMode === 'weekly-plan'" class="text-link" to="/training-plan">
@@ -271,17 +286,17 @@ async function generateAdvice() {
       <n-spin :show="isGenerating">
         <Transition name="tab-fade" mode="out-in">
           <div v-if="activeMode === 'rules'" :key="activeMode" class="analysis-list">
-            <template v-if="aiAdvice">
+            <template v-if="store.aiAdvice">
               <article class="analysis-card">
                 <div class="metric-top">
                   <h3>AI 总结</h3>
                   <n-tag type="success" size="small" round>{{ store.settings.aiModel }}</n-tag>
                 </div>
-                <p>{{ aiAdvice.summary }}</p>
-                <strong>{{ aiAdvice.headline }}</strong>
+                <p>{{ store.aiAdvice.summary }}</p>
+                <strong>{{ store.aiAdvice.headline }}</strong>
               </article>
               <article
-                v-for="item in aiAdvice.findings"
+                v-for="item in store.aiAdvice.findings"
                 :key="`${item.title}-${item.detail}`"
                 class="analysis-card"
               >
@@ -294,7 +309,7 @@ async function generateAdvice() {
                 <p>{{ item.detail }}</p>
               </article>
               <article
-                v-for="item in aiAdvice.actions"
+                v-for="item in store.aiAdvice.actions"
                 :key="`${item.title}-${item.detail}`"
                 class="analysis-card"
               >
@@ -312,11 +327,11 @@ async function generateAdvice() {
                   <n-tag type="success" size="small" round>Focus</n-tag>
                 </div>
                 <div class="submission-tags">
-                  <n-tag v-for="item in aiAdvice.weeklyFocus" :key="item" size="small" round>
+                  <n-tag v-for="item in store.aiAdvice.weeklyFocus" :key="item" size="small" round>
                     {{ item }}
                   </n-tag>
                   <n-tag
-                    v-for="item in aiAdvice.recommendedTags"
+                    v-for="item in store.aiAdvice.recommendedTags"
                     :key="`tag-${item}`"
                     size="small"
                     round

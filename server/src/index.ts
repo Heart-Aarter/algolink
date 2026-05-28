@@ -4,6 +4,7 @@ import express from 'express'
 import type { ErrorRequestHandler, RequestHandler } from 'express'
 import { initDatabase } from './db'
 import aiRouter from './routes/ai'
+import aiAdviceRouter from './routes/aiAdvice'
 import accountsRouter from './routes/accounts'
 import dailyRouter from './routes/daily'
 import leaderboardRouter from './routes/leaderboard'
@@ -40,6 +41,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/user', userRouter)
 app.use('/api/user', accountsRouter)
 app.use('/api/user', aiRouter)
+app.use('/api/user', aiAdviceRouter)
 app.use('/api/user', submissionsRouter)
 app.use('/api/user', settingsRouter)
 app.use('/api/user', trainingPlanRouter)

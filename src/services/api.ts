@@ -81,6 +81,8 @@ export interface UserDataResponse {
   hasAiApiKey: boolean
   trainingPlan: unknown | null
   dailyChallenge: unknown | null
+  aiAdvice: unknown | null
+  aiAdviceGeneratedAt: string | null
 }
 
 export interface LeaderboardItem {
@@ -185,6 +187,14 @@ export async function saveTrainingPlan(userId: string, trainingPlan: unknown) {
   const response = await apiClient.put<{ userId: string; trainingPlan: unknown }>(
     `/api/user/${encodeURIComponent(userId)}/training-plan`,
     { trainingPlan },
+  )
+  return response.data
+}
+
+export async function saveAiAdvice(userId: string, aiAdvice: unknown) {
+  const response = await apiClient.put<{ userId: string; aiAdvice: unknown }>(
+    `/api/user/${encodeURIComponent(userId)}/ai-advice`,
+    { aiAdvice },
   )
   return response.data
 }

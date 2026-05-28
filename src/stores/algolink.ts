@@ -24,6 +24,7 @@ import {
   getUserData,
   loginUser,
   saveAccounts,
+  saveAiAdvice as saveSavedAiAdvice,
   saveAiApiKey as saveSavedAiApiKey,
   saveDailyChallenge,
   saveSettings,
@@ -38,6 +39,7 @@ import { fetchLuoguSyncData } from '@/services/luogu'
 import { toSubmissionRecord } from '@/services/normalizers'
 import { weeklyTrainingPlan } from '@/mock/trainingPlan'
 import type {
+  AiAdviceResponse,
   OjAccount,
   OjPlatform,
   AiProvider,
@@ -369,6 +371,16 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
         )
       : readStorage<DailyChallengeState | null>(storageKeys.dailyChallenge, null),
   )
+  const aiAdvice = ref<AiAdviceResponse | null>(
+    currentUserId.value
+      ? readStorage<AiAdviceResponse | null>(getUserCacheKey(currentUserId.value, 'aiAdvice'), null)
+      : null,
+  )
+  const aiAdviceGeneratedAt = ref(
+    currentUserId.value
+      ? readStorage<string>(getUserCacheKey(currentUserId.value, 'aiAdviceGeneratedAt'), '')
+      : '',
+  )
   const leaderboardEntries = shallowRef<LeaderboardEntry[]>(
     readStorage<LeaderboardEntry[]>(storageKeys.leaderboard, defaultLeaderboard),
   )
@@ -501,6 +513,34 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       ? getUserCacheKey(currentUserId.value, 'dailyChallenge')
       : storageKeys.dailyChallenge
     writeStorage(key, dailyChallenge.value)
+  }
+
+  function persistAiAdvice() {
+    const userId = currentUserId.value
+    if (!userId) {
+      return
+    }
+    writeStorage(getUserCacheKey(userId, 'aiAdvice'), aiAdvice.value)
+    writeStorage(getUserCacheKey(userId, 'aiAdviceGeneratedAt'), aiAdviceGeneratedAt.value)
+  }
+
+  async function saveAiAdviceToServer() {
+    if (!currentUserId.value) {
+      persistAiAdvice()
+      return
+    }
+
+    try {
+      await saveSavedAiAdvice(currentUserId.value, {
+        advice: aiAdvice.value,
+        generatedAt: aiAdviceGeneratedAt.value,
+      })
+      persistAiAdvice()
+      serverSyncMessage.value = ''
+    } catch {
+      persistAiAdvice()
+      serverSyncMessage.value = 'Server sync failed. Local cache is kept.'
+    }
   }
 
   function pushDailyChallengeToServer() {
@@ -692,6 +732,14 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
     dailyChallenge.value = normalizeDailyChallenge(
       readStorage<unknown>(getUserCacheKey(userId, 'dailyChallenge'), null),
+    )
+    aiAdvice.value = readStorage<AiAdviceResponse | null>(
+      getUserCacheKey(userId, 'aiAdvice'),
+      null,
+    )
+    aiAdviceGeneratedAt.value = readStorage<string>(
+      getUserCacheKey(userId, 'aiAdviceGeneratedAt'),
+      '',
     )
   }
 
@@ -993,6 +1041,23 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     ) {
       await saveDailyChallenge(userId, dailyChallenge.value)
     }
+
+    const userAiAdviceKey = getUserCacheKey(userId, 'aiAdvice')
+    const hasUserAiAdviceCache = hasStorageValue(userAiAdviceKey)
+    if (serverData.aiAdvice) {
+      aiAdvice.value = serverData.aiAdvice as AiAdviceResponse | null
+      aiAdviceGeneratedAt.value = serverData.aiAdviceGeneratedAt ?? ''
+    } else if (hasUserAiAdviceCache) {
+      aiAdvice.value = readStorage<AiAdviceResponse | null>(userAiAdviceKey, null)
+      aiAdviceGeneratedAt.value = readStorage<string>(
+        getUserCacheKey(userId, 'aiAdviceGeneratedAt'),
+        '',
+      )
+    } else {
+      aiAdvice.value = null
+      aiAdviceGeneratedAt.value = ''
+    }
+    persistAiAdvice()
   }
 
   async function loginSimpleUser(
@@ -1634,6 +1699,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     persistSettings()
     persistTrainingPlan()
     dailyChallenge.value = null
+    aiAdvice.value = null
+    aiAdviceGeneratedAt.value = ''
     leaderboardEntries.value = defaultLeaderboard
     persistDailyChallenge()
     persistLeaderboard()
@@ -1655,6 +1722,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
 
   return {
     accounts,
+    aiAdvice,
+    aiAdviceGeneratedAt,
     settings,
     submissions,
     syncedSubmissions,
@@ -1691,6 +1760,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     updateSettings,
     saveStoredAiApiKey,
     clearStoredAiApiKey,
+    saveAiAdviceToServer,
     updateWeeklyPlanStatus,
     addWeeklyPlanDay,
     resetLocalData,
