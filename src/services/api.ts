@@ -8,6 +8,17 @@ const apiClient = axios.create({
   timeout: 10000,
 })
 
+let sessionToken = ''
+let unauthorizedHandler: (() => void) | null = null
+
+export function setApiSession(token: string) {
+  sessionToken = token
+}
+
+export function setApiUnauthorizedHandler(handler: (() => void) | null) {
+  unauthorizedHandler = handler
+}
+
 function getApiErrorMessage(error: unknown) {
   if (!axios.isAxiosError(error)) {
     return error instanceof Error ? error.message : '请求失败，请稍后重试'
@@ -31,14 +42,35 @@ function getApiErrorMessage(error: unknown) {
   return `服务器请求失败 (${axiosError.response.status})`
 }
 
+apiClient.interceptors.request.use((config) => {
+  if (sessionToken) {
+    config.headers.Authorization = `Bearer ${sessionToken}`
+  }
+
+  return config
+})
+
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject(new Error(getApiErrorMessage(error))),
+  (error) => {
+    if (axios.isAxiosError(error)) {
+      const url = error.config?.url ?? ''
+      const isLoginRequest = error.config?.method === 'post' && url === '/api/user'
+
+      if (error.response?.status === 401 && !isLoginRequest) {
+        unauthorizedHandler?.()
+      }
+    }
+
+    return Promise.reject(new Error(getApiErrorMessage(error)))
+  },
 )
 
 export interface LoginUserResponse {
   userId: string
   username: string
+  sessionToken: string
+  sessionExpiresAt: string
 }
 
 export interface UserDataResponse {
@@ -46,6 +78,7 @@ export interface UserDataResponse {
   accounts: unknown[]
   submissions: Record<string, unknown[]>
   settings: unknown | null
+  hasAiApiKey: boolean
   trainingPlan: unknown | null
   dailyChallenge: unknown | null
 }
@@ -86,7 +119,6 @@ export interface AiAdviceRequest {
     UserSettings,
     | 'aiProvider'
     | 'aiBaseUrl'
-    | 'aiApiKey'
     | 'aiModel'
     | 'aiTone'
     | 'aiPromptPreference'
@@ -123,9 +155,20 @@ export async function saveSubmissions(userId: string, submissions: Record<string
 }
 
 export async function saveSettings(userId: string, settings: unknown) {
-  const response = await apiClient.put<{ userId: string; settings: unknown }>(
+  const response = await apiClient.put<{
+    userId: string
+    settings: unknown
+    hasAiApiKey: boolean
+  }>(
     `/api/user/${encodeURIComponent(userId)}/settings`,
     { settings },
+  )
+  return response.data
+}
+
+export async function clearAiApiKey(userId: string) {
+  const response = await apiClient.delete<{ userId: string; hasAiApiKey: boolean }>(
+    `/api/user/${encodeURIComponent(userId)}/settings/ai-key`,
   )
   return response.data
 }

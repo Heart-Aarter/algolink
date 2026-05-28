@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { computed, nextTick, reactive, watch } from 'vue'
-import { NCheckbox, NInput, NSelect, NSwitch } from 'naive-ui'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { NButton, NCheckbox, NInput, NSelect, NSwitch, NTag } from 'naive-ui'
 import { useAlgoLinkStore } from '@/stores/algolink'
 import type { AiProvider, UserSettings, OjPlatform } from '@/types/algolink'
 
 const store = useAlgoLinkStore()
 const form = reactive<UserSettings>({ ...store.settings })
 let syncingFromStore = false
+const apiKeySaving = ref(false)
+const apiKeyMessage = ref('')
+const apiKeyStatus = ref<'success' | 'error' | ''>('')
 
 const syncIntervalOptions = [
   { label: '手动同步', value: 'manual' as const },
@@ -64,12 +67,22 @@ watch(
 )
 
 watch(
-  form,
+  () => ({
+    syncInterval: form.syncInterval,
+    aiTone: form.aiTone,
+    showOnlyPublicData: form.showOnlyPublicData,
+    defaultPlatform: form.defaultPlatform,
+    aiEnabled: form.aiEnabled,
+    aiProvider: form.aiProvider,
+    aiBaseUrl: form.aiBaseUrl,
+    aiModel: form.aiModel,
+    aiPromptPreference: form.aiPromptPreference,
+  }),
   () => {
     if (syncingFromStore) {
       return
     }
-    store.updateSettings({ ...form })
+    store.updateSettings({ ...form, aiApiKey: '' })
   },
   { deep: true },
 )
@@ -92,6 +105,34 @@ watch(
     }
   },
 )
+
+async function saveApiKey() {
+  apiKeySaving.value = true
+  apiKeyMessage.value = ''
+  apiKeyStatus.value = ''
+
+  const result = await store.saveStoredAiApiKey(form.aiApiKey)
+  apiKeyStatus.value = result.ok ? 'success' : 'error'
+  apiKeyMessage.value = result.message
+
+  if (result.ok) {
+    form.aiApiKey = ''
+  }
+
+  apiKeySaving.value = false
+}
+
+async function clearApiKey() {
+  apiKeySaving.value = true
+  apiKeyMessage.value = ''
+  apiKeyStatus.value = ''
+
+  const result = await store.clearStoredAiApiKey()
+  apiKeyStatus.value = result.ok ? 'success' : 'error'
+  apiKeyMessage.value = result.message
+  form.aiApiKey = ''
+  apiKeySaving.value = false
+}
 </script>
 
 <template>
@@ -164,15 +205,43 @@ watch(
           />
         </label>
         <label>
-          API Key
+          <span class="settings-label-row">
+            API Key
+            <n-tag :type="store.hasAiApiKey ? 'success' : 'default'" size="small" round>
+              {{ store.hasAiApiKey ? '已保存' : '未保存' }}
+            </n-tag>
+          </span>
           <n-input
             v-model:value="form.aiApiKey"
             type="password"
             show-password-on="click"
-            placeholder="仅保存在当前浏览器本地缓存"
+            placeholder="留空保留已保存 Key，输入新 Key 后点击保存"
             clearable
           />
         </label>
+        <div class="api-key-actions">
+          <n-button
+            type="primary"
+            secondary
+            :disabled="!form.aiApiKey.trim()"
+            :loading="apiKeySaving"
+            @click="saveApiKey"
+          >
+            保存 API Key
+          </n-button>
+          <n-button
+            secondary
+            type="error"
+            :disabled="!store.hasAiApiKey"
+            :loading="apiKeySaving"
+            @click="clearApiKey"
+          >
+            清除 API Key
+          </n-button>
+        </div>
+        <p v-if="apiKeyMessage" :class="['api-key-message', apiKeyStatus]">
+          {{ apiKeyMessage }}
+        </p>
         <label>
           模型
           <n-input v-model:value="form.aiModel" placeholder="gpt-4o-mini" clearable />
@@ -188,7 +257,7 @@ watch(
         </label>
       </div>
       <p class="settings-note">
-        API Key 不会写入后端 SQLite；真实 AI 请求时会临时发送给本地后端代理用于转发。
+        API Key 会使用服务端加密密钥加密保存；页面不回显完整 Key，真实 AI 请求由后端解密后转发。
       </p>
     </section>
 
@@ -244,5 +313,32 @@ watch(
   color: var(--color-text-muted);
   font-size: 13px;
   line-height: 1.7;
+}
+
+.settings-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.api-key-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.api-key-message {
+  margin: -6px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.api-key-message.success {
+  color: var(--color-accent-strong);
+}
+
+.api-key-message.error {
+  color: var(--color-danger);
 }
 </style>

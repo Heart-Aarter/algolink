@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { pbkdf2Sync, randomBytes, timingSafeEqual } from 'node:crypto'
 import { getDatabase } from '../db'
+import { hashSessionToken, requireUser } from '../middleware'
 import { isValidUsername, usernamePattern } from '../singleUser'
 
 const router = Router()
@@ -8,6 +9,7 @@ const passwordPattern = /^.{6,64}$/
 const passwordKeyLength = 32
 const passwordIterations = 120000
 const passwordDigest = 'sha256'
+const sessionTtlMs = 30 * 24 * 60 * 60 * 1000
 const defaultSubmissions = {
   Codeforces: [],
   Luogu: [],
@@ -33,6 +35,10 @@ type StateRow = {
   settings: string | null
   training_plan: string | null
   daily_challenge: string | null
+}
+
+type SecretRow = {
+  ai_api_key_ciphertext: string | null
 }
 
 function parseJson<T>(value: string | null | undefined, fallback: T): T {
@@ -65,6 +71,31 @@ function verifyPassword(password: string, expectedHash: string, salt: string) {
   const expected = Buffer.from(expectedHash, 'hex')
 
   return actual.length === expected.length && timingSafeEqual(actual, expected)
+}
+
+function createSession(userId: string) {
+  const token = randomBytes(32).toString('hex')
+  const expiresAt = new Date(Date.now() + sessionTtlMs).toISOString()
+  const db = getDatabase()
+
+  db.prepare('DELETE FROM user_sessions WHERE expires_at <= ?').run(new Date().toISOString())
+  db.prepare(
+    `
+      INSERT INTO user_sessions (token_hash, user_id, expires_at)
+      VALUES (?, ?, ?)
+    `,
+  ).run(hashSessionToken(token), userId, expiresAt)
+
+  return { token, expiresAt }
+}
+
+function sanitizeSettings(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return value
+  }
+
+  const { aiApiKey: _aiApiKey, ...settings } = value as Record<string, unknown>
+  return settings
 }
 
 router.post('/', (req, res) => {
@@ -106,14 +137,18 @@ router.post('/', (req, res) => {
     }
   }
 
+  const session = createSession(username)
+
   return res.json({
     userId: username,
     username,
+    sessionToken: session.token,
+    sessionExpiresAt: session.expiresAt,
   })
 })
 
-router.get('/:userId', (req, res) => {
-  const userId = req.params.userId
+router.get('/:userId', requireUser, (req, res) => {
+  const userId = typeof req.params.userId === 'string' ? req.params.userId : ''
 
   if (!isValidUsername(userId)) {
     return res.status(404).json({ error: 'user not found' })
@@ -135,6 +170,9 @@ router.get('/:userId', (req, res) => {
   const stateRow = db
     .prepare('SELECT settings, training_plan, daily_challenge FROM user_state WHERE user_id = ?')
     .get(userId) as StateRow | undefined
+  const secretRow = db
+    .prepare('SELECT ai_api_key_ciphertext FROM user_secrets WHERE user_id = ?')
+    .get(userId) as SecretRow | undefined
   const submissions: Record<string, unknown[]> = {
     ...defaultSubmissions,
   }
@@ -147,7 +185,8 @@ router.get('/:userId', (req, res) => {
     userId,
     accounts: parseJson<unknown[]>(accountsRow?.data, []),
     submissions,
-    settings: parseJson<unknown | null>(stateRow?.settings, null),
+    settings: sanitizeSettings(parseJson<unknown | null>(stateRow?.settings, null)),
+    hasAiApiKey: Boolean(secretRow?.ai_api_key_ciphertext),
     trainingPlan: parseJson<unknown | null>(stateRow?.training_plan, null),
     dailyChallenge: parseJson<unknown | null>(stateRow?.daily_challenge, null),
   })

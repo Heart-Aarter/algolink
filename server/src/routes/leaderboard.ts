@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { getDatabase } from '../db'
+import { requireAuth } from '../middleware'
 import { isValidUsername } from '../singleUser'
 
 const router = Router()
@@ -224,8 +225,9 @@ router.get('/events', (req, res) => {
   return res.json({ items })
 })
 
-router.post('/', (req, res) => {
-  const username = isValidUsernameValue(req.body?.username) ? req.body.username.trim() : ''
+router.post('/', requireAuth, (req, res) => {
+  const username = req.authUserId ?? ''
+  const requestedUsername = isValidUsernameValue(req.body?.username) ? req.body.username.trim() : ''
   const score = req.body?.score
   const eventId = isValidEventId(req.body?.eventId)
     ? req.body.eventId.trim()
@@ -235,8 +237,12 @@ router.post('/', (req, res) => {
     : 'daily-challenge'
   const eventDate = getEventDate(req.body?.date)
 
-  if (!username) {
-    return res.status(400).json({ error: 'username is required' })
+  if (!username || !isValidUsername(username)) {
+    return res.status(401).json({ error: 'login required' })
+  }
+
+  if (requestedUsername && requestedUsername !== username) {
+    return res.status(403).json({ error: 'forbidden' })
   }
 
   if (!isNonNegativeInteger(score)) {

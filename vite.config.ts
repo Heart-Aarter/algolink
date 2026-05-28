@@ -18,14 +18,6 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
-      '/luogu-api': {
-        target: 'https://www.luogu.com.cn',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/luogu-api/, ''),
-        headers: {
-          'x-lentille-request': 'content-only',
-        },
-      },
       '/atcoder-api': {
         target: 'https://kenkoooo.com',
         changeOrigin: true,

@@ -42,7 +42,11 @@ async function syncAccount(id: string, platformName: OjPlatform) {
   }
 
   syncingId.value = id
-  message.info(`${platformName} 正在同步...`)
+  message.info(
+    platformName === 'Luogu'
+      ? '洛谷正在读取公开练习数据，题目标签会尽量补全。'
+      : `${platformName} 正在同步...`,
+  )
   const result = await store.syncOjAccount(id)
   message[result.ok ? 'success' : 'error'](result.message)
   syncingId.value = ''

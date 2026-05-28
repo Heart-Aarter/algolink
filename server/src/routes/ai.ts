@@ -1,5 +1,7 @@
 import { Router } from 'express'
+import { getDatabase } from '../db'
 import { requireUser } from '../middleware'
+import { decryptSecret } from '../secrets'
 
 const router = Router()
 
@@ -24,6 +26,35 @@ interface ChatCompletionResponse {
       content?: string
     }
   }>
+}
+
+type SecretRow = {
+  ai_api_key_ciphertext: string | null
+  ai_api_key_iv: string | null
+  ai_api_key_tag: string | null
+}
+
+function getStoredAiApiKey(userId: string) {
+  const db = getDatabase()
+  const row = db
+    .prepare(
+      `
+        SELECT ai_api_key_ciphertext, ai_api_key_iv, ai_api_key_tag
+        FROM user_secrets
+        WHERE user_id = ?
+      `,
+    )
+    .get(userId) as SecretRow | undefined
+
+  if (!row?.ai_api_key_ciphertext || !row.ai_api_key_iv || !row.ai_api_key_tag) {
+    return ''
+  }
+
+  return decryptSecret({
+    ciphertext: row.ai_api_key_ciphertext,
+    iv: row.ai_api_key_iv,
+    tag: row.ai_api_key_tag,
+  })
 }
 
 function getProviderLabel(provider: string) {
@@ -229,7 +260,12 @@ router.post('/:userId/ai/advice', requireUser, async (req, res) => {
   let endpoint: string
 
   try {
-    config = getProviderConfig((req.body?.settings ?? {}) as AiProviderSettings)
+    const userId = typeof req.params.userId === 'string' ? req.params.userId : ''
+    const settings = (req.body?.settings ?? {}) as AiProviderSettings
+    config = getProviderConfig({
+      ...settings,
+      aiApiKey: getStoredAiApiKey(userId),
+    })
     endpoint = getChatCompletionsUrl(config.baseUrl)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'AI 接口配置无效'

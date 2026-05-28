@@ -19,6 +19,13 @@ export function initDatabase() {
       password_salt TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS user_sessions (
+      token_hash TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS user_accounts (
       user_id TEXT PRIMARY KEY,
       data TEXT NOT NULL
@@ -36,6 +43,14 @@ export function initDatabase() {
       settings TEXT,
       training_plan TEXT,
       daily_challenge TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS user_secrets (
+      user_id TEXT PRIMARY KEY,
+      ai_api_key_ciphertext TEXT,
+      ai_api_key_iv TEXT,
+      ai_api_key_tag TEXT,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS leaderboard (
@@ -57,6 +72,12 @@ export function initDatabase() {
 
     CREATE INDEX IF NOT EXISTS idx_leaderboard_events_date
       ON leaderboard_events(event_date);
+
+    CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id
+      ON user_sessions(user_id);
+
+    CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at
+      ON user_sessions(expires_at);
   `)
 
   for (const column of ['password_hash', 'password_salt']) {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { NAlert, NButton, NSpin, NTag } from 'naive-ui'
+import { NAlert, NButton, NSpin, NTag, useMessage } from 'naive-ui'
 import { problemRecommendations as recommendedProblems } from '@/mock/algolink'
 import { weeklyTrainingPlan } from '@/mock/trainingPlan'
 import { generateAiAdvice } from '@/services/api'
@@ -14,9 +14,12 @@ import {
 } from '@/utils/analysis'
 
 const store = useAlgoLinkStore()
+const message = useMessage()
 const activeMode = ref<'rules' | 'weak-tags' | 'weekly-plan' | 'recommendations'>('rules')
 const isGenerating = ref(false)
 const aiError = ref('')
+const aiStatusMessage = ref('')
+const aiStatusType = ref<'success' | 'info'>('info')
 const aiAdvice = ref<AiAdviceResponse | null>(null)
 
 const summary = computed(() =>
@@ -25,7 +28,7 @@ const summary = computed(() =>
 const weakTagDetails = computed(() => getTagAnalysis(store.analysisSubmissions).slice(0, 5))
 const isAiConfigured = computed(
   () => {
-    if (!store.settings.aiEnabled || !store.settings.aiApiKey.trim()) {
+    if (!store.settings.aiEnabled || !store.hasAiApiKey) {
       return false
     }
 
@@ -130,19 +133,26 @@ function getRecentSubmissionSample() {
 async function generateAdvice() {
   activeMode.value = 'rules'
   aiError.value = ''
+  aiStatusMessage.value = ''
 
   if (!isAiConfigured.value) {
     aiAdvice.value = null
+    aiStatusType.value = 'info'
+    aiStatusMessage.value = '已切换为本地规则建议，未调用真实 AI。'
+    message.info(aiStatusMessage.value)
     return
   }
 
   if (!store.currentUserId) {
     aiError.value = '请先登录用户，再调用真实 AI 分析。'
     aiAdvice.value = null
+    message.error(aiError.value)
     return
   }
 
   isGenerating.value = true
+  const startedAt = performance.now()
+  message.info('正在生成 AI 建议...')
 
   try {
     const aiRequestSettings =
@@ -159,7 +169,6 @@ async function generateAdvice() {
       settings: {
         aiProvider: aiRequestSettings.aiProvider,
         aiBaseUrl: aiRequestSettings.aiBaseUrl,
-        aiApiKey: aiRequestSettings.aiApiKey,
         aiModel: aiRequestSettings.aiModel,
         aiTone: aiRequestSettings.aiTone,
         aiPromptPreference: aiRequestSettings.aiPromptPreference,
@@ -168,9 +177,14 @@ async function generateAdvice() {
       weakTags: weakTagDetails.value,
       recentSubmissions: getRecentSubmissionSample(),
     })
+    const elapsedSeconds = Math.max(0.1, (performance.now() - startedAt) / 1000).toFixed(1)
+    aiStatusType.value = 'success'
+    aiStatusMessage.value = `AI 建议已生成：${aiRequestSettings.aiModel}，耗时 ${elapsedSeconds}s。`
+    message.success(aiStatusMessage.value)
   } catch (error) {
     aiAdvice.value = null
     aiError.value = error instanceof Error ? error.message : 'AI 分析失败，已回退到本地规则建议。'
+    message.error(aiError.value)
   } finally {
     isGenerating.value = false
   }
@@ -249,6 +263,9 @@ async function generateAdvice() {
       </n-alert>
       <n-alert v-else-if="aiError" type="error" :bordered="false" class="ai-status-alert">
         {{ aiError }} 当前已显示本地规则兜底建议。
+      </n-alert>
+      <n-alert v-else-if="aiStatusMessage" :type="aiStatusType" :bordered="false" class="ai-status-alert">
+        {{ aiStatusMessage }}
       </n-alert>
 
       <n-spin :show="isGenerating">

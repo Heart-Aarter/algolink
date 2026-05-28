@@ -19,6 +19,7 @@ import {
 } from '@/services/atcoder'
 import { fetchDailyProblems } from '@/services/dailyChallenge'
 import {
+  clearAiApiKey as clearSavedAiApiKey,
   getLeaderboard,
   getUserData,
   loginUser,
@@ -27,10 +28,12 @@ import {
   saveSettings,
   saveSubmissions,
   saveTrainingPlan,
+  setApiSession,
+  setApiUnauthorizedHandler,
   submitLeaderboard,
 } from '@/services/api'
 import type { LeaderboardPeriod } from '@/services/api'
-import { fetchLuoguSubmissions, fetchLuoguUser } from '@/services/luogu'
+import { fetchLuoguSyncData } from '@/services/luogu'
 import { toSubmissionRecord } from '@/services/normalizers'
 import { weeklyTrainingPlan } from '@/mock/trainingPlan'
 import type {
@@ -53,6 +56,8 @@ import { getCodeforcesRankColor } from '@/utils/codeforcesRank'
 const storageKeys = {
   currentUserId: 'algolink:currentUserId',
   currentUsername: 'algolink:currentUsername',
+  sessionToken: 'algolink:sessionToken',
+  sessionExpiresAt: 'algolink:sessionExpiresAt',
   accounts: 'algolink.accounts',
   settings: 'algolink.settings',
   tasks: 'algolink.trainingTasks',
@@ -198,10 +203,11 @@ function normalizeSettings(value: unknown): UserSettings {
 }
 
 function getServerSafeSettings(value: UserSettings): UserSettings {
-  return {
-    ...value,
-    aiApiKey: '',
-  }
+  return value
+}
+
+function isSessionActive(expiresAt: string) {
+  return Boolean(expiresAt) && new Date(expiresAt).getTime() > Date.now()
 }
 
 function normalizeTrainingPlan(value: unknown): TrainingPlanCache {
@@ -290,7 +296,21 @@ function normalizeSubmissionCache(value: unknown): Record<OjPlatform, Submission
 }
 
 export const useAlgoLinkStore = defineStore('algolink', () => {
-  const currentUserId = ref(readStorage<string>(storageKeys.currentUserId, ''))
+  const storedSessionToken = readStorage<string>(storageKeys.sessionToken, '')
+  const storedSessionExpiresAt = readStorage<string>(storageKeys.sessionExpiresAt, '')
+  const hasActiveSession = storedSessionToken && isSessionActive(storedSessionExpiresAt)
+  const sessionToken = ref(hasActiveSession ? storedSessionToken : '')
+  const sessionExpiresAt = ref(hasActiveSession ? storedSessionExpiresAt : '')
+  const currentUserId = ref(hasActiveSession ? readStorage<string>(storageKeys.currentUserId, '') : '')
+
+  if (!hasActiveSession) {
+    localStorage.removeItem(storageKeys.sessionToken)
+    localStorage.removeItem(storageKeys.sessionExpiresAt)
+    localStorage.removeItem(storageKeys.currentUserId)
+  }
+
+  setApiSession(sessionToken.value)
+
   const accounts = shallowRef<OjAccount[]>(
     normalizeAccounts(
       readStorage<StoredOjAccount[]>(
@@ -309,6 +329,7 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
         : readStorage<UserSettings>(storageKeys.settings, defaultSettings),
     ),
   )
+  const hasAiApiKey = ref(false)
   const initialTrainingPlan = currentUserId.value
     ? normalizeTrainingPlan(
         readStorage<unknown>(getUserCacheKey(currentUserId.value, 'trainingPlan'), {}),
@@ -439,7 +460,15 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     }
 
     saveSettings(currentUserId.value, getServerSafeSettings(settings.value))
-      .then(() => {
+      .then((response) => {
+        hasAiApiKey.value = response.hasAiApiKey
+        if (settings.value.aiApiKey.trim() && response.hasAiApiKey) {
+          settings.value = {
+            ...settings.value,
+            aiApiKey: '',
+          }
+          persistSettings()
+        }
         serverSyncMessage.value = ''
       })
       .catch(() => {
@@ -617,6 +646,27 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
         serverSyncMessage.value = 'Server sync failed. Local cache is kept.'
       })
   }
+
+  function clearLoginSession(redirectToLogin = false) {
+    currentUserId.value = ''
+    sessionToken.value = ''
+    sessionExpiresAt.value = ''
+    hasAiApiKey.value = false
+    setApiSession('')
+    localStorage.removeItem(storageKeys.currentUserId)
+    localStorage.removeItem(storageKeys.sessionToken)
+    localStorage.removeItem(storageKeys.sessionExpiresAt)
+    serverSyncMessage.value = 'Session expired. Please log in again.'
+
+    if (redirectToLogin && window.location.pathname !== '/login') {
+      const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`
+      window.location.assign(`/login?redirect=${encodeURIComponent(redirect)}`)
+    }
+  }
+
+  setApiUnauthorizedHandler(() => {
+    clearLoginSession(true)
+  })
 
   function applyLocalUserCache(userId: string) {
     accounts.value = normalizeAccounts(
@@ -860,16 +910,43 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
         ? readStorage<UserSettings>(storageKeys.settings, defaultSettings)
         : readStorage<unknown>(userSettingsKey, defaultSettings),
     )
-    settings.value = serverData.settings
-      ? {
-          ...normalizeSettings(serverData.settings),
-          aiApiKey: localSettings.aiApiKey,
-        }
-      : localSettings
-    persistSettings()
-    if (!serverData.settings && allowLegacyMigration && !hasUserSettingsCache) {
-      await saveSettings(userId, getServerSafeSettings(settings.value))
+    const legacyAiApiKey = localSettings.aiApiKey.trim()
+    hasAiApiKey.value = Boolean(serverData.hasAiApiKey)
+    settings.value = {
+      ...(serverData.settings ? normalizeSettings(serverData.settings) : localSettings),
+      aiApiKey: serverData.hasAiApiKey ? '' : localSettings.aiApiKey,
     }
+    if (!serverData.settings && allowLegacyMigration && !hasUserSettingsCache) {
+      await saveSettings(userId, { ...getServerSafeSettings(settings.value), aiApiKey: '' })
+    }
+    if (!serverData.hasAiApiKey && legacyAiApiKey) {
+      try {
+        const response = await saveSettings(userId, {
+          ...getServerSafeSettings(settings.value),
+          aiApiKey: legacyAiApiKey,
+        })
+        hasAiApiKey.value = response.hasAiApiKey
+
+        if (response.hasAiApiKey) {
+          settings.value = {
+            ...settings.value,
+            aiApiKey: '',
+          }
+        }
+      } catch {
+        settings.value = {
+          ...settings.value,
+          aiApiKey: legacyAiApiKey,
+        }
+        serverSyncMessage.value = 'Server sync failed. Local API key is kept.'
+      }
+    } else {
+      settings.value = {
+        ...settings.value,
+        aiApiKey: '',
+      }
+    }
+    persistSettings()
 
     const userTrainingPlanKey = getUserCacheKey(userId, 'trainingPlan')
     const hasUserTrainingPlanCache = hasStorageValue(userTrainingPlanKey)
@@ -937,8 +1014,13 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       const user = await loginUser(trimmedUsername, password)
       currentUserId.value = user.userId
       currentUsername.value = user.username
+      sessionToken.value = user.sessionToken
+      sessionExpiresAt.value = user.sessionExpiresAt
+      setApiSession(user.sessionToken)
       writeStorage(storageKeys.currentUserId, currentUserId.value)
       writeStorage(storageKeys.currentUsername, currentUsername.value)
+      writeStorage(storageKeys.sessionToken, sessionToken.value)
+      writeStorage(storageKeys.sessionExpiresAt, sessionExpiresAt.value)
       applyLocalUserCache(user.userId)
       await initServerSync(!previousUserId)
       await syncLeaderboardFromServer(leaderboardPeriod.value)
@@ -1194,10 +1276,9 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     }
 
     try {
-      const [profile, syncedSubmissions] = await Promise.all([
-        fetchLuoguUser(account.handle),
-        fetchLuoguSubmissions(account.handle),
-      ])
+      const { profile, submissions: syncedSubmissions, tagWarning } = await fetchLuoguSyncData(
+        account.handle,
+      )
       const records = syncedSubmissions.map(toSubmissionRecord)
       const acceptedProblems = new Set(
         records.filter((item) => item.status === 'Accepted').map(getProblemKey),
@@ -1221,9 +1302,11 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
       persistAccounts()
       pushAccountsToServer()
 
+      const tagMessage = tagWarning ? '部分题目标签因网络波动已跳过。' : '题目标签已尽量补全。'
+
       return {
         ok: true,
-        message: `洛谷公开练习数据同步成功，已保存 ${records.length} 条题目记录。`,
+        message: `洛谷公开练习数据同步成功，已保存 ${records.length} 条题目记录。${tagMessage}`,
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : '洛谷公开接口请求失败'
@@ -1452,6 +1535,71 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     pushSettingsToServer()
   }
 
+  async function saveStoredAiApiKey(apiKey: string): Promise<{ ok: boolean; message: string }> {
+    const trimmedApiKey = apiKey.trim()
+
+    if (!trimmedApiKey) {
+      return { ok: false, message: '请输入 API Key' }
+    }
+
+    if (!currentUserId.value) {
+      settings.value = {
+        ...settings.value,
+        aiApiKey: trimmedApiKey,
+      }
+      persistSettings()
+      return { ok: true, message: 'API Key 已保存到本地缓存' }
+    }
+
+    try {
+      const response = await saveSettings(currentUserId.value, {
+        ...getServerSafeSettings(settings.value),
+        aiApiKey: trimmedApiKey,
+      })
+      hasAiApiKey.value = response.hasAiApiKey
+      settings.value = {
+        ...settings.value,
+        aiApiKey: '',
+      }
+      persistSettings()
+      return { ok: true, message: 'API Key 已加密保存到服务端' }
+    } catch (error) {
+      settings.value = {
+        ...settings.value,
+        aiApiKey: trimmedApiKey,
+      }
+      persistSettings()
+      const message = error instanceof Error ? error.message : 'API Key 保存失败'
+      return { ok: false, message }
+    }
+  }
+
+  async function clearStoredAiApiKey(): Promise<{ ok: boolean; message: string }> {
+    if (!currentUserId.value) {
+      settings.value = {
+        ...settings.value,
+        aiApiKey: '',
+      }
+      persistSettings()
+      hasAiApiKey.value = false
+      return { ok: true, message: 'API Key 已清除' }
+    }
+
+    try {
+      const response = await clearSavedAiApiKey(currentUserId.value)
+      hasAiApiKey.value = response.hasAiApiKey
+      settings.value = {
+        ...settings.value,
+        aiApiKey: '',
+      }
+      persistSettings()
+      return { ok: true, message: 'API Key 已清除' }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'API Key 清除失败'
+      return { ok: false, message }
+    }
+  }
+
   function updateWeeklyPlanStatus(id: string, status: TrainingPlanStatus) {
     weeklyPlanStatus.value = {
       ...weeklyPlanStatus.value,
@@ -1522,6 +1670,9 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     activePlanCount,
     currentUserId,
     currentUsername,
+    sessionToken,
+    sessionExpiresAt,
+    hasAiApiKey,
     dailyChallenge,
     leaderboard,
     currentLeaderboardUser,
@@ -1539,6 +1690,8 @@ export const useAlgoLinkStore = defineStore('algolink', () => {
     loadDailyChallenge,
     verifyAndCompleteDailyProblem,
     updateSettings,
+    saveStoredAiApiKey,
+    clearStoredAiApiKey,
     updateWeeklyPlanStatus,
     addWeeklyPlanDay,
     resetLocalData,

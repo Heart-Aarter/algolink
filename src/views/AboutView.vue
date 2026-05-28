@@ -34,7 +34,7 @@ const features = [
   {
     title: '每日一题挑战',
     icon: '06',
-    text: '从 Codeforces 公开题库随机抽取 Easy + Hard 两道题，完成挑战计入排行榜积分。',
+    text: '从 Codeforces 公开题库随机抽取 Easy + Medium + Hard 三道题，完成挑战计入排行榜积分。',
   },
 ]
 
@@ -51,7 +51,17 @@ const techStack = [
   { name: 'Prettier', category: 'format' },
 ]
 
-type TechCategoryKey = 'framework' | 'language' | 'tooling' | 'state' | 'routing' | 'ui' | 'chart' | 'http' | 'lint' | 'format'
+type TechCategoryKey =
+  | 'framework'
+  | 'language'
+  | 'tooling'
+  | 'state'
+  | 'routing'
+  | 'ui'
+  | 'chart'
+  | 'http'
+  | 'lint'
+  | 'format'
 
 const techCategories: { key: TechCategoryKey; label: string }[] = [
   { key: 'framework', label: '框架' },
@@ -127,8 +137,16 @@ const designPrinciples = [
     </section>
 
     <section class="stats-grid">
-      <StatCard label="数据来源" :value="techStack.filter(t => t.category === 'http').length" helper="公开 API + mock 兜底" />
-      <StatCard label="可视化图表" :value="techStack.filter(t => t.category === 'chart').length" helper="ECharts 交互图表" />
+      <StatCard
+        label="数据来源"
+        :value="techStack.filter((t) => t.category === 'http').length"
+        helper="公开 API + mock 兜底"
+      />
+      <StatCard
+        label="可视化图表"
+        :value="techStack.filter((t) => t.category === 'chart').length"
+        helper="ECharts 交互图表"
+      />
       <StatCard label="路由页面" :value="10" helper="Dashboard 到 Settings 全覆盖" />
       <StatCard label="数据存储" value="SQLite" helper="绑定、提交与训练状态持久化" />
     </section>
@@ -153,11 +171,7 @@ const designPrinciples = [
         <h2>技术栈</h2>
       </div>
       <div class="tech-grid">
-        <article
-          v-for="category in techCategories"
-          :key="category.key"
-          class="tech-category"
-        >
+        <article v-for="category in techCategories" :key="category.key" class="tech-category">
           <strong class="tech-category-label">{{ category.label }}</strong>
           <div class="tech-tags">
             <n-tag
@@ -191,8 +205,9 @@ const designPrinciples = [
       <p class="eyebrow">Acknowledgments</p>
       <h2>致谢</h2>
       <p>
-        AlgoLink 使用 Codeforces 官方 API、AtCoder Problems API 和洛谷公开接口获取训练数据。
-        感谢 Vue、Vite、Naive UI、ECharts 等开源项目的支持。本项目为网页设计比赛作品，不实现真实 OJ 评测系统。
+        AlgoLink 使用 Codeforces 官方 API、AtCoder Problems API 和洛谷公开接口获取训练数据。 感谢
+        Vue、Vite、Naive UI、ECharts 等开源项目的支持。本项目为网页设计比赛作品，不实现真实 OJ
+        评测系统。
       </p>
     </section>
   </div>
