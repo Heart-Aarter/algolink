@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { darkTheme, type GlobalThemeOverrides } from 'naive-ui'
 import { computed, onMounted, ref } from 'vue'
-import { RouterView, useRoute } from 'vue-router'
+import { RouterView, useRoute, useRouter } from 'vue-router'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import MobileMorePanel from '@/components/layout/MobileMorePanel.vue'
 import MobileTabBar from '@/components/layout/MobileTabBar.vue'
 import { useTheme } from '@/composables/useTheme'
+import { useAlgoLinkStore } from '@/stores/algolink'
 
 const { theme } = useTheme()
 const route = useRoute()
+const router = useRouter()
+const store = useAlgoLinkStore()
 const sidebarCollapsed = ref(false)
 const showIntro = ref(true)
 const naiveTheme = computed(() => (theme.value === 'dark' ? darkTheme : null))
@@ -74,6 +77,9 @@ function toggleSidebar() {
 function closeIntro() {
   showIntro.value = false
   localStorage.setItem('algolink.introClosed', '1')
+  if (!store.currentUserId) {
+    router.push('/login?redirect=/')
+  }
 }
 
 onMounted(() => {

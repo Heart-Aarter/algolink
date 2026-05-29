@@ -99,6 +99,11 @@ router.beforeEach((to) => {
     return true
   }
 
+  // 允许未登录用户访问首页（显示引导页）
+  if (to.path === '/') {
+    return true
+  }
+
   return {
     path: '/login',
     query: {

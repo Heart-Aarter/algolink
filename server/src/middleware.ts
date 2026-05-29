@@ -20,7 +20,7 @@ export function hashSessionToken(token: string) {
   return createHash('sha256').update(token).digest('hex')
 }
 
-function getBearerToken(value: string | undefined) {
+export function getBearerToken(value: string | undefined) {
   if (!value) {
     return ''
   }

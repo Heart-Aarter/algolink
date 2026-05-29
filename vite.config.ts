@@ -12,6 +12,22 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('node_modules/naive-ui')) {
+            return 'naive'
+          }
+
+          if (id.includes('node_modules/echarts')) {
+            return 'echarts'
+          }
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': {

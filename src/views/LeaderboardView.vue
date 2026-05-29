@@ -90,7 +90,9 @@ const podiumLabels = ['冠军', '亚军', '季军'] as const
 watch(
   () => store.leaderboardPeriod,
   (period) => {
-    void store.loadLeaderboardPeriod(period)
+    store.loadLeaderboardPeriod(period).catch(() => {
+      // 错误由 store 内部处理
+    })
   },
 )
 </script>

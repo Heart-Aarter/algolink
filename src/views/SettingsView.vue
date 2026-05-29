@@ -111,15 +111,20 @@ async function saveApiKey() {
   apiKeyMessage.value = ''
   apiKeyStatus.value = ''
 
-  const result = await store.saveStoredAiApiKey(form.aiApiKey)
-  apiKeyStatus.value = result.ok ? 'success' : 'error'
-  apiKeyMessage.value = result.message
+  try {
+    const result = await store.saveStoredAiApiKey(form.aiApiKey)
+    apiKeyStatus.value = result.ok ? 'success' : 'error'
+    apiKeyMessage.value = result.message
 
-  if (result.ok) {
-    form.aiApiKey = ''
+    if (result.ok) {
+      form.aiApiKey = ''
+    }
+  } catch {
+    apiKeyStatus.value = 'error'
+    apiKeyMessage.value = '保存 API Key 失败'
+  } finally {
+    apiKeySaving.value = false
   }
-
-  apiKeySaving.value = false
 }
 
 async function clearApiKey() {
@@ -127,11 +132,17 @@ async function clearApiKey() {
   apiKeyMessage.value = ''
   apiKeyStatus.value = ''
 
-  const result = await store.clearStoredAiApiKey()
-  apiKeyStatus.value = result.ok ? 'success' : 'error'
-  apiKeyMessage.value = result.message
-  form.aiApiKey = ''
-  apiKeySaving.value = false
+  try {
+    const result = await store.clearStoredAiApiKey()
+    apiKeyStatus.value = result.ok ? 'success' : 'error'
+    apiKeyMessage.value = result.message
+    form.aiApiKey = ''
+  } catch {
+    apiKeyStatus.value = 'error'
+    apiKeyMessage.value = '清除 API Key 失败'
+  } finally {
+    apiKeySaving.value = false
+  }
 }
 </script>
 

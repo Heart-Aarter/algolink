@@ -16,6 +16,7 @@ const codeforcesClient = axios.create({
 
 const requestIntervalMs = 2000
 const lastRequestAt = new Map<string, number>()
+const requestQueue = new Map<string, Promise<void>>()
 
 interface CodeforcesApiResponse<T> {
   status: 'OK' | 'FAILED'
@@ -24,15 +25,57 @@ interface CodeforcesApiResponse<T> {
 }
 
 async function waitForThrottle(key: string) {
-  const now = Date.now()
-  const lastTime = lastRequestAt.get(key) ?? 0
-  const waitMs = requestIntervalMs - (now - lastTime)
+  const previous = requestQueue.get(key) ?? Promise.resolve()
+  const next = previous.then(() => {
+    const now = Date.now()
+    const lastTime = lastRequestAt.get(key) ?? 0
+    const waitMs = requestIntervalMs - (now - lastTime)
 
-  if (waitMs > 0) {
-    await new Promise((resolve) => globalThis.setTimeout(resolve, waitMs))
+    if (waitMs > 0) {
+      return new Promise<void>((resolve) => globalThis.setTimeout(resolve, waitMs))
+    }
+  }).then(() => {
+    lastRequestAt.set(key, Date.now())
+  })
+
+  requestQueue.set(key, next)
+  void next.finally(() => {
+    if (requestQueue.get(key) === next) {
+      requestQueue.delete(key)
+    }
+  })
+
+  return next
+}
+
+async function runWithConcurrency<T>(
+  tasks: (() => Promise<T>)[],
+  limit: number,
+): Promise<PromiseSettledResult<T>[]> {
+  const results: PromiseSettledResult<T>[] = new Array(tasks.length)
+  let index = 0
+
+  async function worker() {
+    while (index < tasks.length) {
+      const i = index++
+      const task = tasks[i]
+
+      if (!task) {
+        continue
+      }
+
+      try {
+        const value = await task()
+        results[i] = { status: 'fulfilled', value }
+      } catch (reason) {
+        results[i] = { status: 'rejected', reason }
+      }
+    }
   }
 
-  lastRequestAt.set(key, Date.now())
+  const workers = Array.from({ length: Math.min(limit, tasks.length) }, () => worker())
+  await Promise.all(workers)
+  return results
 }
 
 async function requestCodeforces<T>(
@@ -102,8 +145,9 @@ export async function fetchCodeforcesUsers(handles: string[]): Promise<OjProfile
       throw error
     }
 
-    const profiles = await Promise.allSettled(
-      normalizedHandles.map((handle) => fetchCodeforcesUser(handle)),
+    const profiles = await runWithConcurrency(
+      normalizedHandles.map((handle) => () => fetchCodeforcesUser(handle)),
+      3,
     )
 
     return profiles

@@ -15,6 +15,9 @@ interface CodeforcesProblemset {
   }>
 }
 
+let problemsetCache: { data: DailyProblem[]; timestamp: number } | null = null
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000 // 6 hours
+
 function pickRandom<T>(items: T[], seed: string) {
   if (!items.length) {
     throw new Error('No matching Codeforces problems found')
@@ -59,6 +62,12 @@ export async function fetchDailyProblems(date: string): Promise<DailyProblem[]> 
 }
 
 async function fetchCodeforcesProblems(): Promise<DailyProblem[]> {
+  const now = Date.now()
+
+  if (problemsetCache && now - problemsetCache.timestamp < CACHE_TTL_MS) {
+    return problemsetCache.data
+  }
+
   const response = await fetch('https://codeforces.com/api/problemset.problems')
   const data = (await response.json()) as CodeforcesApiResponse<CodeforcesProblemset>
 
@@ -66,7 +75,7 @@ async function fetchCodeforcesProblems(): Promise<DailyProblem[]> {
     throw new Error(data.comment || 'Failed to fetch Codeforces problemset')
   }
 
-  return data.result.problems
+  const problems = data.result.problems
     .filter((problem) => typeof problem.contestId === 'number' && typeof problem.rating === 'number')
     .map((problem) => {
       const difficulty = problem.rating ?? 0
@@ -80,4 +89,7 @@ async function fetchCodeforcesProblems(): Promise<DailyProblem[]> {
         url: `https://codeforces.com/problemset/problem/${problem.contestId}/${problem.index}`,
       }
     })
+
+  problemsetCache = { data: problems, timestamp: now }
+  return problems
 }

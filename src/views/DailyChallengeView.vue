@@ -44,9 +44,14 @@ async function loadChallenge() {
   }
 
   isLoading.value = true
-  const result = await store.loadDailyChallenge()
-  message[result.ok ? 'success' : 'error'](result.message)
-  isLoading.value = false
+  try {
+    const result = await store.loadDailyChallenge()
+    message[result.ok ? 'success' : 'error'](result.message)
+  } catch {
+    message.error('加载每日一题失败')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 async function completeProblem(problem: DailyProblem) {
@@ -55,9 +60,14 @@ async function completeProblem(problem: DailyProblem) {
   }
 
   verifyingProblemId.value = problem.id
-  const result = await store.verifyAndCompleteDailyProblem(problem)
-  message[result.ok ? 'success' : 'error'](result.message)
-  verifyingProblemId.value = ''
+  try {
+    const result = await store.verifyAndCompleteDailyProblem(problem)
+    message[result.ok ? 'success' : 'error'](result.message)
+  } catch {
+    message.error('验证题目失败')
+  } finally {
+    verifyingProblemId.value = ''
+  }
 }
 
 function isCompleted(problem?: DailyProblem) {

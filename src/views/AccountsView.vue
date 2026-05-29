@@ -7,6 +7,7 @@ import type { OjPlatform } from '@/types/algolink'
 const store = useAlgoLinkStore()
 const message = useMessage()
 const platform = ref<OjPlatform | null>(store.settings.defaultPlatform)
+const platformSelected = ref(false)
 const handle = ref('')
 const bindingAccount = ref(false)
 const syncingId = ref('')
@@ -24,16 +25,21 @@ async function submitAccount() {
   }
 
   bindingAccount.value = true
-  const result = await store.bindAccount(platform.value || '', handle.value)
-  bindingAccount.value = false
+  try {
+    const result = await store.bindAccount(platform.value || '', handle.value)
 
-  if (result.ok) {
-    message.success(result.message)
-    handle.value = ''
-    return
+    if (result.ok) {
+      message.success(result.message)
+      handle.value = ''
+      return
+    }
+
+    message.error(result.message)
+  } catch {
+    message.error('绑定账号失败')
+  } finally {
+    bindingAccount.value = false
   }
-
-  message.error(result.message)
 }
 
 async function syncAccount(id: string, platformName: OjPlatform) {
@@ -47,9 +53,14 @@ async function syncAccount(id: string, platformName: OjPlatform) {
       ? '洛谷正在读取公开练习数据，题目标签会尽量补全。'
       : `${platformName} 正在同步...`,
   )
-  const result = await store.syncOjAccount(id)
-  message[result.ok ? 'success' : 'error'](result.message)
-  syncingId.value = ''
+  try {
+    const result = await store.syncOjAccount(id)
+    message[result.ok ? 'success' : 'error'](result.message)
+  } catch {
+    message.error(`${platformName} 同步失败`)
+  } finally {
+    syncingId.value = ''
+  }
 }
 
 function removeAccount(id: string, platformName: OjPlatform) {
@@ -85,6 +96,7 @@ function shouldShowRating(platformName: OjPlatform) {
             :options="platformOptions"
             clearable
             placeholder="选择 OJ 平台"
+            @update:value="platformSelected = true"
           />
         </label>
         <label>
@@ -95,7 +107,7 @@ function shouldShowRating(platformName: OjPlatform) {
       </form>
 
       <Transition name="tab-fade">
-        <div v-if="platform === 'Codeforces'" class="cf-verify-card">
+        <div v-if="platformSelected && platform === 'Codeforces'" class="cf-verify-card">
           <div class="cf-verify-copy">
             <strong>Codeforces 绑定验证</strong>
             <span>请先打开 CF 1A，在 10 分钟内提交一次 CE，再回到这里绑定 handle。</span>

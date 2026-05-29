@@ -275,8 +275,6 @@ async function fetchWithRetry(
       const response = await fetch(endpoint, { ...options, signal: controller.signal })
       return response
     } catch (error) {
-      clearTimeout(timeout)
-
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
           throw error
@@ -289,6 +287,8 @@ async function fetchWithRetry(
       if (attempt < maxRetries) {
         await new Promise((resolve) => setTimeout(resolve, 2000))
       }
+    } finally {
+      clearTimeout(timeout)
     }
   }
 

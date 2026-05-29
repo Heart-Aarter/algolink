@@ -1,14 +1,8 @@
 import { Router } from 'express'
 import { getDatabase } from '../db'
-import { hashSessionToken, requireAuth } from '../middleware'
+import { hashSessionToken, requireAuth, getBearerToken } from '../middleware'
 
 const router = Router()
-
-function getBearerToken(value: string | undefined) {
-  if (!value) return ''
-  const [scheme, token] = value.split(' ')
-  return scheme?.toLowerCase() === 'bearer' && token ? token : ''
-}
 
 router.delete('/session', requireAuth, (req, res) => {
   const token = getBearerToken(req.get('authorization'))
