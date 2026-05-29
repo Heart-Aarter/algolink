@@ -196,8 +196,8 @@ export async function saveTrainingPlan(userId: string, trainingPlan: unknown) {
   return response.data
 }
 
-export async function saveAiAdvice(userId: string, aiAdvice: unknown) {
-  const response = await apiClient.put<{ userId: string; aiAdvice: unknown }>(
+export async function saveAiAdvice(userId: string, aiAdvice: AiAdviceResponse | null) {
+  const response = await apiClient.put<{ userId: string; aiAdvice: AiAdviceResponse | null }>(
     `/api/user/${encodeURIComponent(userId)}/ai-advice`,
     { aiAdvice },
   )

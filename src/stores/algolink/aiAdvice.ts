@@ -7,6 +7,28 @@ import { useSessionStore } from './session'
 import { useSyncStore } from './sync'
 import { getUserCacheKey } from './shared/storageKeys'
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function normalizeAiAdvicePayload(
+  value: unknown,
+  generatedAt: string | null,
+): { advice: AiAdviceResponse | null; generatedAt: string } {
+  if (isRecord(value) && 'advice' in value) {
+    return {
+      advice: (value.advice as AiAdviceResponse | null) ?? null,
+      generatedAt:
+        generatedAt ?? (typeof value.generatedAt === 'string' ? value.generatedAt : ''),
+    }
+  }
+
+  return {
+    advice: (value as AiAdviceResponse | null) ?? null,
+    generatedAt: generatedAt ?? '',
+  }
+}
+
 export const useAiAdviceStore = defineStore('algolink/aiAdvice', () => {
   const session = useSessionStore()
   const initialUserId = session.currentUserId
@@ -39,10 +61,7 @@ export const useAiAdviceStore = defineStore('algolink/aiAdvice', () => {
     }
 
     try {
-      await saveSavedAiAdvice(userId, {
-        advice: aiAdvice.value,
-        generatedAt: aiAdviceGeneratedAt.value,
-      })
+      await saveSavedAiAdvice(userId, aiAdvice.value)
       persistAiAdvice()
       useSyncStore().serverSyncMessage = ''
     } catch {
@@ -70,8 +89,9 @@ export const useAiAdviceStore = defineStore('algolink/aiAdvice', () => {
     }
 
     if (payload.aiAdvice) {
-      aiAdvice.value = payload.aiAdvice as AiAdviceResponse | null
-      aiAdviceGeneratedAt.value = payload.aiAdviceGeneratedAt ?? ''
+      const normalized = normalizeAiAdvicePayload(payload.aiAdvice, payload.aiAdviceGeneratedAt)
+      aiAdvice.value = normalized.advice
+      aiAdviceGeneratedAt.value = normalized.generatedAt
     } else if (payload.hasUserAiAdviceCache) {
       const userAiAdviceKey = getUserCacheKey(userId, 'aiAdvice')
       aiAdvice.value = readStorage<AiAdviceResponse | null>(userAiAdviceKey, null)
