@@ -241,6 +241,8 @@ watch(
 }
 
 .leaderboard-tabs {
+  min-width: 0;
+  width: 100%;
   max-width: 420px;
 }
 
@@ -253,14 +255,18 @@ watch(
 
 .my-rank-panel h3 {
   margin: 4px 0 0;
+  min-width: 0;
   font-size: 20px;
   font-weight: 850;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .my-rank-metrics {
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
   color: var(--color-text-soft);
 }
 
@@ -276,8 +282,10 @@ watch(
 }
 
 .my-rank-metrics small {
+  min-width: 0;
   color: var(--color-text-muted);
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .podium-wrap {
@@ -291,6 +299,7 @@ watch(
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   padding: 28px 16px 20px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -361,11 +370,11 @@ watch(
 
 .podium-name {
   max-width: 100%;
-  overflow: hidden;
   font-size: 15px;
   font-weight: 820;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .podium-score {
@@ -404,6 +413,7 @@ watch(
   grid-template-columns: 44px 38px minmax(120px, 1fr) auto auto;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .leaderboard-rank {
@@ -427,11 +437,10 @@ watch(
 
 .leaderboard-username {
   min-width: 0;
-  overflow: hidden;
   font-size: 14px;
   font-weight: 760;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .leaderboard-bar {
@@ -459,7 +468,18 @@ watch(
   text-align: right;
   font-size: 15px;
   font-weight: 800;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 960px) {
+  .leaderboard-hero :deep(.panel-heading) {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .leaderboard-tabs {
+    max-width: 100%;
+  }
 }
 
 @media (max-width: 760px) {

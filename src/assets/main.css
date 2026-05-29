@@ -3965,6 +3965,301 @@ select:focus {
   }
 }
 
+.app-shell,
+.app-main,
+.app-content,
+.page-stack,
+.page-stack > *,
+.hero-panel,
+.panel,
+.ai-brief,
+.chart-panel,
+.stat-card,
+.account-card,
+.policy-card,
+.analysis-card,
+.recommend-card,
+.daily-card,
+.podium-card,
+.cf-style-panel,
+.profile-card,
+.report-hero,
+.report-document,
+.report-card,
+.report-direction-card,
+.report-entry-panel,
+.product-hero,
+.product-hero-copy,
+.product-hero-visual,
+.leaderboard-row,
+.leaderboard-main,
+.mobile-submission-card,
+.mobile-more-panel {
+  min-width: 0;
+}
+
+.panel h1,
+.panel h2,
+.panel h3,
+.hero-panel h2,
+.hero-panel p,
+.ai-brief h2,
+.ai-brief p,
+.chart-heading h2,
+.stat-card strong,
+.stat-card p,
+.account-card,
+.policy-card,
+.analysis-card,
+.recommend-card,
+.daily-card,
+.report-hero h2,
+.report-hero p,
+.report-id-card,
+.report-id-card strong,
+.report-id-card p,
+.report-document-head,
+.report-document-head h2,
+.report-document-head p,
+.report-card h3,
+.report-card p,
+.report-direction-card h3,
+.report-direction-card p,
+.report-advice-card h3,
+.product-hero h2,
+.product-slogan,
+.product-event-band,
+.product-event-band span,
+.product-event-band strong,
+.leaderboard-intro,
+.leaderboard-username,
+.podium-name,
+.mobile-submission-main,
+.mobile-submission-card,
+.mobile-more-grid a,
+.submission-problem,
+.submission-problem strong,
+.submission-problem span,
+.submission-tags,
+.difficulty-chip,
+.runtime-cell,
+.submission-platform,
+.pagination-summary,
+.pagination-actions,
+.naive-empty {
+  overflow-wrap: anywhere;
+}
+
+.product-hero h2 {
+  width: auto;
+  max-width: 100%;
+}
+
+.hero-actions,
+.product-hero-actions {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.hero-actions a,
+.product-hero-actions a,
+.primary-action,
+.secondary-link,
+.text-link,
+.report-entry-action,
+.report-generate-button {
+  min-width: 0;
+  max-width: 100%;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.table-wrap,
+.heatmap-wrap,
+.submission-data-table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.submission-data-table {
+  overflow-y: hidden;
+}
+
+.submission-filter-bar,
+.naive-filter-bar,
+.pagination-bar,
+.naive-pagination-bar {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.submission-filter-bar input,
+.submission-filter-bar select {
+  min-width: 0;
+  width: 100%;
+}
+
+.pagination-actions {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.pagination-actions span,
+.pagination-summary {
+  min-width: 0;
+}
+
+.report-id-card strong,
+.report-stamp strong,
+.leaderboard-score,
+.podium-score {
+  white-space: normal;
+}
+
+@media (min-width: 761px) and (max-width: 960px) {
+  .app-shell,
+  .app-shell.sidebar-collapsed {
+    display: block;
+    min-height: 100svh;
+  }
+
+  .app-sidebar,
+  .app-sidebar.collapsed {
+    position: relative;
+    min-height: auto;
+    max-height: none;
+    padding: 16px;
+    overflow: visible;
+  }
+
+  .app-sidebar .brand {
+    margin-bottom: 16px;
+  }
+
+  .app-sidebar .sidebar-toggle {
+    margin-bottom: 14px;
+  }
+
+  .app-sidebar .nav-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .app-sidebar .nav-item {
+    min-height: 38px;
+  }
+
+  .app-content {
+    max-width: none;
+    padding: 24px 18px 42px;
+  }
+
+  .stats-grid,
+  .account-cards,
+  .submission-stats,
+  .report-metrics,
+  .sync-strip,
+  .policy-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .report-entry-panel,
+  .report-hero,
+  .report-document-head,
+  .plan-overview,
+  .recommend-card,
+  .timeline-item {
+    grid-template-columns: 1fr;
+  }
+
+  .report-entry-action,
+  .report-generate-button {
+    width: fit-content;
+  }
+
+  .product-hero h2 {
+    font-size: clamp(40px, 8vw, 72px);
+  }
+}
+
+@media (max-width: 760px) {
+  .app-content {
+    overflow-x: clip;
+  }
+
+  .profile-page .profile-card {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-page .profile-avatar-frame {
+    max-width: 180px;
+  }
+
+  .profile-page .profile-card h2,
+  .profile-page .profile-card p,
+  .profile-page .cf-link {
+    grid-column: 1 / -1;
+  }
+
+  .stats-grid,
+  .dashboard-page .stats-grid,
+  .submission-stats,
+  .profile-stats {
+    scroll-padding-inline: 14px;
+  }
+
+  .stats-grid > *,
+  .submission-stats > *,
+  .profile-stats div {
+    flex: 0 0 min(168px, calc(100vw - 28px));
+    min-width: min(168px, calc(100vw - 28px));
+    max-width: calc(100vw - 28px);
+  }
+
+  .panel-heading,
+  .chart-heading,
+  .daily-card-head,
+  .daily-actions,
+  .leaderboard-row {
+    min-width: 0;
+  }
+
+  .mobile-tab-item span:not(.mobile-tab-icon) {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-more-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mobile-submission-meta {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .mobile-submission-main strong {
+    white-space: normal;
+  }
+
+  .naive-pagination-bar .n-pagination {
+    max-width: 100%;
+  }
+
+  .report-id-card,
+  .report-stamp,
+  .report-entry-meta {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .report-bars div {
+    grid-template-columns: minmax(0, 84px) minmax(0, 1fr) minmax(24px, auto);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .intro-scanline,
   .intro-light-ribbons span,

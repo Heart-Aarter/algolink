@@ -166,6 +166,7 @@ onMounted(() => {
 }
 
 .header-title {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -192,13 +193,17 @@ h1 {
 .header-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
+  min-width: 0;
 }
 
 .user-tag {
   display: inline-flex;
   align-items: center;
   gap: 9px;
+  max-width: min(260px, 24vw);
+  min-width: 0;
   min-height: 40px;
   padding: 0 12px;
   border: 1px solid var(--glass-border);
@@ -229,9 +234,13 @@ h1 {
 }
 
 .user-tag-name {
+  min-width: 0;
+  overflow: hidden;
   color: var(--color-heading);
   font-size: 13px;
   font-weight: 720;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .theme-toggle {
@@ -284,6 +293,7 @@ h1 {
 }
 
 .sync-card {
+  flex: 0 1 auto;
   min-width: 78px;
   padding: 6px 10px;
   border: 1px solid var(--glass-border);
@@ -306,7 +316,8 @@ h1 {
 }
 
 .server-warning {
-  max-width: 220px;
+  max-width: min(220px, 18vw);
+  min-width: 0;
 }
 
 .server-warning strong {
@@ -322,6 +333,8 @@ h1 {
 .primary-action {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   min-height: 40px;
   padding: 0 17px;
   border: 1px solid rgba(194, 138, 46, 0.38);
@@ -334,6 +347,59 @@ h1 {
   box-shadow:
     0 14px 28px rgba(0, 0, 0, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  text-align: center;
+  white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+  .app-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+    padding: 16px 24px;
+  }
+
+  .app-header::after {
+    right: 24px;
+    left: 24px;
+    width: auto;
+  }
+
+  .header-actions {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .user-tag {
+    max-width: min(320px, 44vw);
+  }
+
+  .server-warning {
+    max-width: min(300px, 44vw);
+  }
+}
+
+@media (min-width: 761px) and (max-width: 960px) {
+  .app-header {
+    position: relative;
+  }
+
+  .header-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto repeat(2, minmax(74px, auto)) auto;
+    width: 100%;
+  }
+
+  .user-tag {
+    max-width: none;
+    width: 100%;
+  }
+
+  .server-warning {
+    grid-column: 1 / -1;
+    max-width: none;
+  }
 }
 
 @media (max-width: 760px) {

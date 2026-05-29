@@ -199,10 +199,12 @@ const boundOjText = computed(() =>
   grid-template-columns: minmax(230px, 280px) minmax(0, 1fr);
   gap: 18px;
   align-items: start;
+  min-width: 0;
 }
 
 .profile-card,
 .cf-style-panel {
+  min-width: 0;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background:
@@ -215,6 +217,7 @@ const boundOjText = computed(() =>
   display: grid;
   gap: 14px;
   padding: 18px;
+  overflow: hidden;
 }
 
 .profile-avatar-frame {
@@ -242,8 +245,11 @@ const boundOjText = computed(() =>
 
 .profile-card h2 {
   margin: 0;
+  min-width: 0;
   font-size: 28px;
   font-weight: 850;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
 }
 
 .profile-card p {
@@ -254,6 +260,8 @@ const boundOjText = computed(() =>
 }
 
 .cf-link {
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: var(--color-blue);
   font-size: 13px;
   font-weight: 780;
@@ -283,15 +291,18 @@ dt {
 
 dd {
   margin: 0;
+  min-width: 0;
   color: var(--color-heading);
   font-size: 13px;
   font-weight: 780;
   text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .profile-main {
   display: grid;
   gap: 18px;
+  min-width: 0;
 }
 
 .cf-style-panel {
@@ -304,13 +315,20 @@ dd {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 16px;
+  min-width: 0;
+}
+
+.profile-heading > div {
+  min-width: 0;
 }
 
 .profile-heading h2,
 .profile-heading h3 {
   margin: 0;
+  min-width: 0;
   color: var(--color-heading);
   font-weight: 830;
+  overflow-wrap: anywhere;
 }
 
 .profile-heading h2 {
@@ -325,6 +343,8 @@ dd {
   margin: 6px 0 0;
   color: var(--color-text-muted);
   font-size: 13px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
 .profile-heading.compact {
@@ -343,6 +363,7 @@ dd {
 .profile-stats div {
   display: grid;
   gap: 6px;
+  min-width: 0;
   min-height: 82px;
   padding: 14px;
   border-right: 1px solid rgba(154, 170, 190, 0.12);
@@ -362,12 +383,11 @@ dd {
 
 .profile-stats strong {
   min-width: 0;
-  overflow: hidden;
   color: var(--color-heading);
   font-size: 20px;
   font-weight: 850;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .profile-grid {
@@ -394,27 +414,28 @@ dd {
 }
 
 .account-row {
-  grid-template-columns: auto minmax(0, 1fr) 34px;
+  grid-template-columns: minmax(66px, auto) minmax(0, 1fr) 34px;
 }
 
 .account-platform {
+  min-width: 0;
   padding: 4px 8px;
   border: 1px solid;
   border-radius: 999px;
   color: var(--color-text-soft);
   font-size: 12px;
   font-weight: 760;
+  overflow-wrap: anywhere;
 }
 
 .account-row strong,
 .submission-row strong {
   display: block;
   min-width: 0;
-  overflow: hidden;
   color: var(--color-heading);
   font-size: 13px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .account-avatar {
@@ -460,6 +481,10 @@ dd {
     grid-template-columns: 1fr;
   }
 
+  .profile-card h2 {
+    font-size: 24px;
+  }
+
   .profile-avatar-frame {
     max-width: 180px;
   }
@@ -470,6 +495,15 @@ dd {
 
   .submission-row {
     grid-template-columns: 1fr auto;
+  }
+
+  .account-row {
+    grid-template-columns: 1fr 34px;
+  }
+
+  .account-platform {
+    grid-column: 1 / -1;
+    width: fit-content;
   }
 
   .submission-row > span,
