@@ -944,6 +944,7 @@
 .ai-brief {
   position: relative;
   overflow: hidden;
+  min-width: 0;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background:
@@ -1143,12 +1144,12 @@
 .stats-grid,
 .account-cards {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: clamp(14px, 1.2vw + 4px, 20px);
 }
 
 .dashboard-page .stats-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
 .dashboard-page .stats-grid .stat-card:nth-child(3),
@@ -1557,24 +1558,24 @@
 
 .content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.85fr);
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: clamp(16px, 1.4vw + 6px, 24px);
 }
 
 .activity-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 0.8fr);
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: clamp(16px, 1.4vw + 6px, 24px);
   align-items: stretch;
 }
 
 .wide-left {
-  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
 .panel,
 .ai-brief {
-  padding: 22px;
+  padding: clamp(14px, 1.2vw + 8px, 22px);
 }
 
 .panel-prominent {
@@ -1618,9 +1619,10 @@
 }
 
 .heatmap-wrap {
-  --heatmap-cell-size: 11px;
-  --heatmap-cell-gap: 3px;
-  --heatmap-weekday-width: 28px;
+  --heatmap-cell-size: clamp(10px, 0.85vw, 13px);
+  --heatmap-cell-gap: clamp(2px, 0.25vw, 4px);
+  --heatmap-weekday-width: 32px;
+  --heatmap-label-font: clamp(10px, 0.78vw, 12px);
   overflow-x: auto;
   padding-bottom: 2px;
 }
@@ -1633,14 +1635,16 @@
   width: max-content;
   margin-left: calc(var(--heatmap-weekday-width) + 8px);
   color: var(--color-text-muted);
-  font-size: 11px;
-  line-height: 14px;
+  font-size: var(--heatmap-label-font);
+  line-height: 1.2;
 }
 
 .heatmap-months span {
   min-width: 0;
   overflow: visible;
   white-space: nowrap;
+  text-align: center;
+  transform: translateX(calc(-50% + var(--heatmap-cell-size) / 2));
 }
 
 .heatmap-body {
@@ -1656,8 +1660,9 @@
   gap: var(--heatmap-cell-gap);
   width: var(--heatmap-weekday-width);
   color: var(--color-text-muted);
-  font-size: 11px;
-  line-height: var(--heatmap-cell-size);
+  font-size: var(--heatmap-label-font);
+  line-height: 1;
+  align-items: center;
 }
 
 .heatmap-grid {
@@ -2747,8 +2752,8 @@ select:focus {
 .sync-strip,
 .policy-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: clamp(14px, 1.2vw + 4px, 20px);
 }
 
 .sync-card footer {
@@ -3136,15 +3141,6 @@ select:focus {
 }
 
 @media (max-width: 1180px) {
-  .stats-grid,
-  .account-cards,
-  .sync-strip,
-  .policy-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .content-grid,
-  .activity-grid,
   .product-hero,
   .report-entry-panel,
   .report-hero,

@@ -94,6 +94,7 @@
 html {
   min-width: 320px;
   background: var(--color-background);
+  font-size: clamp(14px, 0.6vw + 12px, 17px);
   transition: background-color 0.32s ease;
 }
 

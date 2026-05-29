@@ -122,7 +122,7 @@ const heatmapDays = computed(() => {
 })
 
 const heatmapMonthLabels = computed(() => {
-  const labels: { name: string; column: number; span: number }[] = []
+  const starts: { name: string; column: number }[] = []
   let currentMonth = ''
 
   heatmapDays.value.forEach((day, index) => {
@@ -133,17 +133,22 @@ const heatmapMonthLabels = computed(() => {
     }
 
     currentMonth = month
-    labels.push({
+    starts.push({
       name: monthNames[day.date.getMonth()] ?? '',
       column: Math.floor(index / 7) + 1,
-      span: 1,
     })
   })
 
-  return labels.map((label, index) => ({
-    ...label,
-    span: Math.max(1, (labels[index + 1]?.column ?? heatmapWeekCount.value + 1) - label.column),
-  }))
+  const totalWeeks = heatmapWeekCount.value
+
+  return starts
+    .map((label, index) => {
+      const nextColumn = starts[index + 1]?.column ?? totalWeeks + 1
+      const span = Math.max(1, nextColumn - label.column)
+      const centerColumn = label.column + Math.floor(span / 2)
+      return { ...label, span, centerColumn }
+    })
+    .filter((label) => label.span >= 2)
 })
 
 const heatmapWeekCount = computed(() => Math.ceil(heatmapDays.value.length / 7))
@@ -468,7 +473,7 @@ const mobileRecentSubmissions = computed(() => dashboardSubmissions.value.slice(
             <span
               v-for="month in heatmapMonthLabels"
               :key="`${month.name}-${month.column}`"
-              :style="{ gridColumn: `${month.column} / span ${month.span}` }"
+              :style="{ gridColumn: `${month.centerColumn} / span 1` }"
             >
               {{ month.name }}
             </span>
