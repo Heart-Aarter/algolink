@@ -2,7 +2,10 @@ import './env'
 import cors from 'cors'
 import express from 'express'
 import type { ErrorRequestHandler, RequestHandler } from 'express'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { initDatabase } from './db'
+import atcoderRouter from './routes/atcoder'
 import aiRouter from './routes/ai'
 import aiAdviceRouter from './routes/aiAdvice'
 import accountsRouter from './routes/accounts'
@@ -17,6 +20,9 @@ import userRouter from './routes/user'
 
 const app = express()
 const port = Number(process.env.PORT) || 3001
+const clientDistDir = join(__dirname, '..', '..', 'dist')
+const clientIndexPath = join(clientDistDir, 'index.html')
+const shouldServeClient = process.env.NODE_ENV === 'production' || existsSync(clientIndexPath)
 
 initDatabase()
 
@@ -50,10 +56,20 @@ app.use('/api/user', trainingPlanRouter)
 app.use('/api/user', dailyRouter)
 app.use('/api/leaderboard', leaderboardRouter)
 app.use('/api/luogu', luoguRouter)
+app.use('/atcoder-api', atcoderRouter)
 
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'api route not found' })
 })
+
+if (shouldServeClient && existsSync(clientIndexPath)) {
+  app.use(express.static(clientDistDir))
+  app.get(/^(?!\/api(?:\/|$)|\/atcoder-api(?:\/|$)).*/, (_req, res) => {
+    res.sendFile(clientIndexPath)
+  })
+} else if (shouldServeClient) {
+  console.warn(`Client dist not found at ${clientDistDir}; serving API only`)
+}
 
 const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   console.error(error)

@@ -11,6 +11,7 @@
     "dev:client": "vite",
     "dev:server": "npm --workspace server run dev",
     "build": "run-p type-check build:server \"build-only {@}\" --",
+    "start": "npm --workspace server run start",
     "preview": "vite preview",
     "build-only": "vite build",
     "build:server": "npm --workspace server run build",

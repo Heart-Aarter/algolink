@@ -412,27 +412,41 @@ GET /api/leaderboard/events?username=Aarter&limit=20
 
 推荐生产部署方式：
 
-- 前端 `dist/` 作为静态文件。
-- 后端 `server/dist/` 作为 Node 服务。
-- Nginx 对外提供静态文件和 `/api` 反向代理。
-- SQLite 数据库保存在 `server/data/app.db`。
+- 单个 Node/Express 服务同时提供前端静态文件和后端 API。
+- 前端 `dist/` 由后端托管，Vue Router history 路由会回退到 `index.html`。
+- 后端处理 `/api/...`，并提供 `/atcoder-api/...` 作为 AtCoder Problems API 代理。
+- SQLite 数据库保存在 `server/data/app.db`，生产部署时必须持久化或定期备份 `server/data/`。
 
 ### 构建
+
+服务器 Node.js 版本需满足 `package.json` 中的要求：`^20.19.0 || >=22.12.0`。
 
 ```sh
 npm install
 npm run build
 ```
 
-`npm run build` 只负责构建前端 `dist/` 和后端 `server/dist/`，不会启动生产服务。构建完成后需要启动后端：
+`npm run build` 会构建前端 `dist/` 和后端 `server/dist/`。构建完成后启动生产服务：
 
 ```sh
-npm --workspace server run start
+npm start
 ```
 
-生产环境前端默认请求当前域名下的 `/api/...`，因此同域部署时通常不需要 `.env.production`。如果前端和 API 不在同一个域名，再通过 `VITE_API_BASE` 指向完整 API 地址并重新构建。
+生产服务默认监听 `3001` 端口，可用 `PORT` 覆盖：
 
-### systemd 后端服务示例
+```sh
+PORT=8080 npm start
+```
+
+生产环境前端默认请求当前域名下的 `/api/...`，同源部署通常不需要配置 `VITE_API_BASE`。如果前端和 API 不在同一个域名，再通过 `VITE_API_BASE` 指向完整 API 地址并重新构建。
+
+后端加密保存 AI API Key 时必须配置稳定的 `ALGOLINK_ENCRYPTION_SECRET`。该值变化后，已保存的 AI Key 密文将无法解密：
+
+```env
+ALGOLINK_ENCRYPTION_SECRET=replace-with-a-long-random-secret
+```
+
+### systemd 服务示例
 
 `/etc/systemd/system/algolink.service`：
 
@@ -443,11 +457,13 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/var/www/algolink/server
-ExecStart=/usr/bin/node dist/index.js
+WorkingDirectory=/var/www/algolink
+ExecStart=/usr/bin/npm start
 Restart=always
 RestartSec=5
 Environment=NODE_ENV=production
+Environment=PORT=3001
+Environment=ALGOLINK_ENCRYPTION_SECRET=replace-with-a-long-random-secret
 
 [Install]
 WantedBy=multi-user.target
@@ -462,35 +478,12 @@ sudo systemctl start algolink
 sudo systemctl status algolink
 ```
 
-### Nginx 示例
-
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-
-    root /var/www/algolink/dist;
-    index index.html;
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:3001/api/;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-}
-```
-
-启用后检查：
+启动后检查：
 
 ```sh
-sudo nginx -t
-sudo systemctl reload nginx
 curl http://localhost:3001/api/health
+curl http://localhost:3001/
+curl http://localhost:3001/login
 ```
 
 
